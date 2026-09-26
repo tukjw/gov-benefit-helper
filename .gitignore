@@ -1,0 +1,12 @@
+### IDE ###
+.idea/
+.vscode/
+*.iml
+
+### OS ###
+.DS_Store
+
+### Env ###
+.env
+.env.*
+!.env.example
