@@ -20,7 +20,7 @@ public class TestcontainersConfiguration {
                 .withDatabaseName("gov_benefit_test")
                 .withCommand(
                         "--character-set-server=utf8mb4",
-                        "--collation-server=utf8mb4_unicode_ci")
+                        "--collation-server=utf8mb4_0900_ai_ci")
                 .withUrlParam("serverTimezone", "Asia/Seoul");
     }
 
