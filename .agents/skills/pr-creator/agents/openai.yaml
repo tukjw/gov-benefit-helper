@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR 생성기"
+  short_description: "코드 변경사항을 리뷰하기 쉬운 PR 제목과 본문으로 명확히 정리"
+  default_prompt: "$pr-creator를 사용해 현재 변경사항을 명확하고 리뷰하기 쉬운 PR 초안으로 정리해줘."

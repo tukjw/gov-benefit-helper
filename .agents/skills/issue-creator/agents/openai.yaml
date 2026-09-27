@@ -1,0 +1,4 @@
+interface:
+  display_name: "이슈 생성기"
+  short_description: "요구사항을 GitHub 이슈, 추천 라벨, 로컬 작업 브랜치로 정리"
+  default_prompt: "$issue-creator를 사용해 내 메모로 GitHub 이슈를 만들고 로컬 브랜치도 생성해줘."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR 리뷰어"
+  short_description: "PR을 플랜·저장소 규칙과 대조하고 결함을 근거와 함께 검토"
+  default_prompt: "$pr-reviewer를 사용해 현재 변경사항을 검토하고 중요한 문제부터 알려줘."

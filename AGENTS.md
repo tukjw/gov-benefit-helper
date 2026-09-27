@@ -1,0 +1,69 @@
+# gov-benefit-helper 작업 지침
+
+이 파일은 Codex와 Claude Code가 공통으로 읽는 저장소 지침입니다. `CLAUDE.md`는 이 파일의 심볼릭 링크이고, `.claude/skills`는 `.agents/skills`의 심볼릭 링크입니다. 스킬은 `.agents/skills/`에서만 수정합니다.
+
+## 저장소 구성
+
+- `backend/`: Spring Boot API. 도메인별 레이어드 패키지 구조 (`kr.govbenefit.<도메인>.{controller,service,repository,domain,dto}`). Gradle 명령은 `backend/`에서 실행합니다.
+- `docs/plans/`: 이슈별 구현 플랜. 파일명은 `<이슈번호>-<브랜치 슬러그>.md`.
+- `scripts/`: 저장소 보조 스크립트.
+- `docker-compose.local.yml`: 로컬 개발용 MySQL.
+- 이슈와 PR은 GitHub에 있습니다. CLI는 `gh`입니다.
+
+## 로컬 실행
+
+- `docker compose -f docker-compose.local.yml up -d`로 MySQL을 띄우고, `backend/`에서 `SPRING_PROFILES_ACTIVE=local ./gradlew bootRun`으로 실행합니다.
+- `local` 프로필의 DB 계정 기본값은 로컬 compose가 만드는 계정과 같으므로 `.env` 없이 실행됩니다. 값을 바꿀 때만 루트 `.env`(compose)와 `backend/.env`(앱)를 `.env.example`에서 복사해 씁니다.
+
+## 플랜 기반 작업 규칙
+
+- 이슈 번호를 받으면 먼저 `docs/plans/<이슈번호>-*.md`를 찾아 읽고, 플랜의 단계와 완료 조건을 그대로 따릅니다.
+- 플랜 형식과 `status` 값은 `docs/plans/README.md`를 따릅니다. 이슈 하나에 플랜 파일은 하나이며, 후속 작업이 필요하면 새 이슈를 만듭니다.
+- 플랜에 `결정 필요`로 남아 있는 항목은 임의로 정하지 말고 작업을 멈추고 사용자에게 확인합니다.
+- 플랜에 없는 리팩터링이나 범위 확장을 끼워 넣지 않습니다. 필요하다고 판단되면 플랜 파일에 제안으로 적고 진행하지 않습니다.
+- 작업을 시작하면 플랜 상단의 `status`를 `in-progress`로 바꾸고, PR을 올리기 직전 마지막 커밋에서 `done`으로 바꿉니다.
+
+## 검증
+
+- Java: `backend/`에서 `./gradlew test`가 통과해야 합니다.
+- 테스트는 Testcontainers로 실제 MySQL을 띄우므로 Docker가 필요합니다. Docker가 없으면 skip하지 않고 실패로 둡니다.
+- MySQL 전용 동작과 Flyway 마이그레이션은 H2 같은 대체 DB가 아니라 Testcontainers MySQL로 검증합니다.
+- 새 테스트는 외부 서비스에 의존하지 않아야 합니다. 외부 HTTP는 fake나 로컬 stub 서버로 대체합니다. 실제 외부 API에 요청하는 테스트가 필요하면 기본 `./gradlew test`에 포함되지 않도록 분리합니다.
+
+## 브랜치와 커밋
+
+- 브랜치 이름은 `<type>/<이슈번호>-<슬러그>` 형식입니다. 이슈에 대응하는 브랜치가 이미 만들어져 있으면 그 브랜치를 사용합니다.
+- 커밋 메시지는 `<type>: <한국어 요약> (#<이슈번호>)` 형식입니다. 예: `fix: 로그인 실패 시 에러 메시지 개선 (#12)`.
+- `type`은 이슈 라벨과 맞춥니다: `fix`, `feat`, `improve`, `refactor`, `docs`, `test`, `chore`, `hotfix`.
+- 하나의 PR은 하나의 이슈만 다룹니다. PR 설명에는 플랜 파일 경로를 적습니다.
+- 워크트리는 저장소 루트에서 `scripts/worktree.sh <브랜치명 | 이슈번호>`로 만듭니다. `git worktree add`를 직접 실행하지 않고, `git worktree remove`·`prune`은 사용자가 직접 합니다.
+
+### 분기 원점과 PR base
+
+`main`은 배포된 상태, `develop`은 통합 상태입니다. 저장소 기본 브랜치는 `develop`입니다.
+
+| 작업 | 분기 원점 | PR base |
+| --- | --- | --- |
+| 일반 이슈 | `develop` | `develop` |
+| hotfix | `main` | `main` |
+| 릴리스 | `develop` (그대로 head) | `main` |
+
+### hotfix
+
+- 배포된 `main`의 긴급 결함만 hotfix입니다. 판단 기준은 "지금 `develop`에 쌓인 변경을 함께 배포해도 되는가"입니다. 되면 일반 `fix` 이슈로 `develop`에, 안 되면 hotfix로 처리합니다.
+- 이슈 라벨은 `type/hotfix`, 브랜치는 `hotfix/<이슈번호>-<슬러그>`, 커밋 type은 `hotfix`입니다. 유형 라벨은 하나만 붙이므로 `type/bug`와 함께 쓰지 않습니다.
+- 절차: `main`으로 PR 머지 → 패치 버전 태그 `vX.Y.Z` → 곧바로 `main → develop` 역머지. 역머지를 빠뜨리면 다음 릴리스에서 수정이 되돌아가므로 같은 자리에서 끝냅니다.
+- PR 머지 이후의 태그, 역머지, push는 사용자가 직접 합니다. 에이전트는 실행할 명령만 제시합니다.
+
+### 릴리스
+
+- release 브랜치는 두지 않습니다. `develop → main` PR 하나로 릴리스합니다.
+- PR 제목은 `release: vX.Y.Z`입니다. `release`는 대응하는 이슈 라벨이 없는 유일한 커밋 type이며 이슈 번호를 붙이지 않습니다.
+- 같은 PR에서 `backend/build.gradle`의 `version`을 `X.Y.Z`로 맞춥니다. SNAPSHOT 접미사는 쓰지 않습니다.
+- 머지 커밋에 `git tag -a vX.Y.Z -m "vX.Y.Z"`를 붙이고 push합니다. 버전의 단일 소스는 git 태그입니다.
+- PR 머지 이후의 태그와 push는 사용자가 직접 합니다. 에이전트는 실행할 명령만 제시합니다.
+
+## 하지 말 것
+
+- `.env` 내용, DB 자격 증명, API 키를 코드나 문서에 새로 하드코딩하지 않습니다. 로컬 compose 전용 기본 계정(`docker-compose.local.yml`, `application-local.yaml`)만 예외입니다.
+- 원격 브랜치 삭제, force push, `main`·`develop` 직접 커밋을 하지 않습니다. 예외는 릴리스 PR의 버전 bump 커밋 하나이며, 이것만 `develop`에 직접 올립니다.
