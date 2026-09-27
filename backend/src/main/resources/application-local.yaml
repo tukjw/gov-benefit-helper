@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    # docker-compose.local.yml이 만드는 로컬 전용 계정. backend/.env에 DB_USER, DB_PASSWORD가 있으면 그 값이 우선한다.
+    # 단 .env에 빈 값으로 두면 빈 문자열이 되어 이 기본값이 적용되지 않으니 항목을 지운다.
+    username: ${DB_USER:gov_benefit_user}
+    password: ${DB_PASSWORD:gov_benefit_user}
+
+logging:
+  level:
+    kr.govbenefit: DEBUG

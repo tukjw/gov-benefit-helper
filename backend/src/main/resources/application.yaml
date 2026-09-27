@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: gov-benefit-helper
+  config:
+    # 작업 디렉터리의 .env를 KEY=VALUE 프로퍼티로 읽는다. ./gradlew는 backend/에서 실행한다.
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gov_benefit}?serverTimezone=Asia/Seoul
+    username: ${DB_USER:}
+    password: ${DB_PASSWORD:}
+  jpa:
+    # 영속성 컨텍스트를 트랜잭션 범위로 한정한다. 지연 로딩은 @Transactional 서비스 안에서만 일어난다.
+    open-in-view: false
+    hibernate:
+      # 스키마는 Flyway(db/migration)만 만든다. 엔티티와 스키마가 어긋나면 기동에 실패한다.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Seoul
