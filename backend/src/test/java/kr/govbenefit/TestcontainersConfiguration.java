@@ -10,7 +10,8 @@ import org.testcontainers.utility.DockerImageName;
 public class TestcontainersConfiguration {
 
     /**
-     * 문자셋과 정렬 규칙은 docker-compose.local.yml과 같게 둔다.
+     * 문자셋, 정렬 규칙, 시간대는 docker-compose.local.yml과 같게 둔다.
+     * serverTimezone은 서버 세션 시간대를 바꾸지 않고 KST라고 가정만 하므로, 서버도 KST로 띄워야 시각이 어긋나지 않는다.
      * DB 이름을 로컬·운영과 다르게 두어 엔티티가 스키마 이름을 고정하지 않는지 함께 확인한다.
      */
     @Bean
@@ -21,6 +22,7 @@ public class TestcontainersConfiguration {
                 .withCommand(
                         "--character-set-server=utf8mb4",
                         "--collation-server=utf8mb4_0900_ai_ci")
+                .withEnv("TZ", "Asia/Seoul")
                 .withUrlParam("serverTimezone", "Asia/Seoul");
     }
 
