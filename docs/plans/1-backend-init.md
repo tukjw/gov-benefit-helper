@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #1 백엔드 Spring Boot 프로젝트 초기 구성
 
