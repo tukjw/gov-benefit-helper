@@ -5,6 +5,7 @@
 ## 저장소 구성
 
 - `backend/`: Spring Boot API. 도메인별 레이어드 패키지 구조 (`kr.govbenefit.<도메인>.{controller,service,repository,domain,dto}`). Gradle 명령은 `backend/`에서 실행합니다.
+- `docs/product/`: 서비스 기획, 요구사항(`REQ-*`), 외부 데이터, 개발 순서와 미정 사항(`DEC-*`). 문서 안내는 `docs/README.md`에 있습니다. 기능 범위나 동작을 판단할 때 먼저 확인합니다.
 - `docs/plans/`: 이슈별 구현 플랜. 파일명은 `<이슈번호>-<브랜치 슬러그>.md`.
 - `scripts/`: 저장소 보조 스크립트.
 - `docker-compose.local.yml`: 로컬 개발용 MySQL.
