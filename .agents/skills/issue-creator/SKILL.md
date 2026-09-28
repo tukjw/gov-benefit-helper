@@ -60,11 +60,11 @@ description: 정리되지 않은 요구사항, 버그 제보, 개선 아이디�
 - `area/worker`
 - `area/infra`
 
-우선순위가 명확할 때만 하나를 선택합니다.
+우선순위가 명확할 때만 하나를 선택합니다. `docs/product/requirements.md`의 P0·P1과 같은 기준입니다.
 
-- `priority/high`
-- `priority/medium`
-- `priority/low`
+- `priority/p0`: 기능이 끝까지 동작하는 데 필요한 작업
+- `priority/p1`: P0 완성 후 다룰 후속 작업
+- `priority/p2`: 아이디어·언젠가 할 작업
 
 작업이 막혔거나 추가 정보가 필요한 경우에만 상태를 선택합니다.
 
