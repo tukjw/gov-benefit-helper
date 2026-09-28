@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #5 공공서비스 혜택 API 실제 데이터 검증
 
@@ -35,6 +35,7 @@ status: in-progress
 6. **공고 대조는 개인 대상 35개 코드만 한다.** 사업자·기업 대상 13개 코드는 값 분포만 집계하고 미확인으로 둔다. 48개 전부 대조하면 수작업이 100건을 넘는다.
 7. **표본은 `md5(서비스ID || ':' || 용도)` 순으로 뽑는다.** 같은 스냅샷이면 DuckDB 버전과 관계없이 같은 표본이 나온다.
 8. **착수(T0)와 마무리(T1) 두 시점에 수집한다.** 간격은 3일 이상으로 하고, 관찰 기간이 짧다는 한계를 보고서에 적는다.
+   - 실행 중 변경: 두 시점 비교는 #6(1주 이상 매일 관찰)으로 옮겼다. 이 이슈는 T0만 수집한다. 비교 쿼리(`snapshot_diff.sql`)와 `--modified-since`는 가짜 스냅샷으로 동작을 확인했다.
 
 ## 단계별 구현 계획
 
@@ -75,7 +76,7 @@ status: in-progress
    - 신청기한: 분류별 10건을 원문과 대조해 오분류율을 적는다.
      - 실행 중 변경: 1차 표본에서 오분류 2건을 찾아 규칙을 고쳤다. 고친 규칙은 새 표본(`:deadline-v2`)으로 다시 검증했다.
      - 분류에는 '신청 불필요'를 더했다(분류당 10건씩 5개 분류).
-7. T0에서 3일 이상 지난 뒤 T1을 수집하고 `analyze --snapshot <T1> --compare <T0>`로 비교한다(`snapshot_diff.sql`). 추가·사라진·변경 ID와 `수정일시` 변화를 보고, `cond[수정일시::GTE]`로 조회한 T0 이후 수정 건과 맞춰 본다.
+7. (#6으로 옮김) T0에서 3일 이상 지난 뒤 T1을 수집하고 `analyze --snapshot <T1> --compare <T0>`로 비교한다(`snapshot_diff.sql`). 추가·사라진·변경 ID와 `수정일시` 변화를 보고, `cond[수정일시::GTE]`로 조회한 T0 이후 수정 건과 맞춰 본다.
 8. `docs/research/gov24-api-data.md` 보고서를 작성한다. 확인 날짜, 표본 수, 집계 방법(실행 명령·스냅샷 목록 파일), 완료 조건별 결과, `DEC-SCOPE`·`DEC-DATA`·`DEC-PROFILE`·`DEC-MATCH`별 선택지와 근거, 한계를 적는다.
 9. `docs/product/data-source.md`의 미확인 항목을 확인한 사실로 갱신하고, "첫 개발 작업" 섹션을 보고서 링크로 바꾼다.
 10. 검증 명령을 실행한 뒤 이 플랜의 `status`를 `done`으로 바꾼다.
@@ -88,7 +89,7 @@ status: in-progress
 - [ ] 지원조건 코드별 실제 값 종류, 그리고 의미를 공고와 대조해 확인한 사례가 있다. 의미를 확인하지 못한 코드는 미확인으로 구분한다 → 5단계(`condition_values.sql`), 6단계
 - [ ] 신청기한 표현을 명시 날짜·상시·조건부·미확인으로 나눈 비율과 예시, 대상 지역을 판별할 근거가 있는지가 있다 → 5단계(`deadline_classes.sql`, `region_evidence.sql`), 6단계
 - [ ] 인증 실패 등 관찰한 실패 응답의 형식이 있다. 호출 한도를 소진하는 실험은 하지 않는다 → 3단계
-- [ ] 두 시점 이상 수집해 변경·사라진 ID를 비교한 결과가 있다. 관찰 기간이 부족하면 한계로 적는다 → 7, 8단계
+- 두 시점 이상 수집해 비교하는 작업은 #6으로 옮겼다(이슈 #5 본문 수정). 보고서 8절에 T0 관찰 결과와 한계를 적었다 → 8단계
 - [ ] 보고서에 확인 날짜, 표본 수, 집계 방법이 있고, 같은 스크립트로 집계를 다시 실행할 수 있다 → 8단계, 검증 명령 3
 - [ ] 인증키와 인증 헤더가 저장소 파일, 보고서, 커밋 어디에도 남지 않는다 → 설계 결정 3, 검증 명령 1
 - [ ] `DEC-SCOPE`, `DEC-DATA`, `DEC-PROFILE`, `DEC-MATCH` 각각에 대한 선택지와 근거가 보고서에 있다 → 8단계
@@ -113,8 +114,7 @@ comm -23 <(grep -rhoE 'DEC-[A-Z]+' docs | sort -u) \
   <(grep -hoE '^\| DEC-[A-Z]+' docs/product/development.md | cut -c3- | sort -u)
 
 # 3. 같은 스냅샷으로 집계를 다시 실행해도 커밋된 결과와 같은지
-uv run scripts/research/gov24/gov24.py analyze --snapshot <T0>
-uv run scripts/research/gov24/gov24.py analyze --snapshot <T1> --compare <T0>
+uv run scripts/research/gov24/gov24.py analyze --snapshot 20260928T163852
 git diff --exit-code docs/research/gov24-api-data/results/
 ```
 
