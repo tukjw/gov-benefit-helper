@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #3 서비스 기획·요구사항 문서 추가
 
@@ -53,7 +53,7 @@ comm -23 <(grep -rhoE 'DEC-[A-Z]+' docs | sort -u) \
 
 # 4. 스킬의 라벨 목록과 GitHub 라벨이 같은지
 diff <(gh label list --limit 100 --json name --jq '.[].name' | sort) \
-  <(grep -oE '^- `[a-z]+/[a-z0-9-]+`' .agents/skills/issue-creator/SKILL.md | tr -d '`- ' | sort -u)
+  <(grep -oE '^- `[a-z]+/[a-z0-9-]+`' .agents/skills/issue-creator/SKILL.md | sed -E 's/^- `(.*)`$/\1/' | sort -u)
 ```
 
 3. `docs/`와 `AGENTS.md`의 상대 링크 대상 파일과 `#앵커`가 가리키는 제목이 존재하는지 확인한다.
