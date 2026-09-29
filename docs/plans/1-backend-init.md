@@ -22,8 +22,8 @@ status: done
 ## 설계 결정
 
 1. **테스트 DB는 Testcontainers MySQL, Docker는 필수로 둔다.** H2는 MySQL과 SQL 문법·정렬 규칙이 달라 제외했다. Docker가 없을 때 skip하면 DB 검증이 신호 없이 빠지므로 실패로 둔다.
-2. **정렬 규칙은 `utf8mb4_0900_ai_ci`로 로컬 compose와 테스트 컨테이너에 명시한다.** 기본값과 같지만 환경 간 일치를 드러내기 위해 적는다.
-3. **로컬 MySQL과 테스트 컨테이너 모두 `TZ=Asia/Seoul`로 띄운다.** JDBC `serverTimezone=Asia/Seoul`의 가정과 서버 시간대를 맞춘다.
+2. **정렬 규칙은 `utf8mb4_0900_ai_ci`로 로컬 compose와 테스트 컨테이너에 명시한다.** 기본값과 같지만 환경 간 일치를 드러내기 위해 적는다. → [결정 0001](../decisions/0001-db-collation.md)
+3. **로컬 MySQL과 테스트 컨테이너 모두 `TZ=Asia/Seoul`로 띄운다.** JDBC `serverTimezone=Asia/Seoul`의 가정과 서버 시간대를 맞춘다. → [결정 0002](../decisions/0002-db-timezone.md)
 4. **`.env`는 `spring.config.import=optional:file:.env[.properties]`로 읽는다.** `spring-dotenv`는 Boot 4 호환이 확인되지 않았고 의존성 없이 같은 목적을 이룬다.
 5. **`local` 프로필에 로컬 compose 계정 기본값을 둔다.** `.env` 없이 `docker compose up`과 `bootRun`만으로 실행되게 한다. 저장소 지침의 로컬 전용 계정 예외에 해당한다.
 
