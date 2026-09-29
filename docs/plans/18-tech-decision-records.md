@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #18 여러 이슈에 걸치는 기술 설계 결정을 별도 문서로 기록
 
