@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # job 이름 `test`가 ruleset의 필수 체크 이름이다. 바꾸면 .github/rulesets/*.json도 함께 바꾼다.
+  test:
+    name: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Test
+        run: ./gradlew test
+
+      # Docker를 못 써서 건너뛴 테스트가 통과로 보이지 않게 한다.
+      - name: Fail on skipped tests
+        run: |
+          shopt -s nullglob
+          results=(build/test-results/test/*.xml)
+          if [ ${#results[@]} -eq 0 ]; then
+            echo "::error::테스트 결과 파일이 없습니다."
+            exit 1
+          fi
+          if skipped=$(grep -l '<skipped' "${results[@]}"); then
+            echo "::error::건너뛴 테스트가 있습니다."
+            echo "$skipped"
+            exit 1
+          fi
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: backend/build/reports/tests/test
+          retention-days: 7
