@@ -28,6 +28,7 @@
 ## 검증
 
 - Java: `backend/`에서 `./gradlew test`가 통과해야 합니다.
+- `develop`·`main` 대상 PR은 CI(`.github/workflows/ci.yml`)의 `test` 체크가 통과해야 머지할 수 있습니다. 건너뛴 테스트가 있어도 실패합니다. 보호 규칙은 `.github/rulesets/`에 있고 관리자도 우회할 수 없습니다.
 - 테스트는 Testcontainers로 실제 MySQL을 띄우므로 Docker가 필요합니다. Docker가 없으면 skip하지 않고 실패로 둡니다.
 - MySQL 전용 동작과 Flyway 마이그레이션은 H2 같은 대체 DB가 아니라 Testcontainers MySQL로 검증합니다.
 - 새 테스트는 외부 서비스에 의존하지 않아야 합니다. 외부 HTTP는 fake나 로컬 stub 서버로 대체합니다. 실제 외부 API에 요청하는 테스트가 필요하면 기본 `./gradlew test`에 포함되지 않도록 분리합니다.
@@ -44,28 +45,33 @@
 
 `main`은 배포된 상태, `develop`은 통합 상태입니다. 저장소 기본 브랜치는 `develop`입니다.
 
-| 작업 | 분기 원점 | PR base |
-| --- | --- | --- |
-| 일반 이슈 | `develop` | `develop` |
-| hotfix | `main` | `main` |
-| 릴리스 | `develop` (그대로 head) | `main` |
+| 작업 | 분기 원점 | PR base | 머지 방식 |
+| --- | --- | --- | --- |
+| 일반 이슈 | `develop` | `develop` | squash |
+| hotfix | `main` | `main` | merge commit |
+| hotfix 역머지 | `develop` | `develop` | merge commit |
+| 릴리스 버전 반영 | `develop` | `develop` | squash |
+| 릴리스 | `develop` (그대로 head) | `main` | merge commit |
+
+`main`은 merge commit만 허용합니다. 역머지를 squash하면 `main`이 `develop`에 합쳐지지 않으므로 merge commit을 고릅니다.
 
 ### hotfix
 
 - 배포된 `main`의 긴급 결함만 hotfix입니다. 판단 기준은 "지금 `develop`에 쌓인 변경을 함께 배포해도 되는가"입니다. 되면 일반 `fix` 이슈로 `develop`에, 안 되면 hotfix로 처리합니다.
 - 이슈 라벨은 `type/hotfix`, 브랜치는 `hotfix/<이슈번호>-<슬러그>`, 커밋 type은 `hotfix`입니다. 유형 라벨은 하나만 붙이므로 `type/bug`와 함께 쓰지 않습니다.
-- 절차: `main`으로 PR 머지 → 패치 버전 태그 `vX.Y.Z` → 곧바로 `main → develop` 역머지. 역머지를 빠뜨리면 다음 릴리스에서 수정이 되돌아가므로 같은 자리에서 끝냅니다.
+- 절차: `main`으로 PR 머지 → 패치 버전 태그 `vX.Y.Z` → 곧바로 `develop`으로 역머지 PR 머지. 역머지를 빠뜨리면 다음 릴리스에서 수정이 되돌아가므로 같은 자리에서 끝냅니다.
+- 역머지는 `develop`에서 `hotfix/<이슈번호>-<슬러그>-backmerge` 브랜치를 만들어 `origin/main`을 병합한 뒤 `develop`으로 PR을 올립니다. `main`을 그대로 head로 두면 최신 `develop`을 반영하라는 조건 때문에 머지할 수 없습니다. PR 제목은 `hotfix: vX.Y.Z 역머지 (#<이슈번호>)`입니다.
 - PR 머지 이후의 태그, 역머지, push는 사용자가 직접 합니다. 에이전트는 실행할 명령만 제시합니다.
 
 ### 릴리스
 
-- release 브랜치는 두지 않습니다. `develop → main` PR 하나로 릴리스합니다.
-- PR 제목은 `release: vX.Y.Z`입니다. `release`는 대응하는 이슈 라벨이 없는 유일한 커밋 type이며 이슈 번호를 붙이지 않습니다.
-- 같은 PR에서 `backend/build.gradle`의 `version`을 `X.Y.Z`로 맞춥니다. SNAPSHOT 접미사는 쓰지 않습니다.
+- 장기 release 브랜치는 두지 않습니다. 버전 반영 PR을 `develop`에 머지한 뒤 `develop → main` PR로 릴리스합니다.
+- 버전 반영 PR은 `develop`에서 `release/vX.Y.Z` 브랜치를 만들어 `backend/build.gradle`의 `version`을 `X.Y.Z`로 맞추고, 제목 `release: vX.Y.Z 버전 반영`으로 `develop`에 올립니다. SNAPSHOT 접미사는 쓰지 않습니다.
+- 릴리스 PR 제목은 `release: vX.Y.Z`입니다. `release`는 대응하는 이슈 라벨이 없는 유일한 커밋 type이며 이슈 번호를 붙이지 않습니다.
 - 머지 커밋에 `git tag -a vX.Y.Z -m "vX.Y.Z"`를 붙이고 push합니다. 버전의 단일 소스는 git 태그입니다.
 - PR 머지 이후의 태그와 push는 사용자가 직접 합니다. 에이전트는 실행할 명령만 제시합니다.
 
 ## 하지 말 것
 
 - `.env` 내용, DB 자격 증명, API 키를 코드나 문서에 새로 하드코딩하지 않습니다. 로컬 compose 전용 기본 계정(`docker-compose.local.yml`, `application-local.yaml`)만 예외입니다.
-- 원격 브랜치 삭제, force push, `main`·`develop` 직접 커밋을 하지 않습니다. 예외는 릴리스 PR의 버전 bump 커밋 하나이며, 이것만 `develop`에 직접 올립니다.
+- 원격 브랜치 삭제, force push, `main`·`develop` 직접 커밋을 하지 않습니다. 모든 변경은 PR로 머지합니다.
