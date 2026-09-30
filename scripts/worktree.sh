@@ -3,6 +3,7 @@
 # 사용법: scripts/worktree.sh <브랜치명 | 이슈번호>
 # 경로: <저장소>-worktrees/<브랜치명의 '/'를 '-'로 치환>
 # 브랜치 생성·전환, 원격 작업, 기존 경로 덮어쓰기는 하지 않는다.
+# 메인 체크아웃의 IntelliJ Gradle 연결 설정(.idea/gradle.xml, misc.xml)이 있으면 복사한다.
 set -euo pipefail
 
 usage() { echo "사용법: $0 <브랜치명 | 이슈번호>" >&2; exit 2; }
@@ -54,6 +55,19 @@ head=$(git -C "$dest" rev-parse HEAD)
 [[ $new_branch == "$branch" ]] || { echo "검증 실패: 새 워크트리 브랜치가 '$new_branch' 입니다." >&2; exit 1; }
 [[ $before == "$after" ]] || { echo "검증 실패: 원래 워크트리 브랜치가 바뀌었습니다." >&2; exit 1; }
 
+# 5. IntelliJ Gradle 연결 설정 복사 (.idea는 git 추적 대상이 아니라 새 워크트리에 없음)
+main_root=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+idea_result=""
+for f in gradle.xml misc.xml; do
+  if [[ -f $main_root/.idea/$f ]]; then
+    mkdir -p "$dest/.idea"
+    cp "$main_root/.idea/$f" "$dest/.idea/$f"
+    idea_result+="- IDE 설정 복사: \`.idea/$f\`"$'\n'
+  else
+    idea_result+="- IDE 설정 건너뜀 (메인 체크아웃에 없음): \`.idea/$f\`"$'\n'
+  fi
+done
+
 cat <<RESULT
 ## 워크트리 생성 결과
 
@@ -63,3 +77,4 @@ cat <<RESULT
 - HEAD: \`$head\`
 - 기존 워크트리 브랜치: \`$before\`
 RESULT
+printf '%s' "$idea_result"
