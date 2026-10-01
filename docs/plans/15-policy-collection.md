@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #15 공공서비스 혜택 전체 수집과 저장·실행 이력 구현
 
