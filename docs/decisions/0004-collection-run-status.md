@@ -1,6 +1,6 @@
 # 0004. 수집 실행 상태와 격리
 
-- 상태: 채택
+- 상태: 대체됨 → [0007](0007-collection-run-status-and-failures.md)
 - 날짜: 2026-09-30
 - 출처: #15, [플랜](../plans/15-policy-collection.md)
 

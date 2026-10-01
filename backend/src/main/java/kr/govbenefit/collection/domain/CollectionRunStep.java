@@ -73,13 +73,8 @@ public class CollectionRunStep {
         unlinkedCount += result.unlinked();
     }
 
-    public void succeed(LocalDateTime now) {
-        this.status = CollectionStatus.SUCCEEDED;
-        this.finishedAt = now;
-    }
-
-    public void fail(LocalDateTime now) {
-        this.status = CollectionStatus.FAILED;
+    public void finish(CollectionStatus status, LocalDateTime now) {
+        this.status = status;
         this.finishedAt = now;
     }
 }
