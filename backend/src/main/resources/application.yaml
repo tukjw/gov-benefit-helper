@@ -20,7 +20,18 @@ spring:
           time_zone: Asia/Seoul
 
 # 공공서비스(혜택) API. 인증키는 GOV24_SERVICE_KEY(공공데이터포털 Decoding 키)로만 받는다. 수집할 때만 필요하다.
+# 시간 제한·재시도·호출 예산은 결정 0006. 전체 수집은 정상일 때 33회 호출, 쪽 응답은 최대 1.1초였다.
 gov24:
   base-url: https://api.odcloud.kr/api/gov24/v3
   service-key: ${GOV24_SERVICE_KEY:}
   per-page: 1000
+  connect-timeout: 5s
+  # 응답 헤더를 받을 때까지의 시간 제한
+  read-timeout: 10s
+  max-retries: 2
+  retry-delay: 1s
+  max-calls-per-run: 100
+  schedule:
+    enabled: true
+    # 매일 04:00 (Asia/Seoul)
+    cron: "0 0 4 * * *"

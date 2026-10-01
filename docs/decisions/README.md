@@ -46,5 +46,7 @@
 | [0001](0001-db-collation.md) | DB 문자 집합과 정렬 규칙 | 채택 | #1 |
 | [0002](0002-db-timezone.md) | DB와 애플리케이션 시간대 | 채택 | #1 |
 | [0003](0003-source-record-retention.md) | 원문 보관과 내용 변경 감지 | 채택 | #15 |
-| [0004](0004-collection-run-status.md) | 수집 실행 상태와 격리 | 채택 | #15 |
+| [0004](0004-collection-run-status.md) | 수집 실행 상태와 격리 | 대체됨 → [0007](0007-collection-run-status-and-failures.md) | #15 |
 | [0005](0005-gov24-client-and-stub.md) | 공공서비스 API 호출과 테스트 stub | 채택 | #15 |
+| [0006](0006-gov24-failure-handling.md) | 공공서비스 API 실패 처리와 호출 예산 | 채택 | #16 |
+| [0007](0007-collection-run-status-and-failures.md) | 수집 실행 상태와 실패 기록 | 채택 | #16 |

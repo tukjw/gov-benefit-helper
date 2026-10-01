@@ -33,6 +33,11 @@ public class CollectionRun {
     @Column(columnDefinition = "varchar(20)")
     private CollectionStatus status;
 
+    /** 실행을 실패로 만들거나 중단시킨 원인. 끝까지 돈 실행은 null이다. */
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(30)")
+    private CollectionErrorType errorType;
+
     private String errorMessage;
 
     public static CollectionRun start(LocalDateTime now) {
@@ -42,15 +47,12 @@ public class CollectionRun {
         return run;
     }
 
-    public void succeed(LocalDateTime now) {
-        this.status = CollectionStatus.SUCCEEDED;
-        this.finishedAt = now;
-    }
-
-    public void fail(LocalDateTime now, String errorMessage) {
-        this.status = CollectionStatus.FAILED;
-        this.finishedAt = now;
+    public void finish(CollectionStatus status, CollectionErrorType errorType, String errorMessage,
+                       LocalDateTime now) {
+        this.status = status;
+        this.errorType = errorType;
         this.errorMessage = truncate(errorMessage);
+        this.finishedAt = now;
     }
 
     private static String truncate(String message) {

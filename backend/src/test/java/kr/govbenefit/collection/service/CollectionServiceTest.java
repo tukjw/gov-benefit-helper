@@ -14,6 +14,7 @@ import kr.govbenefit.benefit.domain.BenefitDetail;
 import kr.govbenefit.benefit.repository.BenefitDetailRepository;
 import kr.govbenefit.benefit.repository.BenefitRepository;
 import kr.govbenefit.collection.Gov24StubServer;
+import kr.govbenefit.collection.domain.CollectionErrorType;
 import kr.govbenefit.collection.domain.CollectionQuarantine;
 import kr.govbenefit.collection.domain.CollectionRun;
 import kr.govbenefit.collection.domain.CollectionRunStep;
@@ -22,6 +23,7 @@ import kr.govbenefit.collection.domain.QuarantineReason;
 import kr.govbenefit.collection.domain.SourceEndpoint;
 import kr.govbenefit.collection.domain.SourceRecord;
 import kr.govbenefit.collection.domain.SourceRecordHistory;
+import kr.govbenefit.collection.repository.CollectionFailureRepository;
 import kr.govbenefit.collection.repository.CollectionQuarantineRepository;
 import kr.govbenefit.collection.repository.CollectionRunRepository;
 import kr.govbenefit.collection.repository.CollectionRunStepRepository;
@@ -49,7 +51,9 @@ import tools.jackson.databind.node.ObjectNode;
  */
 @SpringBootTest(properties = {
         "logging.level.kr.govbenefit=DEBUG",
-        "logging.level.org.springframework.web.client=DEBUG"
+        "logging.level.org.springframework.web.client=DEBUG",
+        "gov24.schedule.enabled=false",
+        "gov24.retry-delay=10ms"
 })
 @Import(TestcontainersConfiguration.class)
 @ExtendWith(OutputCaptureExtension.class)
@@ -92,6 +96,8 @@ class CollectionServiceTest {
     @Autowired
     private CollectionQuarantineRepository quarantineRepository;
     @Autowired
+    private CollectionFailureRepository failureRepository;
+    @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
     private JsonMapper jsonMapper;
@@ -100,7 +106,7 @@ class CollectionServiceTest {
     void setUp() {
         stub.reset();
         for (String table : List.of("benefit_detail", "benefit", "source_record_history", "source_record",
-                "collection_quarantine", "collection_run_step", "collection_run")) {
+                "collection_quarantine", "collection_failure", "collection_run_step", "collection_run")) {
             jdbcTemplate.update("DELETE FROM " + table);
         }
     }
@@ -270,23 +276,31 @@ class CollectionServiceTest {
     }
 
     @Test
-    void data가_없는_200_응답은_실패로_기록하고_이전_쪽은_남긴다() {
+    void data가_없는_200_응답은_그_쪽만_실패로_기록하고_나머지는_저장한다() {
         stub.override(SERVICE_LIST, 2, 200, NOT_FOUND);
 
         Long runId = collectionService.collectAll();
 
         CollectionRun run = runRepository.findById(runId).orElseThrow();
-        assertThat(run.getStatus()).isEqualTo(CollectionStatus.FAILED);
+        assertThat(run.getStatus()).isEqualTo(CollectionStatus.PARTIAL);
         assertThat(run.getFinishedAt()).isNotNull();
-        assertThat(run.getErrorMessage()).contains("/serviceList page=2", "data가 없습니다");
-        assertThat(stepRepository.findAllByRunIdOrderById(runId)).singleElement().satisfies(step -> {
-            assertThat(step.getEndpoint()).isEqualTo(SERVICE_LIST);
-            assertThat(step.getStatus()).isEqualTo(CollectionStatus.FAILED);
-            assertThat(step.getFinishedAt()).isNotNull();
-            assertThat(step.getPageCount()).isEqualTo(1);
-            assertThat(step.getCreatedCount()).isEqualTo(2);
+        assertThat(run.getErrorType()).isNull();
+        assertThat(failureRepository.findAllByRunIdOrderById(runId)).singleElement().satisfies(failure -> {
+            assertThat(failure.getEndpoint()).isEqualTo(SERVICE_LIST);
+            assertThat(failure.getPage()).isEqualTo(2);
+            assertThat(failure.getErrorType()).isEqualTo(CollectionErrorType.API_BAD_RESPONSE);
+            assertThat(failure.getAttempts()).isEqualTo(1);
+            assertThat(failure.getMessage()).contains("/serviceList page=2", "data가 없습니다");
         });
+        List<CollectionRunStep> steps = stepRepository.findAllByRunIdOrderById(runId);
+        assertThat(steps).extracting(CollectionRunStep::getStatus).containsExactly(CollectionStatus.PARTIAL,
+                CollectionStatus.SUCCEEDED, CollectionStatus.SUCCEEDED);
+        assertThat(steps.get(0).getFinishedAt()).isNotNull();
+        assertThat(steps.get(0).getPageCount()).isEqualTo(1);
+        assertThat(steps.get(0).getCreatedCount()).isEqualTo(2);
         assertThat(benefitRepository.findAll()).extracting(Benefit::getServiceId).containsExactlyInAnyOrder(A, B);
+        // 목록에 없는 C의 상세는 원문만 남는다.
+        assertThat(steps.get(1).getUnlinkedCount()).isEqualTo(1);
     }
 
     @Test
@@ -300,6 +314,7 @@ class CollectionServiceTest {
 
         CollectionRun failed = runRepository.findById(failedRunId).orElseThrow();
         assertThat(failed.getStatus()).isEqualTo(CollectionStatus.FAILED);
+        assertThat(failed.getErrorType()).isEqualTo(CollectionErrorType.API_AUTH);
         assertThat(failed.getErrorMessage()).contains("HTTP 401", "code=-4").doesNotContain(SERVICE_KEY);
         assertThat(output.getAll()).contains("수집 실패").doesNotContain(SERVICE_KEY);
     }

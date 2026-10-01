@@ -4,12 +4,15 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import kr.govbenefit.collection.domain.SourceEndpoint;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
@@ -25,6 +28,7 @@ import tools.jackson.databind.node.ObjectNode;
  * 공공서비스(혜택) API를 흉내 내는 로컬 HTTP 서버.
  * 경로별 레코드 목록을 {@code page}·{@code perPage}로 잘라 실제 응답 형식으로 돌려준다.
  * 레코드는 {@code src/test/resources/gov24/<경로>.json}(T0 스냅샷에서 고른 실제 레코드)에서 읽고, 테스트가 바꿔 시나리오를 만든다.
+ * 쪽 단위로 오류·지연 응답을 바꿔 끼우고, 받은 요청 수를 경로·쪽별로 센다.
  */
 public class Gov24StubServer implements Closeable {
 
@@ -34,6 +38,8 @@ public class Gov24StubServer implements Closeable {
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
     private final Map<SourceEndpoint, List<ObjectNode>> records = new EnumMap<>(SourceEndpoint.class);
     private final Map<String, MockResponse> overrides = new ConcurrentHashMap<>();
+    private final Map<String, Deque<MockResponse>> onceOverrides = new ConcurrentHashMap<>();
+    private final Map<String, AtomicInteger> requestCounts = new ConcurrentHashMap<>();
     private final List<String> authorizations = new CopyOnWriteArrayList<>();
 
     public static Gov24StubServer start() {
@@ -67,6 +73,8 @@ public class Gov24StubServer implements Closeable {
             records.put(endpoint, fixture);
         }
         overrides.clear();
+        onceOverrides.clear();
+        requestCounts.clear();
         authorizations.clear();
     }
 
@@ -93,11 +101,51 @@ public class Gov24StubServer implements Closeable {
      * 경로의 한 쪽 응답을 바꿔 끼운다.
      */
     public void override(SourceEndpoint endpoint, int page, int status, String body) {
-        overrides.put(key(endpoint, page), new MockResponse.Builder()
+        override(endpoint, page, response(status, body));
+    }
+
+    /**
+     * 경로의 한 쪽 응답을 바꿔 끼운다. 지연 응답처럼 상태 코드·본문 밖의 동작을 바꿀 때 쓴다.
+     */
+    public void override(SourceEndpoint endpoint, int page, MockResponse response) {
+        overrides.put(key(endpoint, page), response);
+    }
+
+    /**
+     * 경로의 한 쪽에 대한 다음 {@code times}번의 요청에만 이 응답을 주고, 그 뒤로는 원래 응답으로 돌아간다.
+     */
+    public synchronized void overrideTimes(SourceEndpoint endpoint, int page, int times, MockResponse response) {
+        Deque<MockResponse> queue = onceOverrides.computeIfAbsent(key(endpoint, page), k -> new ArrayDeque<>());
+        for (int i = 0; i < times; i++) {
+            queue.add(response);
+        }
+    }
+
+    public static MockResponse response(int status, String body) {
+        return new MockResponse.Builder()
                 .code(status)
                 .addHeader("Content-Type", "application/json;charset=UTF-8")
                 .body(body)
-                .build());
+                .build();
+    }
+
+    /**
+     * 받은 요청 수. 경로 밖의 요청도 센다.
+     */
+    public int requestCount() {
+        return requestCounts.values().stream().mapToInt(AtomicInteger::get).sum();
+    }
+
+    public int requestCount(SourceEndpoint endpoint) {
+        return requestCounts.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(endpoint + ":"))
+                .mapToInt(entry -> entry.getValue().get())
+                .sum();
+    }
+
+    public int requestCount(SourceEndpoint endpoint, int page) {
+        AtomicInteger count = requestCounts.get(key(endpoint, page));
+        return count == null ? 0 : count.get();
     }
 
     public List<String> authorizations() {
@@ -119,11 +167,17 @@ public class Gov24StubServer implements Closeable {
             }
         }
         if (endpoint == null) {
+            requestCounts.computeIfAbsent(path, k -> new AtomicInteger()).incrementAndGet();
             return new MockResponse.Builder().code(404).build();
         }
         // 실제 API처럼 page<1은 1쪽으로 본다.
         int page = Math.max(1, parseInt(request.getUrl().queryParameter("page"), 1));
         int perPage = parseInt(request.getUrl().queryParameter("perPage"), 10);
+        requestCounts.computeIfAbsent(key(endpoint, page), k -> new AtomicInteger()).incrementAndGet();
+        Deque<MockResponse> once = onceOverrides.get(key(endpoint, page));
+        if (once != null && !once.isEmpty()) {
+            return once.poll();
+        }
         MockResponse override = overrides.get(key(endpoint, page));
         if (override != null) {
             return override;

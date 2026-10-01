@@ -8,3 +8,8 @@ spring:
 logging:
   level:
     kr.govbenefit: DEBUG
+
+# 로컬에서는 정기 수집을 끈다. 수동 수집은 collect 프로필로 한다.
+gov24:
+  schedule:
+    enabled: false

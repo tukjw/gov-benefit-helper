@@ -78,6 +78,11 @@ public class CollectionRunStep {
         this.finishedAt = now;
     }
 
+    public void partial(LocalDateTime now) {
+        this.status = CollectionStatus.PARTIAL;
+        this.finishedAt = now;
+    }
+
     public void fail(LocalDateTime now) {
         this.status = CollectionStatus.FAILED;
         this.finishedAt = now;
