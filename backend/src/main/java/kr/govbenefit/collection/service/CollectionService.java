@@ -13,6 +13,7 @@ import kr.govbenefit.collection.domain.CollectionFailure;
 import kr.govbenefit.collection.domain.CollectionRun;
 import kr.govbenefit.collection.domain.CollectionRunStep;
 import kr.govbenefit.collection.domain.CollectionStatus;
+import kr.govbenefit.collection.domain.PageResult;
 import kr.govbenefit.collection.domain.SourceEndpoint;
 import kr.govbenefit.collection.repository.CollectionFailureRepository;
 import kr.govbenefit.collection.repository.CollectionRunRepository;
@@ -52,148 +53,113 @@ public class CollectionService {
         CollectionRun run = runRepository.save(CollectionRun.start(now()));
         Gov24CallBudget budget = new Gov24CallBudget(properties.maxCallsPerRun());
         log.info("수집 시작 runId={}", run.getId());
-        CollectionStatus status = CollectionStatus.SUCCEEDED;
-        CollectionErrorType errorType = null;
-        String errorMessage = null;
-        try {
-            for (SourceEndpoint endpoint : SourceEndpoint.values()) {
-                StepResult result = collectEndpoint(run.getId(), endpoint, budget);
-                if (endpoint == SourceEndpoint.SERVICE_LIST && result.status() == CollectionStatus.FAILED) {
-                    status = CollectionStatus.FAILED;
-                    errorType = result.failure().type();
-                    errorMessage = result.failure().message();
-                    break;
-                }
-                if (result.status() != CollectionStatus.SUCCEEDED) {
-                    status = CollectionStatus.PARTIAL;
-                }
-            }
-        } catch (RunAborted e) {
-            // 목록 1쪽에서 중단되면 이번 실행으로 갱신된 것이 없다.
-            status = e.endpoint == SourceEndpoint.SERVICE_LIST && e.page == 1
-                    ? CollectionStatus.FAILED : CollectionStatus.PARTIAL;
-            errorType = e.type;
-            errorMessage = e.getMessage();
-        } catch (DataAccessException | TransactionException | PersistenceException e) {
-            status = CollectionStatus.FAILED;
-            errorType = CollectionErrorType.DB_ERROR;
-            errorMessage = describeDbError(e);
-            log.error("수집 중 DB 오류 runId={} errorType={}", run.getId(), errorType, e);
-        } catch (RuntimeException e) {
-            status = CollectionStatus.FAILED;
-            errorType = CollectionErrorType.INTERNAL;
-            errorMessage = e.getMessage();
-            log.error("수집 중 예상하지 못한 오류 runId={} errorType={}", run.getId(), errorType, e);
-        }
-        run.finish(status, errorType, errorMessage, now());
+        RunOutcome outcome = collectEndpoints(run.getId(), budget);
+        run.finish(outcome.status(), outcome.errorType(), outcome.errorMessage(), now());
         runRepository.save(run);
-        switch (status) {
+        switch (outcome.status()) {
             case SUCCEEDED -> log.info("수집 완료 runId={} calls={}", run.getId(), budget.used());
             case PARTIAL -> log.warn("수집 부분 실패 runId={} errorType={} calls={} message={}", run.getId(),
-                    errorType, budget.used(), errorMessage);
-            default -> log.warn("수집 실패 runId={} errorType={} calls={} message={}", run.getId(), errorType,
-                    budget.used(), errorMessage);
+                    outcome.errorType(), budget.used(), outcome.errorMessage());
+            default -> log.warn("수집 실패 runId={} errorType={} calls={} message={}", run.getId(),
+                    outcome.errorType(), budget.used(), outcome.errorMessage());
         }
         return run.getId();
     }
 
-    private StepResult collectEndpoint(Long runId, SourceEndpoint endpoint, Gov24CallBudget budget) {
-        CollectionRunStep step = stepRepository.save(CollectionRunStep.start(runId, endpoint, now()));
-        CollectionStatus status = CollectionStatus.SUCCEEDED;
-        PageFailure failure = null;
-        int page = 1;
+    private RunOutcome collectEndpoints(Long runId, Gov24CallBudget budget) {
         try {
-            int perPage = properties.perPage();
-            int lastPage = 1;
-            for (; page <= lastPage; page++) {
-                Gov24Page response;
-                try {
-                    response = gov24Client.fetchPage(endpoint, page, perPage, budget);
-                } catch (Gov24ApiException e) {
-                    PageFailure pageFailure = recordFailure(runId, endpoint, page, e.type(), e.attempts(),
-                            e.getMessage(), null);
-                    if (e.type().abortsRun()) {
-                        throw new RunAborted(endpoint, page, e.type(), e.getMessage());
-                    }
-                    if (page == 1) {
-                        // 전체 건수를 모르므로 이 경로는 더 받을 수 없다.
-                        status = CollectionStatus.FAILED;
-                        failure = pageFailure;
-                        break;
-                    }
-                    status = CollectionStatus.PARTIAL;
-                    continue;
+            boolean partial = false;
+            for (SourceEndpoint endpoint : SourceEndpoint.values()) {
+                EndpointProgress progress = collectEndpoint(runId, endpoint, budget);
+                if (endpoint == SourceEndpoint.SERVICE_LIST && !progress.firstPageDone) {
+                    // 목록 1쪽이 없으면 이번 실행으로 갱신된 것이 없다.
+                    return RunOutcome.stopped(CollectionStatus.FAILED, progress.stopCause);
                 }
-                if (response.data().isEmpty()) {
-                    if (page > 1) {
-                        // 계산한 마지막 쪽보다 일찍 끝났다. 끝으로 보면 빠진 쪽이 성공으로 기록된다.
-                        recordFailure(runId, endpoint, page, CollectionErrorType.API_TRUNCATED, response.attempts(),
-                                endpoint.path() + " page=" + page + " 마지막 쪽(" + lastPage + ") 전에 data가 비었습니다",
-                                null);
-                        status = CollectionStatus.PARTIAL;
-                    }
-                    break;
+                if (progress.stopCause != null && progress.stopCause.type().abortsRun()) {
+                    return RunOutcome.stopped(CollectionStatus.PARTIAL, progress.stopCause);
                 }
-                lastPage = Math.ceilDiv(response.totalCount(), perPage);
-                try {
-                    step.addPage(pageWriter.write(runId, endpoint, page, response.data(), now()));
-                } catch (DataAccessException | TransactionException | PersistenceException e) {
-                    PageFailure pageFailure = recordFailure(runId, endpoint, page, CollectionErrorType.DB_ERROR,
-                            response.attempts(), endpoint.path() + " page=" + page + " 저장 실패: "
-                                    + describeDbError(e), e);
-                    if (page == 1) {
-                        status = CollectionStatus.FAILED;
-                        failure = pageFailure;
-                        break;
-                    }
-                    status = CollectionStatus.PARTIAL;
-                    continue;
-                }
-                step = stepRepository.save(step);
+                partial |= progress.status() != CollectionStatus.SUCCEEDED;
             }
-            finishStep(step, status);
-            log.info("수집 경로 종료 runId={} endpoint={} status={} pages={} received={} created={} changed={} "
-                            + "unchanged={} quarantined={} unlinked={}", runId, endpoint, status, step.getPageCount(),
-                    step.getReceivedCount(), step.getCreatedCount(), step.getChangedCount(),
-                    step.getUnchangedCount(), step.getQuarantinedCount(), step.getUnlinkedCount());
-            return new StepResult(status, failure);
-        } catch (RunAborted e) {
-            finishStep(step, page == 1 ? CollectionStatus.FAILED : CollectionStatus.PARTIAL);
-            throw e;
+            return new RunOutcome(partial ? CollectionStatus.PARTIAL : CollectionStatus.SUCCEEDED, null, null);
+        } catch (DataAccessException | TransactionException | PersistenceException e) {
+            // 실행·경로·실패 기록을 저장하지 못했다. DB를 쓸 수 없는 상태로 보고 끝낸다.
+            log.error("수집 중 DB 오류 runId={} errorType={}", runId, CollectionErrorType.DB_ERROR, e);
+            return new RunOutcome(CollectionStatus.FAILED, CollectionErrorType.DB_ERROR, describeDbError(e));
         } catch (RuntimeException e) {
-            step.fail(now());
+            log.error("수집 중 예상하지 못한 오류 runId={} errorType={}", runId, CollectionErrorType.INTERNAL, e);
+            return new RunOutcome(CollectionStatus.FAILED, CollectionErrorType.INTERNAL, e.getMessage());
+        }
+    }
+
+    private EndpointProgress collectEndpoint(Long runId, SourceEndpoint endpoint, Gov24CallBudget budget) {
+        CollectionRunStep step = stepRepository.save(CollectionRunStep.start(runId, endpoint, now()));
+        EndpointProgress progress = new EndpointProgress();
+        try {
+            int lastPage = 1;
+            for (int page = 1; page <= lastPage && !progress.finished; page++) {
+                PageOutcome outcome = collectPage(runId, endpoint, page, lastPage, budget);
+                if (outcome.failure() != null) {
+                    recordFailure(runId, endpoint, page, outcome.failure());
+                    progress.addFailure(page, outcome.failure());
+                    continue;
+                }
+                if (page == 1) {
+                    progress.firstPageDone = true;
+                }
+                lastPage = outcome.lastPage();
+                if (outcome.saved() != null) {
+                    step.addPage(outcome.saved());
+                    stepRepository.save(step);
+                }
+            }
+            step.finish(progress.status(), now());
+            log.info("수집 경로 종료 runId={} endpoint={} status={} pages={} received={} created={} changed={} "
+                            + "unchanged={} quarantined={} unlinked={} failedPages={}", runId, endpoint,
+                    step.getStatus(), step.getPageCount(), step.getReceivedCount(), step.getCreatedCount(),
+                    step.getChangedCount(), step.getUnchangedCount(), step.getQuarantinedCount(),
+                    step.getUnlinkedCount(), progress.failedPages);
+            return progress;
+        } catch (RuntimeException e) {
+            step.finish(CollectionStatus.FAILED, now());
             throw e;
         } finally {
             stepRepository.save(step);
         }
     }
 
-    private void finishStep(CollectionRunStep step, CollectionStatus status) {
-        switch (status) {
-            case SUCCEEDED -> step.succeed(now());
-            case PARTIAL -> step.partial(now());
-            default -> step.fail(now());
+    /**
+     * 한 쪽을 받아 저장한다. 받거나 저장하지 못하면 저장하지 않고 실패를 돌려준다.
+     */
+    private PageOutcome collectPage(Long runId, SourceEndpoint endpoint, int page, int lastPage,
+                                    Gov24CallBudget budget) {
+        String where = endpoint.path() + " page=" + page;
+        int perPage = properties.perPage();
+        Gov24Page response;
+        try {
+            response = gov24Client.fetchPage(endpoint, page, perPage, budget);
+        } catch (Gov24ApiException e) {
+            return PageOutcome.failed(new PageFailure(e.type(), e.attempts(), e.getMessage(), null));
+        }
+        if (response.data().isEmpty()) {
+            // 1쪽이 비면 대상이 없는 것이다. 그 뒤 쪽이 비면 계산한 마지막 쪽보다 일찍 끝난 것이라 실패로 본다.
+            return page == 1 ? new PageOutcome(0, null, null)
+                    : PageOutcome.failed(new PageFailure(CollectionErrorType.API_TRUNCATED, response.attempts(),
+                            where + " 마지막 쪽(" + lastPage + ") 전에 data가 비었습니다", null));
+        }
+        try {
+            PageResult saved = pageWriter.write(runId, endpoint, page, response.data(), now());
+            return new PageOutcome(Math.ceilDiv(response.totalCount(), perPage), saved, null);
+        } catch (DataAccessException | TransactionException | PersistenceException e) {
+            return PageOutcome.failed(new PageFailure(CollectionErrorType.DB_ERROR, response.attempts(),
+                    where + " 저장 실패: " + describeDbError(e), e));
         }
     }
 
-    /**
-     * 실패한 쪽을 기록한다. 기록조차 저장하지 못하면 DB를 쓸 수 없는 상태로 보고 실행을 중단한다.
-     *
-     * @param cause 로그에 스택을 남길 원인. API 실패는 메시지로 충분해 null을 넘긴다
-     */
-    private PageFailure recordFailure(Long runId, SourceEndpoint endpoint, int page, CollectionErrorType type,
-                                      int attempts, String message, Throwable cause) {
+    private void recordFailure(Long runId, SourceEndpoint endpoint, int page, PageFailure failure) {
         log.warn("수집 쪽 실패 runId={} endpoint={} page={} errorType={} attempts={} message={}", runId, endpoint,
-                page, type, attempts, message, cause);
-        try {
-            failureRepository.save(CollectionFailure.of(runId, endpoint, page, type, attempts, message, now()));
-        } catch (DataAccessException | TransactionException | PersistenceException e) {
-            log.error("수집 실패 기록 저장 실패 runId={} endpoint={} page={} errorType={}", runId, endpoint, page,
-                    CollectionErrorType.DB_ERROR, e);
-            throw new RunAborted(endpoint, page, CollectionErrorType.DB_ERROR,
-                    "실패 기록 저장 실패: " + describeDbError(e));
-        }
-        return new PageFailure(type, message);
+                page, failure.type(), failure.attempts(), failure.message(), failure.cause());
+        failureRepository.save(CollectionFailure.of(runId, endpoint, page, failure.type(), failure.attempts(),
+                failure.message(), now()));
     }
 
     /**
@@ -211,26 +177,58 @@ public class CollectionService {
         return LocalDateTime.now(clock);
     }
 
-    private record StepResult(CollectionStatus status, PageFailure failure) {
-    }
+    /**
+     * 경로 하나의 진행. 상태는 기록한 사실로 정한다.
+     */
+    private static final class EndpointProgress {
 
-    private record PageFailure(CollectionErrorType type, String message) {
+        private boolean firstPageDone;
+        /** 남은 쪽을 더 받지 않는다. */
+        private boolean finished;
+        private int failedPages;
+        /** 경로를 일찍 끝낸 실패. 1쪽 실패이거나 실행을 중단하는 실패다. */
+        private PageFailure stopCause;
+
+        void addFailure(int page, PageFailure failure) {
+            failedPages++;
+            if (page == 1 || failure.type().abortsRun()) {
+                // 1쪽이 없으면 전체 건수를 몰라 더 받을 수 없다.
+                stopCause = failure;
+                finished = true;
+            } else if (failure.type() == CollectionErrorType.API_TRUNCATED) {
+                finished = true;
+            }
+        }
+
+        CollectionStatus status() {
+            if (!firstPageDone) {
+                return CollectionStatus.FAILED;
+            }
+            return failedPages > 0 ? CollectionStatus.PARTIAL : CollectionStatus.SUCCEEDED;
+        }
     }
 
     /**
-     * 실행을 더 진행하지 않는 실패(인증 실패, 호출 제한, 예산 초과, 실패 기록 저장 불가).
+     * @param lastPage 응답으로 계산한 마지막 쪽. 실패했으면 쓰지 않는다
+     * @param saved    저장한 쪽의 건수. 빈 쪽이거나 실패했으면 null이다
      */
-    private static final class RunAborted extends RuntimeException {
+    private record PageOutcome(int lastPage, PageResult saved, PageFailure failure) {
 
-        private final SourceEndpoint endpoint;
-        private final int page;
-        private final CollectionErrorType type;
+        static PageOutcome failed(PageFailure failure) {
+            return new PageOutcome(0, null, failure);
+        }
+    }
 
-        private RunAborted(SourceEndpoint endpoint, int page, CollectionErrorType type, String message) {
-            super(message, null, false, false);
-            this.endpoint = endpoint;
-            this.page = page;
-            this.type = type;
+    /**
+     * @param cause 로그에 스택을 남길 원인. API 실패는 메시지로 충분해 null이다
+     */
+    private record PageFailure(CollectionErrorType type, int attempts, String message, Throwable cause) {
+    }
+
+    private record RunOutcome(CollectionStatus status, CollectionErrorType errorType, String errorMessage) {
+
+        static RunOutcome stopped(CollectionStatus status, PageFailure cause) {
+            return new RunOutcome(status, cause.type(), cause.message());
         }
     }
 }
