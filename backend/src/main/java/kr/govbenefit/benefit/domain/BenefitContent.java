@@ -1,7 +1,7 @@
 package kr.govbenefit.benefit.domain;
 
 /**
- * 목록(serviceList)에서 받은 혜택 기본 항목. 값은 원문 문자열 그대로다.
+ * 목록(serviceList)에서 받은 혜택 기본 항목. 값은 원문 문자열 그대로이며, 빈 문자열과 공백뿐인 문자열만 null로 둔다.
  */
 public record BenefitContent(
         String name,

@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import kr.govbenefit.benefit.domain.Benefit;
+import kr.govbenefit.benefit.domain.BenefitContent;
 import kr.govbenefit.benefit.domain.BenefitDetail;
+import kr.govbenefit.benefit.domain.BenefitNormalization;
 import kr.govbenefit.benefit.repository.BenefitDetailRepository;
 import kr.govbenefit.benefit.repository.BenefitRepository;
 import kr.govbenefit.collection.domain.CollectionQuarantine;
@@ -99,10 +101,12 @@ public class CollectionPageWriter {
         List<Benefit> created = new ArrayList<>();
         records.forEach((serviceId, record) -> {
             Benefit benefit = existing.get(serviceId);
+            BenefitContent content = Gov24RecordMapper.toBenefitContent(record);
+            BenefitNormalization normalization = Gov24RecordMapper.toBenefitNormalization(record);
             if (benefit == null) {
-                created.add(Benefit.create(serviceId, Gov24RecordMapper.toBenefitContent(record), now));
+                created.add(Benefit.create(serviceId, content, normalization, now));
             } else {
-                benefit.confirm(Gov24RecordMapper.toBenefitContent(record), now);
+                benefit.confirm(content, normalization, now);
             }
         });
         benefitRepository.saveAll(created);

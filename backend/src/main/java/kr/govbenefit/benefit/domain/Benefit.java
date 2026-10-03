@@ -2,6 +2,8 @@ package kr.govbenefit.benefit.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -64,6 +66,25 @@ public class Benefit {
 
     private String detailUrl;
 
+    /** 출처 등록 시각. 원문에 없으면 null이다. */
+    @Column(columnDefinition = "datetime")
+    private LocalDateTime sourceRegisteredAt;
+
+    /** 출처 수정 시각. 원문에 없으면 null이다. 수집 시각과 다르다. */
+    @Column(columnDefinition = "datetime")
+    private LocalDateTime sourceModifiedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(20)")
+    private ApplyPeriodType applyPeriodType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(30)")
+    private ApplyPeriodRule applyPeriodRule;
+
+    /** 신청기한 원문을 함께 봐야 하는지. 세부 규칙이 정한다. */
+    private Boolean applyPeriodNeedsReview;
+
     /** 목록에서 마지막으로 확인한 시각. 목록에서 빠지면 이전 값을 유지한다. */
     private LocalDateTime lastSeenAt;
 
@@ -72,10 +93,12 @@ public class Benefit {
     /** 내용 컬럼이 마지막으로 바뀐 시각. */
     private LocalDateTime updatedAt;
 
-    public static Benefit create(String serviceId, BenefitContent content, LocalDateTime now) {
+    public static Benefit create(String serviceId, BenefitContent content, BenefitNormalization normalization,
+                                 LocalDateTime now) {
         Benefit benefit = new Benefit();
         benefit.serviceId = serviceId;
         benefit.setContent(content);
+        benefit.setNormalization(normalization);
         benefit.lastSeenAt = now;
         benefit.createdAt = now;
         benefit.updatedAt = now;
@@ -83,14 +106,19 @@ public class Benefit {
     }
 
     /**
-     * 목록에서 다시 확인했다. 내용이 바뀐 경우에만 내용과 수정 시각을 바꾼다.
+     * 목록에서 다시 확인했다. 원문 값이나 해석한 값이 바뀐 경우에만 내용과 수정 시각을 바꾼다.
      */
-    public void confirm(BenefitContent content, LocalDateTime now) {
-        if (!content.equals(content())) {
+    public void confirm(BenefitContent content, BenefitNormalization normalization, LocalDateTime now) {
+        if (!content.equals(content()) || !normalization.equals(normalization())) {
             setContent(content);
+            setNormalization(normalization);
             this.updatedAt = now;
         }
         this.lastSeenAt = now;
+    }
+
+    public BenefitNormalization normalization() {
+        return new BenefitNormalization(sourceRegisteredAt, sourceModifiedAt, applyPeriodRule);
     }
 
     public BenefitContent content() {
@@ -117,5 +145,13 @@ public class Benefit {
         this.agencyCode = content.agencyCode();
         this.departmentName = content.departmentName();
         this.detailUrl = content.detailUrl();
+    }
+
+    private void setNormalization(BenefitNormalization normalization) {
+        this.sourceRegisteredAt = normalization.sourceRegisteredAt();
+        this.sourceModifiedAt = normalization.sourceModifiedAt();
+        this.applyPeriodRule = normalization.applyPeriodRule();
+        this.applyPeriodType = normalization.applyPeriodRule().type();
+        this.applyPeriodNeedsReview = normalization.applyPeriodRule().needsReview();
     }
 }
