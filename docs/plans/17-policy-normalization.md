@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #17 혜택 신청기한·수정 시각 정규화와 빈 값 보존
 
