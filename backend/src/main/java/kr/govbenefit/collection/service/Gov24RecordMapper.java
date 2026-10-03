@@ -1,15 +1,25 @@
 package kr.govbenefit.collection.service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import kr.govbenefit.benefit.domain.BenefitContent;
 import kr.govbenefit.benefit.domain.BenefitDetailContent;
+import kr.govbenefit.benefit.domain.BenefitNormalization;
 import tools.jackson.databind.JsonNode;
 
 /**
- * 원문 레코드의 한글 필드를 혜택 항목으로 옮긴다. 값은 해석하지 않고 문자열 그대로 둔다.
+ * 원문 레코드의 한글 필드를 혜택 항목으로 옮긴다. 원문 값은 해석하지 않고 문자열 그대로 두며, 빈 문자열과 공백뿐인 문자열만 null로 둔다.
+ * 해석한 값({@link BenefitNormalization})은 정해진 원문 필드 하나에서만 만들고, 원문에 없으면 null로 둔다.
  */
 final class Gov24RecordMapper {
 
     static final String SERVICE_ID = "서비스ID";
+
+    /** 목록 등록일시·수정일시 형식. 시간대 표기가 없어 DB와 같은 Asia/Seoul로 읽는다(결정 0002). */
+    private static final DateTimeFormatter SOURCE_DATE_TIME = DateTimeFormatter.ofPattern("uuuuMMddHHmmss")
+            .withResolverStyle(ResolverStyle.STRICT);
 
     private Gov24RecordMapper() {
     }
@@ -65,11 +75,37 @@ final class Gov24RecordMapper {
                 text(record, "지원유형"));
     }
 
+    /**
+     * 목록 원문을 해석한다. 출처 시각이 없어도 수집 시각으로 채우지 않는다.
+     */
+    static BenefitNormalization toBenefitNormalization(JsonNode record) {
+        return new BenefitNormalization(
+                dateTime(record, "등록일시"),
+                dateTime(record, "수정일시"),
+                ApplyPeriodClassifier.classify(text(record, "신청기한")));
+    }
+
     private static String text(JsonNode record, String field) {
         JsonNode value = record.get(field);
         if (value == null || value.isNull()) {
             return null;
         }
-        return value.isString() ? value.stringValue() : value.toString();
+        String text = value.isString() ? value.stringValue() : value.toString();
+        return text.isBlank() ? null : text;
+    }
+
+    /**
+     * {@code yyyyMMddHHmmss} 문자열. 없거나, 문자열이 아니거나, 형식이 다르거나, 없는 시각이면 null이다.
+     */
+    private static LocalDateTime dateTime(JsonNode record, String field) {
+        JsonNode value = record.get(field);
+        if (value == null || !value.isString()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(value.stringValue(), SOURCE_DATE_TIME);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 }

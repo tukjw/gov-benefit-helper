@@ -50,3 +50,4 @@
 | [0005](0005-gov24-client-and-stub.md) | 공공서비스 API 호출과 테스트 stub | 채택 | #15 |
 | [0006](0006-gov24-failure-handling.md) | 공공서비스 API 실패 처리와 호출 예산 | 채택 | #16 |
 | [0007](0007-collection-run-status-and-failures.md) | 수집 실행 상태와 실패 기록 | 채택 | #16 |
+| [0008](0008-benefit-normalization.md) | 혜택 정규화 값의 저장과 원문 추적 | 채택 | #17 |
