@@ -29,6 +29,8 @@ status: in-progress
 - `Gov24StubServer.requestCount()`로 stub에 들어온 요청 수를 확인할 수 있다.
 - InnoDB 기본 격리 수준(REPEATABLE READ)에서 읽기 전용 트랜잭션의 쿼리는 같은 스냅샷을 본다. 목록 쿼리와 건수 쿼리를 한 트랜잭션에서 실행하면 수집 중에도 둘이 어긋나지 않는다.
 - Spring의 `Pageable` 자동 바인딩은 음수 페이지를 0으로, 최대 크기 초과를 최대값으로 조용히 보정한다. 범위 밖 입력을 400으로 응답해야 하므로 쓰지 않는다.
+- Spring Data JPA는 쪽 시작 위치를 `int`로 넘긴다(`Math.toIntExact`). `(page - 1) * size`가 `int` 범위를 넘으면 예외가 나므로, 그런 쪽은 조회하지 않고 빈 목록으로 응답해야 한다.
+- `@RequestParam List<String>`에 값이 하나만 오면 Spring 기본 변환이 쉼표로 나눈다(`field=보육·교육,보건·의료`가 두 값이 됨, 2026-10-04 테스트로 확인). 현재 분야·기관 유형 값에는 쉼표가 없다.
 
 ## 설계 결정
 
@@ -40,9 +42,9 @@ status: in-progress
    - LIKE 특수 문자 `\`, `%`, `_`는 `\`로 이스케이프한다. 기관 유형 값처럼 밑줄이 들어간 이름도 글자 그대로 찾는다.
    - 키워드는 최대 100자, 단어는 최대 10개다. 넘으면 잘못된 입력이다. 이름 컬럼이 255자이고 실제 검색어로는 충분하며, 조건 수가 끝없이 늘지 않게 막는다.
    - 대안: MySQL FULLTEXT ngram(토큰 크기보다 짧은 단어를 찾지 못해 "포함" 계약과 다름), 메모리 필터링(사실상 캐시 도입이라 `DEC-FRESHNESS` 미정 항목과 충돌).
-3. **필터 값은 원문 문자열 그대로 받아 `IN`으로 비교한다.** 파라미터를 반복해 여러 값을 받는다(`field=보육·교육&field=보건·의료`). 쉼표 구분은 쓰지 않는다. 빈 문자열 값은 무시한다. 모르는 값은 오류가 아니라 일치하는 혜택이 없는 것이다.
+3. **필터 값은 원문 문자열 그대로 받아 `IN`으로 비교한다.** 파라미터를 반복해 여러 값을 받는다(`field=보육·교육&field=보건·의료`). API 계약으로는 쉼표 구분을 두지 않는다. 다만 값이 하나일 때 Spring 기본 변환이 쉼표로 나누는 동작은 막지 않는다(2026-10-04 사용자 결정). 현재 값에 쉼표가 없어 결과가 틀리지 않는다. 쉼표가 든 값이 생기면 그 값을 혼자 보낼 때만 나뉘어 빈 목록이 되므로, 그때 필터 파라미터를 원본 값으로 받도록 바꾼다. 빈 문자열 값은 무시한다. 모르는 값은 오류가 아니라 일치하는 혜택이 없는 것이다.
    - 대안: 영문 코드 enum 매핑. 모르는 값을 400으로 거절할 수 있지만, 출처에 새 값이 생기면 코드를 고치기 전까지 필터할 수 없고 원문 그대로 두는 원칙([0008](../decisions/0008-benefit-normalization.md))과 어긋난다.
-4. **페이지 번호는 1부터 센다.** `page`는 1 이상, `size`는 1 이상 100 이하이며 기본값은 1과 20이다. 범위 밖이거나 정수가 아니면 잘못된 입력이다. 마지막 쪽을 넘은 번호는 빈 목록이며, 이때도 결과 건수는 조건에 맞는 전체 건수다. `@RequestParam`에 Bean Validation 제약을 달고 서비스에서 `PageRequest.of(page - 1, size, sort)`를 만든다.
+4. **페이지 번호는 1부터 센다.** `page`는 1 이상, `size`는 1 이상 100 이하이며 기본값은 1과 20이다. 범위 밖이거나 정수가 아니면 잘못된 입력이다. 마지막 쪽을 넘은 번호는 빈 목록이며, 이때도 결과 건수는 조건에 맞는 전체 건수다. `page` 상한은 두지 않고, 시작 위치가 `int` 범위를 넘는 쪽은 건수만 세고 빈 목록으로 응답한다. `@RequestParam`에 Bean Validation 제약을 달고 서비스에서 `PageRequest.of(page - 1, size, sort)`를 만든다.
 5. **정렬은 `name ASC, service_id ASC`로 고정한다.** 정렬 파라미터는 받지 않는다. 이름이 `NULL`인 혜택은 현재 0건이며, 생기면 MySQL 기본대로 맨 앞에 온다.
 6. **결과 건수는 `Page`의 건수 쿼리로 구하고, 응답은 자체 레코드로 내보낸다.** `PageImpl`을 그대로 직렬화하지 않는다(Spring Data가 JSON 구조를 보장하지 않음). 응답 최상위는 `totalCount`, `page`, `size`, `items`다. `DEC-SEARCH`에 따라 `totalCount`는 나중에 빼거나 다음 쪽 여부로 바꿀 수 있는 항목으로 두며, 클라이언트가 `items`를 해석할 때 `totalCount`에 의존하지 않게 문서화한다.
 7. **목록 항목에는 원문 값을 그대로 담고, 없는 값은 `null`로 보낸다.** 항목 필드: `serviceId`, `name`, `summary`(`purpose_summary`), `agencyName`, `agencyType`, `field`(`service_field`), `applyPeriodText`, `applyPeriodType`, `applyPeriodNeedsReview`, `lastSeenAt`. 기본 문구로 채우지 않는다. 목록에서 사라진 혜택도 숨기지 않으며 `lastSeenAt`으로 구분한다.
@@ -67,22 +69,22 @@ status: in-progress
 
 1. **공통 API 지원** `kr.govbenefit.common.api`
    - `ApiTimes.toOffset(LocalDateTime)`: `null`이면 `null`, 아니면 `Asia/Seoul` 기준 `OffsetDateTime`.
-   - `ErrorCode` enum: `INVALID_INPUT`, `NOT_FOUND`, `INTERNAL_ERROR`, `REQUEST_FAILED`. 필드 `status`, `defaultMessage`.
-   - `ErrorResponse` record(`String code`, `String message`, `List<FieldError> errors`)와 `FieldError` record(`String field`, `String value`, `String reason`).
+   - `ErrorCode` enum: `INVALID_INPUT`, `NOT_FOUND`, `INTERNAL_ERROR`, `REQUEST_FAILED`. 필드 `message`. 상태 코드에서 코드를 고르는 `from(HttpStatusCode)`(400 → `INVALID_INPUT`, 404 → `NOT_FOUND`, 5xx → `INTERNAL_ERROR`, 그 밖 → `REQUEST_FAILED`).
+   - `ApiErrorResponse` record(`String code`, `String message`, `List<InputError> errors`)와 중첩 record `InputError`(`String field`, `String value`, `String reason`). Spring의 `org.springframework.web.ErrorResponse`, `FieldError`와 이름이 겹치지 않게 했다.
+   - `InvalidInputException`(`field`, `value`, `reason`): Bean Validation 제약으로 표현하지 않은 입력 검증의 실패. 핸들러가 `INVALID_INPUT`으로 바꾼다.
    - `GlobalExceptionHandler`(`@RestControllerAdvice`, `ResponseEntityExceptionHandler` 상속):
      - `handleHandlerMethodValidation`: 파라미터 제약 위반을 `INVALID_INPUT`과 항목별 `errors`로 바꾼다.
      - `handleTypeMismatch`: `page=abc` 같은 변환 실패를 `INVALID_INPUT`과 해당 항목 오류로 바꾼다.
-     - `handleNoResourceFoundException`: `NOT_FOUND`.
-     - `handleExceptionInternal`: 위에서 다루지 않은 Spring MVC 예외를 상태 코드에 맞춰 `ErrorResponse`로 바꾼다.
+     - `handleExceptionInternal`: 위에서 다루지 않은 Spring MVC 예외(404 `NoResourceFoundException`, 405 등)를 `ErrorCode.from(status)`로 `ApiErrorResponse`로 바꾼다.
      - `@ExceptionHandler(Exception.class)`: `INTERNAL_ERROR`. 예외는 로그에 남긴다.
 2. **검색 조건** `kr.govbenefit.benefit.dto.BenefitSearchCondition` record(`List<String> keywords`, `List<String> fields`, `List<String> agencyTypes`)
    - `static of(String keyword, List<String> fields, List<String> agencyTypes)`: 키워드를 유니코드 공백으로 나누고 중복을 뺀다. 필터에서 `null`·빈 문자열을 뺀다.
-   - 단어 수 상한(10개) 검사는 컨트롤러의 입력 검증에서 하고, 위반은 `INVALID_INPUT`의 `keyword` 항목 오류로 낸다.
+   - 단어 수 상한(10개)을 넘으면 `of`가 `InvalidInputException("keyword", ...)`을 던진다. 키워드 길이(100자)는 컨트롤러의 `@Size`로 검사한다.
 3. **리포지토리**
    - `BenefitRepository`에 `JpaSpecificationExecutor<Benefit>`를 더한다.
    - `kr.govbenefit.benefit.repository.BenefitSpecifications`: `nameContainsAll(List<String> words)`, `serviceFieldIn(List<String>)`, `agencyTypeIn(List<String>)`. 빈 목록이면 조건 없음. `escapeLike(String)`로 `\`, `%`, `_`를 이스케이프하고 `cb.like(..., '\\')`로 비교한다.
 4. **서비스** `BenefitQueryService.search(BenefitSearchCondition condition, int page, int size)`
-   - 세 조건을 AND로 묶고 `PageRequest.of(page - 1, size, Sort.by(asc("name"), asc("serviceId")))`로 `findAll`한다. 클래스의 `@Transactional(readOnly = true)` 안에서 목록·건수 쿼리가 함께 실행된다.
+   - 세 조건을 AND로 묶고 `PageRequest.of(page - 1, size, Sort.by(asc("name"), asc("serviceId")))`로 `findAll`한다. 시작 위치가 `int` 범위를 넘으면 `count(spec)`만 하고 빈 목록을 돌려준다. 클래스의 `@Transactional(readOnly = true)` 안에서 목록·건수 쿼리가 함께 실행된다.
    - `BenefitSearchResponse`로 바꿔 돌려준다.
 5. **응답 DTO** `kr.govbenefit.benefit.dto`
    - `BenefitSearchResponse` record(`long totalCount`, `int page`, `int size`, `List<BenefitSummary> items`).
@@ -108,7 +110,7 @@ status: in-progress
 - [ ] 키워드를 공백으로 나눈 단어를 이름에 모두 포함한 혜택만 나온다. 빈 키워드·공백만 있는 키워드는 전체 목록이다. → 설계 2, 2·3단계. `청년 월세`와 `월세 청년`이 같은 결과이고, 한 단어만 포함한 혜택은 빠진다. 전각 공백으로 나눈 키워드도 같다. `keyword=`, `keyword=%20%20`, 생략이 모두 전체 건수다. `%`·`_` 키워드는 그 글자가 들어간 혜택만 찾는다. 101자 키워드와 11개 단어는 400 `INVALID_INPUT`이다.
 - [ ] 분야·기관 유형 필터는 한 필터 안의 여러 값을 OR, 필터 사이와 키워드를 AND로 적용한다. → 설계 3, 3단계. `field` 두 값이면 둘 중 하나인 혜택, `field`와 `agencyType`을 함께 주면 둘 다 맞는 혜택, 여기에 키워드를 더하면 세 조건을 모두 만족하는 혜택만 나온다. 모르는 필터 값은 빈 목록이다.
 - [ ] 이름순, 동률은 서비스 ID 순이다. 같은 이름 혜택이 페이지 경계에 걸쳐도 데이터가 그대로면 페이지 이동 시 중복·누락이 없다. → 설계 5, 4단계. 전체 목록이 `name, service_id` 순이다. `size=2`로 모든 쪽을 넘겨 모은 서비스 ID가 한 번에 받은 목록과 같고 중복이 없다. 같은 쪽을 두 번 요청하면 결과가 같다.
-- [ ] 기본 20건, 최대 100건이다. 범위를 벗어난 크기·잘못된 페이지 번호는 잘못된 입력, 결과 없음과 마지막 쪽을 넘은 번호는 빈 목록으로 응답한다. → 설계 4·8, 1·6단계. 파라미터 생략 시 `page=1`, `size=20`이고 항목이 20건 이하다. `size=100`은 200, `size=0`·`size=101`·`page=0`·`page=-1`·`page=abc`는 400이고 본문이 `code: INVALID_INPUT`과 해당 항목의 `errors`다. 일치하는 혜택이 없는 키워드와 마지막 쪽을 넘은 `page`는 200과 빈 `items`다.
+- [ ] 기본 20건, 최대 100건이다. 범위를 벗어난 크기·잘못된 페이지 번호는 잘못된 입력, 결과 없음과 마지막 쪽을 넘은 번호는 빈 목록으로 응답한다. → 설계 4·8, 1·6단계. 파라미터 생략 시 `page=1`, `size=20`이고 항목이 20건 이하다. `size=100`은 200, `size=0`·`size=101`·`size=abc`·`page=0`·`page=-1`·`page=abc`·`page=99999999999`(int 초과)는 400이고 본문이 `code: INVALID_INPUT`과 해당 항목의 `errors`다. 일치하는 혜택이 없는 키워드와 마지막 쪽을 넘은 `page`(`page=2147483647`, `size=100` 포함)는 200과 빈 `items`다.
 - [ ] 응답에 조건에 맞는 결과 건수가 있다. → 설계 6, 4·5단계. 조건마다 `totalCount`가 fixture에서 직접 센 건수와 같다. 마지막 쪽을 넘은 번호에서도 같다.
 - [ ] 항목에 서비스 ID·이름·요약·기관명·기관 유형·분야·신청기한 원문과 분류 상태·목록 마지막 확인 시각이 있고, 원문에 없는 값은 채우지 않는다. → 설계 7·9, 5단계. 항목 필드가 설계 7과 같고 값이 DB와 같다. `lastSeenAt`이 `+09:00`이 붙은 문자열이다. `NULL`인 요약·기관명·신청기한은 JSON `null`이다.
 - [ ] 목록에서 사라진 혜택도 결과에 나오며 마지막 확인 시각으로 구분할 수 있다. → 설계 7. `last_seen_at`을 과거로 바꾼 혜택이 결과에 나오고 `lastSeenAt`이 그 과거 시각이다.
