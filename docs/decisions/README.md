@@ -51,3 +51,5 @@
 | [0006](0006-gov24-failure-handling.md) | 공공서비스 API 실패 처리와 호출 예산 | 채택 | #16 |
 | [0007](0007-collection-run-status-and-failures.md) | 수집 실행 상태와 실패 기록 | 채택 | #16 |
 | [0008](0008-benefit-normalization.md) | 혜택 정규화 값의 저장과 원문 추적 | 채택 | #17 |
+| [0009](0009-api-error-response.md) | API 오류 응답 형식 | 채택 | #29 |
+| [0010](0010-api-time-format.md) | API 응답 시각 형식 | 채택 | #29 |
