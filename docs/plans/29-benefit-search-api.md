@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #29 비회원 혜택 이름·분야·기관 유형 검색 API 제공
 
