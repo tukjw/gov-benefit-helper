@@ -4,6 +4,7 @@ import java.util.List;
 import kr.govbenefit.common.api.ApiErrorResponse.InputError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,6 +26,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(InvalidInputException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidInput(InvalidInputException ex) {
         return ResponseEntity.badRequest().body(ApiErrorResponse.invalidInput(List.of(ex.error())));
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFound(NotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiErrorResponse.of(ErrorCode.NOT_FOUND));
     }
 
     @ExceptionHandler(Exception.class)
