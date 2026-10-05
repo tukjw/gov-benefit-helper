@@ -23,7 +23,7 @@ status: done
 - 2026-10-04 로컬 DB 기준 `benefit` 10,950건. `name`·`service_field`·`agency_type`에 `NULL`이 없다. 기관 유형은 7종(`시군구`, `광역시도`, `중앙행정기관`, `공공기관`, `지방출자_출연기관`, `지방공기업`, `교육청`), 분야는 10종(`생활안정`, `보육·교육`, `보건·의료` 등)이다. 값에 가운뎃점(`·`)과 밑줄(`_`)이 들어 있다.
 - 같은 이름의 혜택이 최대 42건이다(`DEC-SEARCH`). `service_id`는 `UNIQUE`라서 `name, service_id` 정렬로 순서가 하나로 정해진다.
 - 정렬 규칙은 `utf8mb4_0900_ai_ci`다([0001](../decisions/0001-db-collation.md)). LIKE·`IN`·정렬 모두 대소문자와 악센트를 구분하지 않는다.
-- 시각 컬럼은 `Asia/Seoul` 기준 `LocalDateTime`이다([0002](../decisions/0002-db-timezone.md)). 출처 시각과 수집 시각은 구분해 표시하고, 출처 시각이 `NULL`이면 수집 시각으로 대신하지 않는다([0008](../decisions/0008-benefit-normalization.md)).
+- 시각 컬럼은 `Asia/Seoul` 기준 `LocalDateTime`이다([0002](../decisions/0002-db-timezone.md)). Hibernate(`hibernate.jdbc.time_zone`)는 DB 시각을 JVM 기본 시간대로 바꿔 읽는다. 0002는 JVM 시간대를 정하지 않아, CI 러너(UTC)에서 JDBC로 넣은 `last_seen_at`이 9시간 어긋나 읽혔다(PR #31 CI, 2026-10-05). 테스트 JVM을 `Asia/Seoul`로 고정하고(`build.gradle`의 `user.timezone`), 운영 JVM 시간대를 강제하는 일은 후속 이슈로 둔다. 출처 시각과 수집 시각은 구분해 표시하고, 출처 시각이 `NULL`이면 수집 시각으로 대신하지 않는다([0008](../decisions/0008-benefit-normalization.md)).
 - 현재 웹 계층(컨트롤러, 예외 처리)이 없고 Spring Security도 없다. `BenefitQueryService.findByServiceId`는 수집 테스트가 쓰는 조회이며 이번에 바꾸지 않는다.
 - `CollectionAccessTest`는 `kr.govbenefit.collection` 패키지에 HTTP 경로가 없음을 확인한다. 검색 컨트롤러는 `kr.govbenefit.benefit.controller`에 둔다.
 - `Gov24StubServer.requestCount()`로 stub에 들어온 요청 수를 확인할 수 있다.

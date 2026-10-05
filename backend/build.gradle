@@ -41,4 +41,7 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Hibernate는 시각을 DB(Asia/Seoul)와 JVM 기본 시간대 사이에서 변환한다(결정 0002).
+	// 테스트 JVM도 같은 시간대로 띄워 실행 환경(CI 러너는 UTC)에 따라 결과가 달라지지 않게 한다.
+	systemProperty 'user.timezone', 'Asia/Seoul'
 }
