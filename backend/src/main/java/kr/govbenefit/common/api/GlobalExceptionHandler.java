@@ -3,18 +3,13 @@ package kr.govbenefit.common.api;
 import java.util.List;
 import kr.govbenefit.common.api.ApiErrorResponse.InputError;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.TypeMismatchException;
-import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -24,6 +19,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private static final String TYPE_MISMATCH = "형식이 올바르지 않습니다.";
 
     @ExceptionHandler(InvalidInputException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidInput(InvalidInputException ex) {
@@ -37,28 +34,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.internalServerError().body(ApiErrorResponse.of(ErrorCode.INTERNAL_ERROR));
     }
 
+    /**
+     * 요청 객체({@code @Valid} DTO)의 바인딩·검증 실패. 형식 변환 실패는 Spring 기본 문구(영어) 대신 고정 문구로 바꾼다.
+     */
     @Override
-    protected ResponseEntity<Object> handleHandlerMethodValidationException(
-            HandlerMethodValidationException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        if (status.value() != 400) {
-            // 반환값 검증 실패는 서버 오류다. 항목 오류를 내보내지 않는다.
-            return handleExceptionInternal(ex, null, headers, status, request);
-        }
-        List<InputError> errors = ex.getParameterValidationResults().stream()
-                .flatMap(result -> result.getResolvableErrors().stream()
-                        .map(error -> new InputError(parameterName(result.getMethodParameter()),
-                                text(result.getArgument()), error.getDefaultMessage())))
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        List<InputError> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> new InputError(error.getField(), text(error.getRejectedValue()),
+                        error.isBindingFailure() ? TYPE_MISMATCH : error.getDefaultMessage()))
                 .toList();
         return handleExceptionInternal(ex, ApiErrorResponse.invalidInput(errors), headers, status, request);
-    }
-
-    @Override
-    protected ResponseEntity<Object> handleTypeMismatch(
-            TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        String field = ex instanceof MethodArgumentTypeMismatchException mismatch
-                ? mismatch.getName() : ex.getPropertyName();
-        InputError error = new InputError(field, text(ex.getValue()), "형식이 올바르지 않습니다.");
-        return handleExceptionInternal(ex, ApiErrorResponse.invalidInput(List.of(error)), headers, status, request);
     }
 
     @Override
@@ -68,17 +54,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 ? response
                 : ApiErrorResponse.of(ErrorCode.from(statusCode));
         return super.handleExceptionInternal(ex, errorBody, headers, statusCode, request);
-    }
-
-    private static String parameterName(MethodParameter parameter) {
-        RequestParam requestParam = parameter.getParameterAnnotation(RequestParam.class);
-        if (requestParam != null && StringUtils.hasText(requestParam.name())) {
-            return requestParam.name();
-        }
-        if (requestParam != null && StringUtils.hasText(requestParam.value())) {
-            return requestParam.value();
-        }
-        return parameter.getParameterName();
     }
 
     private static String text(Object value) {

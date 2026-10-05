@@ -221,6 +221,26 @@ class BenefitSearchApiTest {
     }
 
     @Test
+    void 여러_항목이_잘못되면_오류를_모두_담는다() throws Exception {
+        JsonNode body = json(mockMvc.perform(request("page", "0", "size", "101", "keyword", "가".repeat(101)))
+                .andExpect(status().isBadRequest()));
+
+        assertThat(elements(body, "errors")).extracting(error -> error.get("field").asString())
+                .containsExactlyInAnyOrder("page", "size", "keyword");
+    }
+
+    @Test
+    void 형식이_잘못된_값은_받은_값과_고정_문구를_담는다() throws Exception {
+        JsonNode body = json(mockMvc.perform(request("page", "abc")).andExpect(status().isBadRequest()));
+
+        assertThat(body.get("errors").size()).isEqualTo(1);
+        JsonNode error = body.get("errors").get(0);
+        assertThat(error.get("field").asString()).isEqualTo("page");
+        assertThat(error.get("value").asString()).isEqualTo("abc");
+        assertThat(error.get("reason").asString()).isEqualTo("형식이 올바르지 않습니다.");
+    }
+
+    @Test
     void 결과_없음과_마지막_쪽을_넘은_번호는_빈_목록이다() throws Exception {
         JsonNode none = search("keyword", "존재하지 않는 혜택");
         assertThat(none.get("totalCount").asLong()).isZero();
@@ -326,9 +346,13 @@ class BenefitSearchApiTest {
     }
 
     private static List<JsonNode> items(JsonNode body) {
-        List<JsonNode> items = new ArrayList<>();
-        body.get("items").forEach(items::add);
-        return items;
+        return elements(body, "items");
+    }
+
+    private static List<JsonNode> elements(JsonNode body, String arrayName) {
+        List<JsonNode> elements = new ArrayList<>();
+        body.get(arrayName).forEach(elements::add);
+        return elements;
     }
 
     private static List<String> ids(JsonNode body) {
