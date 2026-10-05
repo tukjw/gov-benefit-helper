@@ -64,7 +64,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(
             Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
-        Object errorBody = body instanceof ApiErrorResponse ? body : ApiErrorResponse.of(ErrorCode.from(statusCode));
+        ApiErrorResponse errorBody = body instanceof ApiErrorResponse response
+                ? response
+                : ApiErrorResponse.of(ErrorCode.from(statusCode));
         return super.handleExceptionInternal(ex, errorBody, headers, statusCode, request);
     }
 
