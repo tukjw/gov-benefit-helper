@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #33 공개 API의 OpenAPI 명세와 문서 화면 제공
 
