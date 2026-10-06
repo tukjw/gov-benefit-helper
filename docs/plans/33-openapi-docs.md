@@ -60,7 +60,7 @@ status: in-progress
    - 검색: `400`. 상세: `404`. 컨트롤러 메서드에 `@ApiResponse`로 적는다.
    - 모든 API에 `500`(`INTERNAL_ERROR`)을 붙인다. 2026-10-06 사용자 결정. `GlobalExceptionHandler`가 실제로 0009 형식의 500을 낸다.
    - `errors`는 배열이고 항상 있다(`required`). `code`에는 `ErrorCode` 이름을 허용값으로 적는다.
-5. **`field`·`agencyType`은 문자열 배열로 두고 허용값은 설명으로만 적는다.** 2026-10-06 사용자 결정. 서버가 값을 검증하지 않고 원문과 그대로 비교하므로 `enum`으로 적으면 명세가 동작과 다르고, 원문 값이 바뀌면 낡는다. 설명에는 "원문 값과 정확히 일치하는 것만 찾는다, 검증하지 않아 없는 값은 결과가 0건이다, 파라미터를 반복하면 OR다"와 예시 하나를 적는다.
+5. **`field`·`agencyType`은 문자열 배열로 두고 허용값은 설명으로만 적는다.** 2026-10-06 사용자 결정. 서버가 값을 검증하지 않고 원문과 그대로 비교하므로 `enum`으로 적으면 명세가 동작과 다르고, 원문 값이 바뀌면 낡는다. 설명에는 "원문 값과 같은 것만 찾는다, 검증하지 않아 없는 값은 결과가 0건이고 빈 값은 무시한다, 파라미터를 반복하면 OR다"와 예시 하나를 적는다. 비교는 DB 정렬 규칙(0001)을 따르므로 "정확히 일치"라고 쓰지 않는다.
 6. **시각 필드에는 `+09:00` 예시를 넣는다.** 결정 0010의 예(`2026-10-04T04:00:12.345+09:00`)를 쓴다. `format: date-time`은 자동으로 나온다.
 
 ## 단계별 구현 계획
@@ -70,22 +70,27 @@ status: in-progress
 2. **설정**
    - `application.yaml`: `springdoc.api-docs.enabled: false`, `springdoc.swagger-ui.enabled: false`, `spring.web.resources.add-mappings: false`. 주석에 `local`에서만 연다는 것과 정적 매핑을 끈 이유(정적 파일 없음, webjars 노출)를 적는다.
    - `application-local.yaml`: `springdoc.api-docs.enabled: true`, `springdoc.swagger-ui.enabled: true`.
+   - 구현하며 더함: `application.yaml`에 `springdoc.default-produces-media-type: application/json`. 지정하지 않으면 성공 응답의 미디어 타입이 `*/*`로 나온다.
 3. **공통 명세 설정** `kr.govbenefit.common.api.OpenApiConfig`(새 클래스, `@Configuration`)
    - `OpenAPI openApi()`: `info`의 제목·설명. 설명에 공통 규칙을 적는다: 실패만 0009 형식으로 감싼다, 시각은 `+09:00` 오프셋(0010), 값이 없으면 `null`이고 기본 문구로 채우지 않는다(‘정보 없음’은 클라이언트가 표시).
    - `OpenApiCustomizer internalErrorResponse()`: 모든 operation에 `500` 응답(`ApiErrorResponse` 참조)을 더한다. `ApiErrorResponse` 스키마가 components에 없으면 등록한다.
+   - 구현하며 바꿈: 처음에는 항상 `ModelConverters`로 다시 읽어 등록했더니 springdoc이 만든 스키마를 덮어써 `type: object`가 빠졌다. 없을 때만 등록한다.
 4. **오류 스키마** `ApiErrorResponse`, `ApiErrorResponse.InputError`
    - `code`: `@Schema(allowableValues = {"INVALID_INPUT", "NOT_FOUND", "INTERNAL_ERROR", "REQUEST_FAILED"}, requiredMode = REQUIRED)`, 클라이언트는 이 값으로 분기한다는 설명.
    - `message`: 사람이 읽는 문구, 분기에 쓰지 않는다.
    - `errors`: `@ArraySchema(..., schema = @Schema(requiredMode = REQUIRED))` 또는 그와 같은 표현으로 항상 배열이고 항목 오류가 없으면 빈 배열이라는 설명.
    - `InputError`: `field`(요청 파라미터 이름), `value`(받은 값, 없었으면 `null`), `reason`.
+   - 구현하며 바꿈: 필수 항목은 레코드에 `@Schema(requiredProperties = {"code", "message", "errors"})`로 한 번에 적었다.
 5. **컨트롤러** `BenefitController`
    - 클래스: `@Tag(name = "혜택")`.
    - `search`: `@Operation(summary, description)`. 설명에 검색 규칙(DEC-SEARCH: 키워드 단어는 모두 이름에 있어야 함, 한 필터 안은 OR, 필터 사이는 AND)과 마지막 쪽을 넘으면 `items`가 빈 배열이라는 점. 파라미터에 `@ParameterObject`. `@ApiResponse(responseCode = "400", content = ApiErrorResponse)`, 400 예시(`size=200`).
    - `detail`: `@Operation(summary, description)`, `serviceId`에 `@Parameter(description, example)`. `@ApiResponse(responseCode = "404", content = ApiErrorResponse)`, 설명에 "없는 서비스 ID는 404, 상세 미수집 혜택은 `detail`이 `null`인 200".
+   - 구현하며 바꿈: `@Parameter(example = "654000000031")`은 숫자 예시로 나와 `schema = @Schema(type = "string", example = ...)`로 적었다.
 6. **검색 요청** `BenefitSearchRequest`
    - `keyword`: 설명(공백으로 나눈 단어 최대 10개, 모두 이름에 포함, 100자까지).
    - `fields`: `@Parameter(name = "field", description = 설계 5, example)`. `agencyTypes`: `@Parameter(name = "agencyType", ...)`.
    - `page`: 1부터, 기본 1. `size`: 1~100, 기본 20. `@Parameter(schema = @Schema(defaultValue = ...))`.
+   - 구현하며 바꿈: `@Schema(defaultValue)`만 주면 타입이 `string`으로 바뀌어 `implementation = Integer.class`를 함께 적었다.
 7. **검색 응답** `BenefitSearchResponse`, `BenefitSummary`
    - `totalCount`: "조건에 맞는 전체 건수. 규모가 커지면 빠지거나 다음 쪽 여부로 바뀔 수 있으니 의존하지 않는다(DEC-SEARCH)."
    - `BenefitSummary`: `applyPeriodNeedsReview`가 `true`면 ‘확인 필요’로 원문(`applyPeriodText`)과 함께 표시, `applyPeriodType`·`applyPeriodNeedsReview`는 정규화 전 행이면 `null`. `lastSeenAt` 의미와 `+09:00` 예시.
@@ -97,10 +102,13 @@ status: in-progress
    - `sourceModifiedAt`: 출처 수정 시각, 원문에 없으면 `null`이고 수집 시각으로 채우지 않는다. `lastSeenAt`: 목록에서 마지막으로 확인한 시각, 출처 수정 시각이나 상세 수집 시각이 아니다. 둘 다 `+09:00` 예시.
    - `freshness.stale`: 기준 시각에서 48시간이 지났거나 목록을 갱신한 수집 실행이 없으면 `true`. `freshness.referenceAt`: 목록을 갱신한 마지막 수집 실행(`SUCCEEDED`·`PARTIAL`)의 종료 시각, 모든 혜택에 같고, 그런 실행이 없으면 `null`이며 이때 `stale`은 `true`.
    - `guideUrl`: 공식 출처(gov.kr 상세 페이지), 링크로 쓸 수 없으면 `null`.
+   - 구현하며 더함: 검색·상세가 함께 쓰는 설명(`needsReview`, `lastSeenAt`)은 패키지 내부 클래스 `BenefitDocs`에, 시각 예시는 `ApiTimes.EXAMPLE`에 둔다.
 9. **테스트**
    - `kr.govbenefit.common.api.ApiDocsTest`(새 클래스, `@SpringBootTest`, `@ActiveProfiles("local")`, MockMvc, Testcontainers): `/v3/api-docs`를 받아 JSONPath로 검증한다. 시나리오는 완료 조건 매핑에 적는다. 실제 `application-local.yaml`로 켜지는 것을 함께 확인한다.
    - `kr.govbenefit.common.api.ApiDocsClosedTest`(새 클래스, 프로필 지정 없음): `/v3/api-docs`, `/v3/api-docs/swagger-config`, `/swagger-ui.html`, `/swagger-ui/index.html`, `/webjars/swagger-ui/index.html`이 404다.
    - 공공 API 호출이 없도록 기존 API 테스트처럼 `Gov24StubServer`를 붙이고 `gov24.schedule.enabled=false`로 둔다.
+   - 구현하며 바꿈: `ApiDocsTest`는 stub을 붙이고 각 테스트 뒤 요청 수가 0인지 본다(`local`은 정기 수집이 꺼져 있다). `ApiDocsClosedTest`는 문서 경로만 요청하므로 `GovBenefitHelperApplicationTests`처럼 `gov24.schedule.enabled=false`만 둔다.
+   - 정적 매핑을 다시 켜면 `ApiDocsClosedTest`의 webjars 경로가 실패하는 것을 확인했다.
 10. **문서**
     - `docs/decisions/0012-api-spec-docs.md`: 설계 1~4. 적용 위치에 `build.gradle`, `application.yaml`, `application-local.yaml`, `OpenApiConfig`, `BenefitController`, DTO. 영향에 "새 API는 같은 방식으로 파라미터·성공 응답·오류 응답과 의미를 명세에 적는다", "문서는 `local`에서만 연다", "정적 파일이 필요해지면 정적 매핑 설정을 다시 정한다"를 적는다.
     - `docs/decisions/README.md` 목록 표에 0012를 추가한다.

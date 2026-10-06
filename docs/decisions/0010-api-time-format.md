@@ -21,7 +21,7 @@ API 응답의 시각은 `+09:00` 오프셋을 붙인 ISO-8601 문자열로 보�
 
 ## 적용 위치
 
-- `backend/src/main/java/kr/govbenefit/common/api/ApiTimes.java`
+- `backend/src/main/java/kr/govbenefit/common/api/ApiTimes.java`: 변환과 API 명세의 시각 예시(`EXAMPLE`, #33, [0012](0012-api-spec-docs.md))
 - `backend/src/main/java/kr/govbenefit/benefit/dto/BenefitSummary.java`: `lastSeenAt`
 
 ## 영향

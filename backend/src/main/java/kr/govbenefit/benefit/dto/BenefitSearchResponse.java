@@ -1,5 +1,6 @@
 package kr.govbenefit.benefit.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
@@ -10,5 +11,11 @@ import java.util.List;
  * @param size       요청한 쪽 크기
  * @param items      이 쪽의 항목. 마지막 쪽을 넘으면 비어 있다.
  */
-public record BenefitSearchResponse(long totalCount, int page, int size, List<BenefitSummary> items) {
+@Schema(description = "혜택 검색 결과")
+public record BenefitSearchResponse(
+        @Schema(description = "조건에 맞는 전체 건수. 규모가 커지면 빠지거나 다음 쪽 여부로 바뀔 수 있으므로 의존하지 않는다(DEC-SEARCH).")
+        long totalCount,
+        @Schema(description = "요청한 쪽 번호. 1부터 센다.") int page,
+        @Schema(description = "요청한 쪽 크기") int size,
+        @Schema(description = "이 쪽의 항목. 마지막 쪽을 넘으면 빈 배열이다.") List<BenefitSummary> items) {
 }

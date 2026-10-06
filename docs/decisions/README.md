@@ -54,3 +54,4 @@
 | [0009](0009-api-error-response.md) | API 오류 응답 형식 | 채택 | #29 |
 | [0010](0010-api-time-format.md) | API 응답 시각 형식 | 채택 | #29 |
 | [0011](0011-online-apply-url-link.md) | 온라인 신청 URL의 링크 정리 | 채택 | #30 |
+| [0012](0012-api-spec-docs.md) | API 명세 문서화 방식 | 채택 | #33 |

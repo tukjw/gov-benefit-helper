@@ -18,6 +18,19 @@ spring:
       hibernate:
         jdbc:
           time_zone: Asia/Seoul
+  web:
+    resources:
+      # API 전용 서버라 정적 파일이 없다. 기본 매핑을 두면 springdoc을 꺼도 Swagger UI webjar가 /webjars/**로 열린다(결정 0012).
+      add-mappings: false
+
+# API 명세(/v3/api-docs)와 문서 화면(/swagger-ui.html)은 local 프로필에서만 연다(결정 0012).
+springdoc:
+  # 지정하지 않으면 성공 응답의 미디어 타입이 */*로 나온다.
+  default-produces-media-type: application/json
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 
 # 공공서비스(혜택) API. 인증키는 GOV24_SERVICE_KEY(공공데이터포털 Decoding 키)로만 받는다. 수집할 때만 필요하다.
 # 시간 제한·재시도·호출 예산은 결정 0006. 전체 수집은 정상일 때 33회 호출, 쪽 응답은 최대 1.1초였다.

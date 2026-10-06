@@ -13,3 +13,10 @@ logging:
 gov24:
   schedule:
     enabled: false
+
+# 문서 화면: http://localhost:8080/swagger-ui.html
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
