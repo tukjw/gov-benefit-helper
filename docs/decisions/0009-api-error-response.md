@@ -48,6 +48,7 @@
 - `backend/src/main/java/kr/govbenefit/common/api/ErrorCode.java`: 코드 목록과 상태 코드 대응
 - `backend/src/main/java/kr/govbenefit/common/api/GlobalExceptionHandler.java`: Spring MVC 예외와 입력 검증 실패를 이 형식으로 바꾼다
 - `backend/src/main/java/kr/govbenefit/common/api/InvalidInputException.java`: Bean Validation 제약으로 표현하지 않은 입력 검증
+- `backend/src/main/java/kr/govbenefit/common/api/NotFoundException.java`: 요청한 자원이 없다(`NOT_FOUND`). #30에서 추가
 
 ## 영향
 

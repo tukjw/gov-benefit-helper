@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatusCode;
  */
 public enum ErrorCode {
     INVALID_INPUT("요청 값이 올바르지 않습니다."),
-    NOT_FOUND("요청한 경로를 찾을 수 없습니다."),
+    NOT_FOUND("요청한 경로나 자원을 찾을 수 없습니다."),
     INTERNAL_ERROR("서버에서 요청을 처리하지 못했습니다."),
     /** 위 코드에 해당하지 않는 실패. 상태 코드로 원인을 구분한다. */
     REQUEST_FAILED("요청을 처리할 수 없습니다.");
