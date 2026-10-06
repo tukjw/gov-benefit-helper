@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #30 비회원 혜택 상세 조회와 오래된 정보 표시
 
