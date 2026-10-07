@@ -11,6 +11,9 @@ public final class ApiTimes {
 
     public static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
 
+    /** API 명세에 쓰는 시각 예시(결정 0010) */
+    public static final String EXAMPLE = "2026-10-04T04:00:12.345+09:00";
+
     private ApiTimes() {
     }
 

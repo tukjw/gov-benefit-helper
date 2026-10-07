@@ -14,6 +14,7 @@
 ## 로컬 실행
 
 - `docker compose -f docker-compose.local.yml up -d`로 MySQL을 띄우고, `backend/`에서 `SPRING_PROFILES_ACTIVE=local ./gradlew bootRun`으로 실행합니다.
+- API 문서 화면은 `local` 프로필로 실행했을 때만 `http://localhost:8080/swagger-ui.html`에서 열립니다.
 - `local` 프로필의 DB 계정 기본값은 로컬 compose가 만드는 계정과 같으므로 `.env` 없이 실행됩니다. 값을 바꿀 때만 루트 `.env`(compose)와 `backend/.env`(앱)를 `.env.example`에서 복사해 씁니다.
 
 ## 플랜 기반 작업 규칙
