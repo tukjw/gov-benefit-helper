@@ -7,6 +7,7 @@
     uv run scripts/research/gov24/gov24.py probe --max-calls 30
     uv run scripts/research/gov24/gov24.py fetch --per-page <n> --max-calls <n>
     uv run scripts/research/gov24/gov24.py analyze --snapshot <id> [--compare <id>]
+    uv run scripts/research/gov24/gov24.py series --snapshots <id> <id> ...
 
 인증키는 환경 변수 GOV24_SERVICE_KEY(공공데이터포털 Decoding 키)로만 받는다.
 키는 출력하지 않고 저장하는 파일에서는 가린다. 원문 스냅샷은 저장소 밖 data_dir()에 둔다.
@@ -51,6 +52,7 @@ QUERY_FILES = (
     "samples.sql",
 )
 COMPARE_QUERY_FILES = ("snapshot_diff.sql",)
+SERIES_QUERY_FILES = ("snapshot_series.sql",)
 MAX_CELL_CHARS = 200
 
 
@@ -479,6 +481,40 @@ def cmd_analyze(args: argparse.Namespace) -> None:
     print(f"결과: {write_results(args, run_queries(con, files))}")
 
 
+def write_series_results(args: argparse.Namespace, sections: list[str]) -> Path:
+    first, last = args.snapshots[0], args.snapshots[-1]
+    header = [
+        f"# 집계 결과 — 스냅샷 {first} ~ {last}",
+        "",
+        "이 파일은 스크립트가 생성한다. 직접 고치지 않는다.",
+        "",
+        "- 스냅샷: " + ", ".join(f"[`{i}`](../snapshots/{i}.json)" for i in args.snapshots),
+        f"- 생성 명령: `uv run scripts/research/gov24/gov24.py series --snapshots {' '.join(args.snapshots)}`",
+        f"- 쿼리: `scripts/research/gov24/queries/`",
+    ]
+    out = RESEARCH_DIR / "results" / f"series-{first}-{last}.md"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(header) + "\n\n" + "\n\n".join(sections) + "\n", encoding="utf-8")
+    return out
+
+
+def cmd_series(args: argparse.Namespace) -> None:
+    """여러 스냅샷의 목록을 obs(순번, 서비스ID, ...)와 snapshots(순번, 스냅샷, started_at)로 합쳐 집계한다."""
+    import duckdb
+
+    if len(args.snapshots) < 2 or args.snapshots != sorted(set(args.snapshots)):
+        sys.exit("--snapshots에는 서로 다른 스냅샷 2개 이상을 수집 순서(ID 오름차순)로 준다")
+    con = duckdb.connect()
+    for i, snapshot_id in enumerate(args.snapshots):
+        load_snapshot(con, snapshot_path(snapshot_id), f"s{i}")
+    indexes = range(len(args.snapshots))
+    con.execute("CREATE TEMP TABLE snapshots AS " + " UNION ALL ".join(
+        f"SELECT {i} AS 순번, snapshot_id AS 스냅샷, started_at FROM s{i}.snapshot" for i in indexes))
+    con.execute("CREATE TEMP TABLE obs AS " + " UNION ALL ".join(
+        f"SELECT {i} AS 순번, 서비스ID, 서비스명, 등록일시, 수정일시 FROM s{i}.service_list" for i in indexes))
+    print(f"결과: {write_series_results(args, run_queries(con, SERIES_QUERY_FILES))}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -499,6 +535,10 @@ def main() -> None:
     analyze.add_argument("--snapshot", required=True)
     analyze.add_argument("--compare")
     analyze.set_defaults(func=cmd_analyze)
+
+    series = sub.add_parser("series", help="여러 스냅샷의 목록에서 사라짐·재등장을 집계한다")
+    series.add_argument("--snapshots", nargs="+", required=True, help="수집 순서대로 준 스냅샷 ID")
+    series.set_defaults(func=cmd_series)
 
     args = parser.parse_args()
     args.func(args)
