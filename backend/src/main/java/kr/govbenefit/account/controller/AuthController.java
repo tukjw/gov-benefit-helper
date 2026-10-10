@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.govbenefit.account.dto.AccountResponse;
+import kr.govbenefit.account.dto.LoginRequest;
+import kr.govbenefit.account.dto.LoginResponse;
 import kr.govbenefit.account.dto.SignUpRequest;
 import kr.govbenefit.account.service.AccountService;
 import kr.govbenefit.common.api.ApiErrorResponse;
@@ -21,9 +23,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 이메일·비밀번호 가입(REQ-ACCOUNT-01, DEC-AUTH). 로그인 없이 호출한다.
+ * 이메일·비밀번호 가입과 로그인(REQ-ACCOUNT-01, DEC-AUTH). 로그인 없이 호출한다.
  */
-@Tag(name = "계정", description = "이메일·비밀번호 가입")
+@Tag(name = "계정", description = "이메일·비밀번호 가입, 로그인, 내 정보")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -53,5 +55,22 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public AccountResponse signUp(@Valid @RequestBody SignUpRequest request) {
         return accountService.signUp(request);
+    }
+
+    @Operation(summary = "로그인", description = """
+            맞는 이메일·비밀번호면 15분 동안 쓸 수 있는 액세스 토큰을 준다. \
+            비밀번호가 틀린 경우와 가입되지 않은 이메일은 같은 응답이다.""")
+    @ApiResponse(responseCode = "200", description = "액세스 토큰")
+    @ApiResponse(responseCode = "400", description = "이메일이나 비밀번호가 비어 있다. `code`는 `INVALID_INPUT`이다.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "401", description = "이메일 또는 비밀번호가 맞지 않다. `code`는 `INVALID_CREDENTIALS`다.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ApiErrorResponse.class),
+                    examples = @ExampleObject(value = """
+                            {"code": "INVALID_CREDENTIALS", "message": "이메일 또는 비밀번호가 올바르지 않습니다.", "errors": []}""")))
+    @PostMapping("/login")
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+        return accountService.login(request);
     }
 }
