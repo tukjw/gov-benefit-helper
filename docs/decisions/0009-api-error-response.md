@@ -28,11 +28,14 @@
   | --- | --- | --- |
   | `INVALID_INPUT` | 400 | 요청 값이 올바르지 않다. 항목 오류는 `errors`에 있다 |
   | `NOT_FOUND` | 404 | 요청한 경로나 자원이 없다 |
+  | `UNAUTHENTICATED` | 401 | 액세스 토큰이 없거나, 형식이 틀렸거나, 위조·만료됐거나, 토큰 주인이 없다. 원인은 나누지 않는다([0015](0015-api-auth-boundary.md)). #38에서 추가 |
+  | `INVALID_CREDENTIALS` | 401 | 로그인 실패. 비밀번호가 틀린 경우와 가입되지 않은 이메일을 구분하지 않는다([0013](0013-password-storage.md)). #38에서 추가 |
+  | `DUPLICATE_EMAIL` | 409 | 이미 가입된 이메일이다. #38에서 추가 |
   | `INTERNAL_ERROR` | 5xx | 서버에서 처리하지 못했다 |
   | `REQUEST_FAILED` | 그 밖의 상태 | 위에 해당하지 않는 실패(405 등). 상태 코드로 원인을 구분한다 |
 
 - `message`: 사람이 읽는 한국어 문구다. 클라이언트는 이 값으로 분기하지 않는다.
-- `errors`: 입력 항목별 오류이며 항상 배열이다. 항목 오류가 없으면 비어 있다. `field`는 요청 파라미터 이름, `value`는 받은 값(없었으면 `null`), `reason`은 거절한 이유다.
+- `errors`: 입력 항목별 오류이며 항상 배열이다. 항목 오류가 없으면 비어 있다. `field`는 요청 파라미터 이름, `value`는 받은 값(없었으면 `null`), `reason`은 거절한 이유다. 비밀번호 항목(`password`)은 `value`를 항상 `null`로 둔다(#38).
 - 5xx 응답에는 예외 메시지나 내부 정보를 넣지 않고 로그에만 남긴다.
 
 ## 근거
@@ -49,6 +52,8 @@
 - `backend/src/main/java/kr/govbenefit/common/api/GlobalExceptionHandler.java`: Spring MVC 예외와 입력 검증 실패를 이 형식으로 바꾼다
 - `backend/src/main/java/kr/govbenefit/common/api/InvalidInputException.java`: Bean Validation 제약으로 표현하지 않은 입력 검증
 - `backend/src/main/java/kr/govbenefit/common/api/NotFoundException.java`: 요청한 자원이 없다(`NOT_FOUND`). #30에서 추가
+- `backend/src/main/java/kr/govbenefit/common/api/ApiException.java`: 상태 코드와 오류 코드가 정해진 실패. #38에서 추가
+- `backend/src/main/java/kr/govbenefit/common/security/ApiAuthenticationEntryPoint.java`: 보안 필터에서 거절한 요청(401·404)을 이 형식으로 쓴다. #38에서 추가([0015](0015-api-auth-boundary.md))
 - `backend/src/main/java/kr/govbenefit/common/api/OpenApiConfig.java`: API 명세의 공통 500 응답. `ApiErrorResponse`의 스키마 설명과 함께 #33에서 추가([0012](0012-api-spec-docs.md))
 
 ## 영향
@@ -56,3 +61,4 @@
 - 새 API는 오류 본문을 이 형식으로만 보낸다. 컨트롤러에서 오류 본문을 직접 만들지 않고 예외로 던진다.
 - 코드를 추가하거나 뜻을 바꾸면 `ErrorCode`와 이 문서의 표를 함께 고친다. 이미 공개한 코드의 뜻은 바꾸지 않는다.
 - 입력 검증 메시지는 요청 언어에 따라 바뀌지 않도록 제약 애너테이션의 `message`에 한국어로 적는다.
+- 비밀 값을 받는 요청 항목은 `GlobalExceptionHandler.SENSITIVE_FIELDS`에 이름을 두어 `value`가 응답에 나가지 않게 한다.
