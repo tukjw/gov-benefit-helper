@@ -53,7 +53,7 @@
 - `backend/src/main/java/kr/govbenefit/common/api/InvalidInputException.java`: Bean Validation 제약으로 표현하지 않은 입력 검증
 - `backend/src/main/java/kr/govbenefit/common/api/NotFoundException.java`: 요청한 자원이 없다(`NOT_FOUND`). #30에서 추가
 - `backend/src/main/java/kr/govbenefit/common/api/ApiException.java`: 상태 코드와 오류 코드가 정해진 실패. #38에서 추가
-- `backend/src/main/java/kr/govbenefit/common/security/ApiAuthenticationEntryPoint.java`: 보안 필터에서 거절한 요청(401)을 이 형식으로 쓴다. #38에서 추가([0015](0015-api-auth-boundary.md))
+- `backend/src/main/java/kr/govbenefit/common/security/ApiAuthenticationEntryPoint.java`: 보안 필터에서 거절한 요청(401·404)을 이 형식으로 쓴다. #38에서 추가([0015](0015-api-auth-boundary.md))
 - `backend/src/main/java/kr/govbenefit/common/api/OpenApiConfig.java`: API 명세의 공통 500 응답. `ApiErrorResponse`의 스키마 설명과 함께 #33에서 추가([0012](0012-api-spec-docs.md))
 
 ## 영향

@@ -299,8 +299,7 @@ class BenefitSearchApiTest {
 
     @Test
     void 없는_경로와_지원하지_않는_메서드도_같은_오류_형식이다() throws Exception {
-        // 공개 경로 아래의 없는 경로다. 그 밖의 없는 경로는 토큰이 없으면 401이다(결정 0015).
-        JsonNode notFound = json(mockMvc.perform(get("/api/benefits/unknown/path")).andExpect(status().isNotFound()));
+        JsonNode notFound = json(mockMvc.perform(get("/api/unknown")).andExpect(status().isNotFound()));
         assertThat(notFound.get("code").asString()).isEqualTo("NOT_FOUND");
         assertThat(notFound.get("errors").size()).isZero();
 

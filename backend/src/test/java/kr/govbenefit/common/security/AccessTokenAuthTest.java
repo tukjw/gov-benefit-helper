@@ -32,13 +32,14 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
  * 개인 API의 인증 경계(결정 0014·0015). 토큰 없음·위조·변조·만료는 모두 401 {@code UNAUTHENTICATED}이고,
- * 보호된 범위의 없는 경로도 유효한 토큰이 있어야 404다.
+ * 처리할 API가 없는 경로는 토큰과 관계없이 404다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc
@@ -161,21 +162,14 @@ class AccessTokenAuthTest {
     }
 
     @Test
-    void 없는_경로도_인증하지_않으면_401이다() throws Exception {
-        // 보안 필터는 처리할 API가 있는지 모른다(Spring Security 기본 동작).
-        assertUnauthenticated(mockMvc.perform(get("/api/unknown")), false);
-        assertUnauthenticated(mockMvc.perform(get("/api/me/unknown")), false);
-        assertUnauthenticated(mockMvc.perform(get("/api/unknown")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer not-a-jwt")), true);
-    }
-
-    @Test
-    void 유효한_토큰이면_없는_경로는_404다() throws Exception {
+    void 없는_경로는_토큰과_관계없이_404다() throws Exception {
         String token = accessTokenIssuer.issue(aliceId).value();
 
-        for (String path : new String[] {"/api/unknown", "/api/me/unknown"}) {
-            JsonNode body = json(mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
-                    .andExpect(status().isNotFound()));
+        for (MockHttpServletRequestBuilder request : new MockHttpServletRequestBuilder[] {
+                get("/api/unknown"),
+                get("/api/me/unknown"),
+                get("/api/unknown").header(HttpHeaders.AUTHORIZATION, "Bearer " + token)}) {
+            JsonNode body = json(mockMvc.perform(request).andExpect(status().isNotFound()));
             assertThat(body.get("code").asString()).isEqualTo("NOT_FOUND");
             assertThat(body.get("errors").size()).isZero();
         }

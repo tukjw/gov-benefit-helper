@@ -6,7 +6,7 @@
 
 ## 배경
 
-#38에서 처음으로 로그인이 필요한 API(`/api/me`)가 생겼다. 이후 프로필·관심 목록·조건 비교 등 개인 API가 계속 늘어나므로, 새 API를 만들 때마다 보호 여부를 따로 챙기지 않아도 되는 기준이 필요했다. 동시에 비회원 검색·상세(`DEC-AUTH` 공개 범위)는 그대로 로그인 없이 써야 했다.
+#38에서 처음으로 로그인이 필요한 API(`/api/me`)가 생겼다. 이후 프로필·관심 목록·조건 비교 등 개인 API가 계속 늘어나므로, 새 API를 만들 때마다 보호 여부를 따로 챙기지 않아도 되는 기준이 필요했다. 동시에 비회원 검색·상세(`DEC-AUTH` 공개 범위)와 없는 경로의 404 응답([0009](0009-api-error-response.md))은 그대로 유지해야 했다.
 
 ## 결정
 
@@ -14,7 +14,7 @@ API는 기본으로 막고, 로그인 없이 쓰는 경로만 `SecurityConfig.PU
 
 - 공개 경로: `/api/benefits/**`, `/api/auth/**`, `/error`, 문서 경로(`/v3/api-docs/**`, `/swagger-ui.html`, `/swagger-ui/**`). 메서드와 관계없이 허용해 잘못된 메서드는 MVC가 405로 응답한다.
 - 그 밖의 경로는 유효한 액세스 토큰([0014](0014-access-token.md))이 `Authorization: Bearer` 헤더에 있어야 한다. 없거나 유효하지 않으면 401 `UNAUTHENTICATED`와 `WWW-Authenticate: Bearer` 헤더(토큰을 보냈으면 `error="invalid_token"`)다.
-- 공개 경로 밖의 없는 경로도 인증하지 않으면 401이다. 유효한 토큰이 있거나 공개 경로 아래의 없는 경로이면 MVC가 404 `NOT_FOUND`([0009](0009-api-error-response.md))로 응답한다.
+- 처리할 API가 없는 경로는 토큰과 관계없이 404 `NOT_FOUND`다. 경로는 있지만 메서드가 다르면 인증되지 않은 요청에 401을 먼저 준다.
 - 개인 API는 사용자 ID를 경로·파라미터·본문으로 받지 않는다. 컨트롤러는 `@CurrentUserId Long userId`로 토큰의 `sub`만 쓴다. 응답에도 사용자 ID를 넣지 않는다.
 - 공개 경로에 유효하지 않은 토큰을 보내면 401이다. 보낸 토큰은 항상 검증한다.
 - 세션을 만들지 않고, CSRF 보호와 폼 로그인·HTTP Basic·로그아웃 필터는 끈다.
@@ -22,7 +22,7 @@ API는 기본으로 막고, 로그인 없이 쓰는 경로만 `SecurityConfig.PU
 ## 근거
 
 - 기본으로 막으면 새 개인 API를 허용 목록에 넣는 것을 잊어도 열리지 않는다. 반대로 개인 경로 접두사만 막는 방식은 접두사 밖에 둔 API가 그대로 열린다. `@PreAuthorize`를 API마다 붙이는 방식도 빠뜨리면 열린다.
-- 없는 경로의 401은 Spring Security 기본 동작이다. 보안 필터는 `DispatcherServlet`보다 먼저 실행되어 처리할 API가 있는지 모른다. 인증하지 않은 요청에 404를 주려면 필터에서 Spring MVC의 `RequestMappingHandlerMapping`을 직접 조회해야 하는데, 얻는 것은 비로그인 상태의 잘못된 경로 응답이 바뀌는 정도라 기본 동작을 따른다(2026-10-12 사용자 결정). 인증하지 않은 요청에는 어떤 경로가 있는지도 드러나지 않는다. 이 때문에 기존 `BenefitSearchApiTest`의 없는 경로 확인은 공개 경로 아래의 없는 경로로 옮기고, `ApiDocsClosedTest`는 유효한 토큰으로 요청해 공개 경로가 아닌 webjars 경로도 404인지 본다.
+- 없는 경로까지 401로 바꾸면 기존 404 응답과 테스트(`BenefitSearchApiTest`, `ApiDocsClosedTest`)가 바뀐다. `ApiAuthenticationEntryPoint`가 401을 쓰기 직전에 `RequestMappingHandlerMapping`으로 처리할 API가 있는지 확인한다. 확인은 인증에 실패한 요청에서만 일어난다. 컨트롤러의 공개 표시를 보고 판단하는 방식은 판단이 MVC 단계로 늦어지고 모든 요청에서 핸들러를 찾는다. 401과 404가 구분되어 보호된 경로가 있다는 것은 드러나지만, API 경로는 명세로 공개되는 정보다.
 - 사용자 ID를 입력으로 받지 않으면 다른 사용자 ID를 넣어 남의 데이터를 읽는 요청(`REQ-ACCOUNT-01`)이 API 형태에서부터 생기지 않는다.
 - 공개 경로에서 잘못된 토큰을 무시하는 방식은 클라이언트에 편하지만, 검색 결과에 "저장한 혜택" 표시처럼 토큰이 있으면 개인화하는 기능이 생기면 다시 바꿔야 한다. Resource Server 기본 동작을 따르고, 클라이언트는 401이면 토큰을 재발급하거나 버린다.
 - CSRF는 브라우저가 자동으로 붙이는 자격 증명(쿠키)을 악용하는 공격이다. 지금은 인증을 `Authorization` 헤더로만 받아 해당하지 않는다. 리프레시 토큰 쿠키(A2)를 도입하면 재발급 경로에 CSRF 방어가 필요하다(`DEC-AUTH`).
@@ -32,7 +32,7 @@ API는 기본으로 막고, 로그인 없이 쓰는 경로만 `SecurityConfig.PU
 ## 적용 위치
 
 - `backend/src/main/java/kr/govbenefit/common/security/SecurityConfig.java`: 필터 체인과 공개 경로
-- `backend/src/main/java/kr/govbenefit/common/security/ApiAuthenticationEntryPoint.java`: 401 응답
+- `backend/src/main/java/kr/govbenefit/common/security/ApiAuthenticationEntryPoint.java`: 401·404 응답
 - `backend/src/main/java/kr/govbenefit/common/security/CurrentUserId.java`, `CurrentUserIdArgumentResolver.java`, `CurrentUserIdConfig.java`: 요청자 ID
 - `backend/src/main/java/kr/govbenefit/common/api/GlobalExceptionHandler.java`: 토큰 주인이 없을 때의 401
 - `backend/src/test/java/kr/govbenefit/common/security/AccessTokenAuthTest.java`
