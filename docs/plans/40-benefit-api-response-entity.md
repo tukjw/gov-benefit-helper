@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #40 혜택 검색·상세 API 응답을 ResponseEntity로 반환
 
