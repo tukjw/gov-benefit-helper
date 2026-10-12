@@ -10,7 +10,7 @@ status: done
 - 포함:
   - 가입 `POST /api/auth/signup`, 로그인 `POST /api/auth/login`, 내 정보 `GET /api/me`.
   - 사용자 테이블(`user_account`)과 Flyway 마이그레이션.
-  - Spring Security 구성: 기본 거부, 공개 경로 허용, 없는 경로 404 유지, 401 응답의 0009 형식.
+  - Spring Security 구성: 기본 거부, 공개 경로 허용, 401 응답의 0009 형식.
   - 액세스 토큰 발급·검증, 요청자 ID를 컨트롤러에 넘기는 `@CurrentUserId`.
   - 오류 코드 추가(`UNAUTHENTICATED`, `INVALID_CREDENTIALS`, `DUPLICATE_EMAIL`)와 비밀번호 값 응답 제외.
   - 결정 문서 0013(비밀번호 저장과 규칙), 0014(액세스 토큰), 0015(API 인증 경계). 0009·0012 갱신. `DEC-AUTH`에 비밀번호 규칙 기록.
@@ -65,11 +65,11 @@ status: done
    - 허용: `/api/benefits/**`, `/api/auth/**`(메서드 무관. `POST /api/benefits`가 지금처럼 405가 되게), `/error`, 문서 경로(`/v3/api-docs/**`, `/swagger-ui.html`, `/swagger-ui/**`). 문서 경로는 local 밖에서는 핸들러가 없어 404다(0012 유지).
    - 그 밖은 `authenticated()`. 세션은 `STATELESS`, `formLogin`·`httpBasic`·`logout`은 끈다. CSRF 보호는 끈다. 인증을 `Authorization` 헤더로만 받아 브라우저가 자동으로 붙이는 자격 증명이 없기 때문이다. A2에서 리프레시 토큰 쿠키를 도입할 때 재발급 경로에 CSRF 방어를 넣는다.
    - 공개 경로에 잘못된 토큰을 보내면 resource server 기본 동작대로 401이다. 보낸 토큰은 항상 검증한다. 클라이언트는 401이면 토큰을 버리거나 재발급한다. 0015에 적는다.
-7. **없는 경로는 인증 전에도 404를 유지한다.** `ApiAuthenticationEntryPoint`가 401을 쓰기 전에 `RequestMappingHandlerMapping.getHandler(request)`로 처리할 핸들러가 있는지 본다.
-   - `null`이면 404 `NOT_FOUND`. 핸들러가 있거나, 경로는 맞는데 메서드·미디어 타입이 달라 예외가 나면 401 `UNAUTHENTICATED`다. 인증 정보 없는 요청에는 401을 먼저 준다(예: 토큰 없는 `POST /api/me` → 401).
-   - 필터 단계라 경로가 파싱되어 있지 않을 수 있다. `ServletRequestPathUtils.hasParsedRequestPath`가 거짓이면 `parseAndCache`한 뒤 조회한다.
+7. **인증하지 않은 요청은 없는 경로도 401이다(Spring Security 기본 동작, 2026-10-12 사용자 결정).** 보안 필터는 처리할 API가 있는지 모른다. `ApiAuthenticationEntryPoint`는 401 `UNAUTHENTICATED` 본문을 0009 형식으로 쓴다.
+   - 공개 경로 아래의 없는 경로(예: `/api/benefits/unknown/path`)는 필터를 통과하므로 MVC가 404다.
    - 401 응답에는 `WWW-Authenticate: Bearer` 헤더를 붙인다(토큰이 있었으면 `error="invalid_token"`). Spring 기본 entry point는 `error_description`(디코딩 오류 문구)과 제공하지 않는 `resource_metadata` 주소를 넣으므로 쓰지 않고 헤더를 직접 쓴다(구현 중 로컬 실행으로 확인).
    - 토큰이 유효한 요청은 그대로 MVC로 가므로 없는 경로는 지금처럼 `NoHandlerFoundException` → 404다.
+   - 대안: entry point가 401을 쓰기 전에 `RequestMappingHandlerMapping.getHandler(request)`로 처리할 API가 있는지 보고 없으면 404. 처음에 이렇게 구현했으나, 필터에서 MVC 내부를 직접 조회하는 복잡도에 비해 비로그인 상태의 잘못된 경로 응답만 바뀌어 기본 동작으로 되돌렸다.
    - 대안: 컨트롤러에 공개 표시(`@PublicApi`)가 없으면 인증을 요구. 판단이 MVC 단계로 늦어지고 모든 요청에서 핸들러를 확인한다.
    - 대안: `@PreAuthorize`. 붙이지 않은 API가 열리므로 기본 거부가 아니다.
 8. **개인 API는 사용자 ID를 경로·파라미터·본문으로 받지 않고 토큰에서만 얻는다.** 결정 문서 0015. 컨트롤러는 `@CurrentUserId Long userId` 파라미터로 받는다. `/api/me` 응답에도 ID를 넣지 않는다.
@@ -144,15 +144,15 @@ status: done
    - `SignUpApiTest`(`@SpringBootTest`, MockMvc, Testcontainers): 가입 201과 응답, DB의 `password_hash`가 원문과 다르고 `{bcrypt}`로 시작하며 `PasswordEncoder.matches`로 맞는지, 잘못된 이메일·빈 비밀번호·7자·73바이트·빈 이메일이 항목별 `errors`이고 `password`의 `value`가 `null`인지, 중복(대소문자만 다른 이메일 포함) 409 `DUPLICATE_EMAIL`, 저장된 이메일이 소문자인지.
    - `SignUpConcurrencyTest`(`@SpringBootTest`, Testcontainers): 같은 이메일로 `AccountService.signUp`을 스레드 8개에서 `CountDownLatch`로 동시에 부른다. 성공 1, 나머지는 `DUPLICATE_EMAIL`의 `ApiException`, `user_account` 행 1개. 선조회를 통과한 경합이 실제로 생겼는지는 보장하지 않으므로, `existsByEmail`을 건너뛴 경로(제약 위반 변환)는 미리 넣은 행과 같은 이메일을 `saveAndFlush`로 저장하는 서비스 경로 테스트로 따로 확인한다.
    - `LoginApiTest`: 맞는 로그인 → 토큰, `expiresAt - iat`이 15분, 그 토큰으로 `/api/me`가 본인 이메일. 사용자 두 명이 각자 토큰으로 자기 정보만 받는지. 비밀번호 틀림·미가입 이메일·73바이트 비밀번호가 같은 상태·본문(`INVALID_CREDENTIALS`)인지. 이메일 대문자로 로그인해도 성공. 72바이트 비밀번호 뒤에 글자를 붙이면 로그인할 수 없다(BCrypt의 앞 72바이트 비교).
-   - `AccessTokenAuthTest`: `/api/me` 요청이 다음에서 401 `UNAUTHENTICATED`이고 `WWW-Authenticate`가 있는지 — 헤더 없음, `Bearer` 없는 헤더, 임의 문자열, 다른 키로 서명, 페이로드의 `sub`를 바꾼 토큰(서명 유지), `alg: none`, `iss` 다름, `token_use` 없음, `issuedAt = now - 15분 - 1초`. `issuedAt = now - 14분 59초`는 200. 토큰은 유효하지만 사용자 행을 지운 경우 401. 토큰 없는 `POST /api/me`는 401. 토큰 없는 `/api/unknown`은 404 `NOT_FOUND`, 유효한 토큰의 `/api/unknown`도 404.
+   - `AccessTokenAuthTest`: `/api/me` 요청이 다음에서 401 `UNAUTHENTICATED`이고 `WWW-Authenticate`가 있는지 — 헤더 없음, `Bearer` 없는 헤더, 임의 문자열, 다른 키로 서명, 페이로드의 `sub`를 바꾼 토큰(서명 유지), `alg: none`, `iss` 다름, `token_use` 없음, `issuedAt = now - 15분 - 1초`. `issuedAt = now - 14분 59초`는 200. 토큰은 유효하지만 사용자 행을 지운 경우 401. 토큰 없는 `POST /api/me`는 401. 토큰이 없거나 잘못된 `/api/unknown`은 401, 유효한 토큰의 `/api/unknown`은 404 `NOT_FOUND`.
    - `JwtSecretTest`(단위): 키 없음은 기동 실패, 허용 시 32바이트 임의 키, 31바이트·base64 아님은 실패, 설정 문자열에 키가 드러나지 않음.
-   - 기존 `BenefitSearchApiTest`·`BenefitDetailApiTest`·`ApiDocsClosedTest`가 바꾸지 않고 통과한다(비회원 API와 404 유지).
+   - 기존 `BenefitSearchApiTest`·`BenefitDetailApiTest`·`ApiDocsClosedTest`가 통과한다(비회원 API 유지). `BenefitSearchApiTest`의 없는 경로 확인은 공개 경로 아래의 없는 경로로 바꾸고, `ApiDocsClosedTest`는 유효한 토큰으로 요청한다(설계 7).
    - `ApiDocsTest`: 새 경로의 응답 코드(`/api/auth/signup` 201·400·409·500, `/api/auth/login` 200·400·401·500, `/api/me` 200·401·500)와 스키마 참조, `/api/me`의 `bearerAuth` 요구, 새 시각 필드(`AccountResponse.createdAt`, `LoginResponse.expiresAt`)의 형식.
    - 계정·인증 테스트는 공공 API 클라이언트를 쓰는 경로가 없어 `Gov24StubServer`를 두지 않는다. 혜택 API 테스트의 요청 수 0 확인은 그대로다.
 9. **문서**
    - `docs/decisions/0013-password-storage.md`: 설계 2·4. BCrypt·접두사·규칙·가짜 해시·72바이트 처리, 409의 가입 여부 노출 한계.
    - `docs/decisions/0014-access-token.md`: 설계 5. 서명·키 설정·클레임·검증·시계 오차 0·`sub`의 의미, 공개 ID를 둘 시점(사용자 식별자를 URL이나 외부에 노출해야 할 때).
-   - `docs/decisions/0015-api-auth-boundary.md`: 설계 6·7·8. 기본 거부, 공개 경로 목록, 없는 경로 404, 개인 API는 사용자 ID를 입력으로 받지 않음, 공개 경로의 잘못된 토큰 401, CSRF를 끈 이유와 A2에서 바꿀 점. 영향에 "새 공개 API는 `SecurityConfig` 허용 목록에 추가한다".
+   - `docs/decisions/0015-api-auth-boundary.md`: 설계 6·7·8. 기본 거부, 공개 경로 목록, 없는 경로의 401, 개인 API는 사용자 ID를 입력으로 받지 않음, 공개 경로의 잘못된 토큰 401, CSRF를 끈 이유와 A2에서 바꿀 점. 영향에 "새 공개 API는 `SecurityConfig` 허용 목록에 추가한다".
    - `docs/decisions/README.md` 목록 표에 0013~0015.
    - `0009`: 코드 표에 세 코드, 적용 위치에 `ApiException`·`ApiAuthenticationEntryPoint`, 영향에 비밀번호 항목 `value` 제외.
    - `0012`: 적용 위치에 `SecurityConfig`(문서 경로 허용)와 `OpenApiConfig`의 `bearerAuth`.
