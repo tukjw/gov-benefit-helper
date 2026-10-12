@@ -5,7 +5,6 @@ import java.util.Set;
 import kr.govbenefit.common.api.ApiErrorResponse.InputError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,26 +25,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** 입력 오류에 받은 값을 넣지 않는 항목. 비밀번호 원문이 응답에 나가지 않게 한다. */
     private static final Set<String> SENSITIVE_FIELDS = Set.of("password");
 
-    @ExceptionHandler(InvalidInputException.class)
-    public ResponseEntity<ApiErrorResponse> handleInvalidInput(InvalidInputException ex) {
-        return ResponseEntity.badRequest().body(ApiErrorResponse.invalidInput(List.of(ex.error())));
-    }
-
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleNotFound(NotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiErrorResponse.of(ErrorCode.NOT_FOUND));
-    }
-
     /**
-     * 토큰은 유효하지만 쓸 수 없는 경우(토큰 주인 없음)도 보안 필터의 401과 같이 WWW-Authenticate를 붙인다(RFC 6750).
+     * 상태 코드는 오류 코드가 정한다. 토큰은 유효하지만 쓸 수 없는 경우(토큰 주인 없음)도 보안 필터의 401과 같이
+     * WWW-Authenticate를 붙인다(RFC 6750).
      */
-    @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiErrorResponse> handleApi(ApiException ex) {
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusiness(BusinessException ex) {
         ResponseEntity.BodyBuilder response = ResponseEntity.status(ex.status());
         if (ex.code() == ErrorCode.UNAUTHENTICATED) {
             response.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer error=\"invalid_token\"");
         }
-        return response.body(ApiErrorResponse.of(ex.code()));
+        return response.body(ApiErrorResponse.of(ex.code(), ex.errors()));
     }
 
     @ExceptionHandler(Exception.class)

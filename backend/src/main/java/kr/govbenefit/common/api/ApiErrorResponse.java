@@ -28,7 +28,11 @@ public record ApiErrorResponse(
         List<InputError> errors) {
 
     public static ApiErrorResponse of(ErrorCode code) {
-        return new ApiErrorResponse(code.name(), code.message(), List.of());
+        return of(code, List.of());
+    }
+
+    public static ApiErrorResponse of(ErrorCode code, List<InputError> errors) {
+        return new ApiErrorResponse(code.name(), code.message(), errors);
     }
 
     public static ApiErrorResponse invalidInput(List<InputError> errors) {

@@ -9,7 +9,6 @@ import kr.govbenefit.common.api.ApiErrorResponse;
 import kr.govbenefit.common.api.ErrorCode;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -41,11 +40,9 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException, ServletException {
         if (!hasHandler(request)) {
-            response.setStatus(HttpStatus.NOT_FOUND.value());
             write(response, ErrorCode.NOT_FOUND);
             return;
         }
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setHeader(HttpHeaders.WWW_AUTHENTICATE, authenticateHeader(authException));
         write(response, ErrorCode.UNAUTHENTICATED);
     }
@@ -82,6 +79,7 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
     }
 
     private void write(HttpServletResponse response, ErrorCode code) throws IOException {
+        response.setStatus(code.status().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         jsonMapper.writeValue(response.getOutputStream(), ApiErrorResponse.of(code));

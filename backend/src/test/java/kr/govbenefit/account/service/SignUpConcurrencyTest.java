@@ -15,7 +15,7 @@ import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.domain.UserAccount;
 import kr.govbenefit.account.dto.SignUpRequest;
 import kr.govbenefit.account.repository.UserAccountRepository;
-import kr.govbenefit.common.api.ApiException;
+import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,7 +62,7 @@ class SignUpConcurrencyTest {
                     start.await();
                     try {
                         return accountService.signUp(new SignUpRequest(email, "correct-horse"));
-                    } catch (ApiException ex) {
+                    } catch (BusinessException ex) {
                         return ex;
                     }
                 }));
@@ -73,7 +73,7 @@ class SignUpConcurrencyTest {
             int succeeded = 0;
             for (Future<Object> result : results) {
                 Object outcome = result.get(30, TimeUnit.SECONDS);
-                if (outcome instanceof ApiException ex) {
+                if (outcome instanceof BusinessException ex) {
                     assertThat(ex.status()).isEqualTo(HttpStatus.CONFLICT);
                     assertThat(ex.code()).isEqualTo(ErrorCode.DUPLICATE_EMAIL);
                 } else {

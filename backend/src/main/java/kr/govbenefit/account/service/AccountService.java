@@ -12,11 +12,10 @@ import kr.govbenefit.account.dto.LoginRequest;
 import kr.govbenefit.account.dto.LoginResponse;
 import kr.govbenefit.account.dto.SignUpRequest;
 import kr.govbenefit.account.repository.UserAccountRepository;
-import kr.govbenefit.common.api.ApiException;
+import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
 import kr.govbenefit.common.security.AccessTokenIssuer;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,7 +92,7 @@ public class AccountService {
     public AccountResponse me(Long userId) {
         return userAccountRepository.findById(userId)
                 .map(AccountResponse::from)
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHENTICATED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
     }
 
     static boolean isEmailUniqueViolation(DataIntegrityViolationException ex) {
@@ -105,11 +104,11 @@ public class AccountService {
         return false;
     }
 
-    private static ApiException duplicateEmail() {
-        return new ApiException(HttpStatus.CONFLICT, ErrorCode.DUPLICATE_EMAIL);
+    private static BusinessException duplicateEmail() {
+        return new BusinessException(ErrorCode.DUPLICATE_EMAIL);
     }
 
-    private static ApiException invalidCredentials() {
-        return new ApiException(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS);
+    private static BusinessException invalidCredentials() {
+        return new BusinessException(ErrorCode.INVALID_CREDENTIALS);
     }
 }
