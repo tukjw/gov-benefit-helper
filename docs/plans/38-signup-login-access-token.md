@@ -84,6 +84,7 @@ status: in-progress
     - 로그인: 200, `{ "accessToken", "tokenType": "Bearer", "expiresAt" }`. 리프레시 토큰 쿠키는 A2에서 붙인다.
     - 내 정보: 200, `{ "email", "createdAt" }`. 토큰은 유효하지만 사용자 행이 없으면 401 `UNAUTHENTICATED`(탈퇴 이슈 대비).
     - 시각은 `ApiTimes.toOffset`(0010).
+    - 계정 컨트롤러는 `ResponseEntity<응답 DTO>`를 반환하고 상태 코드도 여기서 정한다(2026-10-11 사용자 결정). 혜택 API(#29·#30)는 DTO를 바로 반환하므로 #40에서 맞춘다.
 
 ## 단계별 구현 계획
 
@@ -133,7 +134,7 @@ status: in-progress
      - `AccountResponse signUp(SignUpRequest)`: 정규화 → `existsByEmail`이면 `ApiException(CONFLICT, DUPLICATE_EMAIL)` → 인코딩 → `saveAndFlush`. `DataIntegrityViolationException`의 제약 이름에 `uk_user_account_email`이 있으면 같은 409, 아니면 다시 던진다.
      - `LoginResponse login(LoginRequest)`: 설계 4. 성공하면 `AccessTokenIssuer.issue(id)`.
      - `AccountResponse me(Long userId)`: 없으면 `ApiException(UNAUTHORIZED, UNAUTHENTICATED)`.
-   - `controller.AuthController`(`/api/auth`): `POST /signup`(201), `POST /login`. `controller.MeController`(`/api/me`): `GET`. `@Operation`, `@ApiResponse`(400·401·409와 `ApiErrorResponse`).
+   - `controller.AuthController`(`/api/auth`): `POST /signup`(201), `POST /login`. `controller.MeController`(`/api/me`): `GET`. 모두 `ResponseEntity`를 반환한다(설계 10). `@Operation`, `@ApiResponse`(400·401·409와 `ApiErrorResponse`).
 7. **API 명세** `OpenApiConfig`
    - `DESCRIPTION`을 혜택 API와 계정 API를 함께 설명하도록 고치고, 인증 방법(`Authorization: Bearer <액세스 토큰>`, 15분)을 적는다.
    - `bearerAuth` 보안 스키마(HTTP bearer, JWT)를 등록하고 `MeController`에 `@SecurityRequirement(name = "bearerAuth")`.

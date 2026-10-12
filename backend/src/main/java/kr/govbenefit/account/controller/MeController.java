@@ -14,6 +14,7 @@ import kr.govbenefit.common.api.OpenApiConfig;
 import kr.govbenefit.common.security.CurrentUserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,7 +40,7 @@ public class MeController {
                     examples = @ExampleObject(value = """
                             {"code": "UNAUTHENTICATED", "message": "인증이 필요합니다.", "errors": []}""")))
     @GetMapping
-    public AccountResponse me(@CurrentUserId Long userId) {
-        return accountService.me(userId);
+    public ResponseEntity<AccountResponse> me(@CurrentUserId Long userId) {
+        return ResponseEntity.ok(accountService.me(userId));
     }
 }

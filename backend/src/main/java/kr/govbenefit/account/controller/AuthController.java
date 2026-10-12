@@ -16,10 +16,10 @@ import kr.govbenefit.common.api.ApiErrorResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -52,9 +52,8 @@ public class AuthController {
                     examples = @ExampleObject(value = """
                             {"code": "DUPLICATE_EMAIL", "message": "이미 가입된 이메일입니다.", "errors": []}""")))
     @PostMapping("/signup")
-    @ResponseStatus(HttpStatus.CREATED)
-    public AccountResponse signUp(@Valid @RequestBody SignUpRequest request) {
-        return accountService.signUp(request);
+    public ResponseEntity<AccountResponse> signUp(@Valid @RequestBody SignUpRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.signUp(request));
     }
 
     @Operation(summary = "로그인", description = """
@@ -70,7 +69,7 @@ public class AuthController {
                     examples = @ExampleObject(value = """
                             {"code": "INVALID_CREDENTIALS", "message": "이메일 또는 비밀번호가 올바르지 않습니다.", "errors": []}""")))
     @PostMapping("/login")
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        return accountService.login(request);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(accountService.login(request));
     }
 }
