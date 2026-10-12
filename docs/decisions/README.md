@@ -55,3 +55,6 @@
 | [0010](0010-api-time-format.md) | API 응답 시각 형식 | 채택 | #29 |
 | [0011](0011-online-apply-url-link.md) | 온라인 신청 URL의 링크 정리 | 채택 | #30 |
 | [0012](0012-api-spec-docs.md) | API 명세 문서화 방식 | 채택 | #33 |
+| [0013](0013-password-storage.md) | 비밀번호 저장과 길이 규칙 | 채택 | #38 |
+| [0014](0014-access-token.md) | 액세스 토큰 형식과 검증 | 채택 | #38 |
+| [0015](0015-api-auth-boundary.md) | API 인증 경계 | 채택 | #38 |

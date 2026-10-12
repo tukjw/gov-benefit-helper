@@ -48,3 +48,12 @@ gov24:
     enabled: true
     # 매일 04:00 (Asia/Seoul)
     cron: "0 0 4 * * *"
+
+# 액세스 토큰(결정 0014). 서명 키는 JWT_SECRET(base64, 32바이트 이상)으로만 받고, 없으면 기동에 실패한다.
+auth:
+  jwt:
+    secret: ${JWT_SECRET:}
+    issuer: gov-benefit-helper
+    access-token-ttl: 15m
+    # 키가 없을 때 임의 키를 만든다. local과 테스트에서만 켠다.
+    generate-secret-if-missing: false

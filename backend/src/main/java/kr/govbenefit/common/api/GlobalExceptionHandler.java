@@ -1,6 +1,7 @@
 package kr.govbenefit.common.api;
 
 import java.util.List;
+import java.util.Set;
 import kr.govbenefit.common.api.ApiErrorResponse.InputError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -22,6 +23,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final String TYPE_MISMATCH = "형식이 올바르지 않습니다.";
+    /** 입력 오류에 받은 값을 넣지 않는 항목. 비밀번호 원문이 응답에 나가지 않게 한다. */
+    private static final Set<String> SENSITIVE_FIELDS = Set.of("password");
 
     @ExceptionHandler(InvalidInputException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidInput(InvalidInputException ex) {
@@ -31,6 +34,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(NotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiErrorResponse.of(ErrorCode.NOT_FOUND));
+    }
+
+    /**
+     * 토큰은 유효하지만 쓸 수 없는 경우(토큰 주인 없음)도 보안 필터의 401과 같이 WWW-Authenticate를 붙인다(RFC 6750).
+     */
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiErrorResponse> handleApi(ApiException ex) {
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(ex.status());
+        if (ex.code() == ErrorCode.UNAUTHENTICATED) {
+            response.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer error=\"invalid_token\"");
+        }
+        return response.body(ApiErrorResponse.of(ex.code()));
     }
 
     @ExceptionHandler(Exception.class)
@@ -47,7 +62,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<InputError> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> new InputError(error.getField(), text(error.getRejectedValue()),
+                .map(error -> new InputError(error.getField(),
+                        SENSITIVE_FIELDS.contains(error.getField()) ? null : text(error.getRejectedValue()),
                         error.isBindingFailure() ? TYPE_MISMATCH : error.getDefaultMessage()))
                 .toList();
         return handleExceptionInternal(ex, ApiErrorResponse.invalidInput(errors), headers, status, request);

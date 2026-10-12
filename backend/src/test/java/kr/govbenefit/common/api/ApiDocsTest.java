@@ -158,6 +158,64 @@ class ApiDocsTest {
     }
 
     @Test
+    void 가입_API의_요청과_응답() {
+        JsonNode operation = spec.path("paths").path("/api/auth/signup").path("post");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(operation.path("requestBody").path("content").path("application/json").path("schema").path("$ref")
+                .asString()).isEqualTo("#/components/schemas/SignUpRequest");
+        assertThat(texts(schema("SignUpRequest").path("required"))).containsExactlyInAnyOrder("email", "password");
+        assertThat(property("SignUpRequest", "password").path("description").asString()).contains("72바이트");
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("201", "400", "409", "500");
+        assertThat(schemaRef(responses, "201")).isEqualTo("#/components/schemas/AccountResponse");
+        for (String code : List.of("400", "409", "500")) {
+            assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
+        }
+    }
+
+    @Test
+    void 로그인_API의_요청과_응답() {
+        JsonNode operation = spec.path("paths").path("/api/auth/login").path("post");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(operation.path("requestBody").path("content").path("application/json").path("schema").path("$ref")
+                .asString()).isEqualTo("#/components/schemas/LoginRequest");
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("200", "400", "401", "500");
+        assertThat(schemaRef(responses, "200")).isEqualTo("#/components/schemas/LoginResponse");
+        for (String code : List.of("400", "401", "500")) {
+            assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
+        }
+        assertThat(property("LoginResponse", "expiresAt").path("description").asString()).contains("15분");
+    }
+
+    @Test
+    void 내_정보_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
+        JsonNode operation = spec.path("paths").path("/api/me").path("get");
+
+        assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
+        assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("200", "401", "500");
+        assertThat(schemaRef(responses, "200")).isEqualTo("#/components/schemas/AccountResponse");
+        assertThat(schemaRef(responses, "401")).isEqualTo(ERROR_REF);
+        assertThat(names(schema("AccountResponse").path("properties"))).containsExactlyInAnyOrder("email", "createdAt");
+    }
+
+    @Test
+    void 액세스_토큰_인증_방식이_명세에_있다() {
+        JsonNode bearer = spec.path("components").path("securitySchemes").path("bearerAuth");
+
+        assertThat(bearer.path("type").asString()).isEqualTo("http");
+        assertThat(bearer.path("scheme").asString()).isEqualTo("bearer");
+        assertThat(bearer.path("bearerFormat").asString()).isEqualTo("JWT");
+    }
+
+    @Test
     void 오류_응답_스키마가_결정_0009_형식이다() {
         JsonNode error = schema("ApiErrorResponse");
 
@@ -178,7 +236,9 @@ class ApiDocsTest {
                 new String[] {"BenefitSummary", "lastSeenAt"},
                 new String[] {"BenefitDetailResponse", "sourceModifiedAt"},
                 new String[] {"BenefitDetailResponse", "lastSeenAt"},
-                new String[] {"Freshness", "referenceAt"});
+                new String[] {"Freshness", "referenceAt"},
+                new String[] {"AccountResponse", "createdAt"},
+                new String[] {"LoginResponse", "expiresAt"});
         times.forEach(target -> {
             JsonNode time = property(target[0], target[1]);
             assertThat(time.path("type").asString()).as("%s.%s", target[0], target[1]).isEqualTo("string");
