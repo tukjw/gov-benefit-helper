@@ -16,6 +16,7 @@ import kr.govbenefit.common.api.ApiErrorResponse;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,8 +48,8 @@ public class BenefitController {
                             {"code": "INVALID_INPUT", "message": "요청 값이 올바르지 않습니다.",
                              "errors": [{"field": "size", "value": "200", "reason": "1 이상 100 이하여야 합니다."}]}""")))
     @GetMapping
-    public BenefitSearchResponse search(@ParameterObject @Valid BenefitSearchRequest request) {
-        return benefitQueryService.search(request.toCondition(), request.page(), request.size());
+    public ResponseEntity<BenefitSearchResponse> search(@ParameterObject @Valid BenefitSearchRequest request) {
+        return ResponseEntity.ok(benefitQueryService.search(request.toCondition(), request.page(), request.size()));
     }
 
     /**
@@ -64,10 +65,10 @@ public class BenefitController {
                     examples = @ExampleObject(value = """
                             {"code": "NOT_FOUND", "message": "요청한 경로나 자원을 찾을 수 없습니다.", "errors": []}""")))
     @GetMapping("/{serviceId}")
-    public BenefitDetailResponse detail(
+    public ResponseEntity<BenefitDetailResponse> detail(
             @Parameter(description = "서비스 ID. gov.kr 상세 주소의 마지막 부분과 같다.",
                     schema = @Schema(type = "string", example = "654000000031"))
             @PathVariable String serviceId) {
-        return benefitQueryService.getDetail(serviceId);
+        return ResponseEntity.ok(benefitQueryService.getDetail(serviceId));
     }
 }

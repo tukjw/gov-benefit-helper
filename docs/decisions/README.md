@@ -58,3 +58,4 @@
 | [0013](0013-password-storage.md) | 비밀번호 저장과 길이 규칙 | 채택 | #38 |
 | [0014](0014-access-token.md) | 액세스 토큰 형식과 검증 | 채택 | #38 |
 | [0015](0015-api-auth-boundary.md) | API 인증 경계 | 채택 | #38 |
+| [0016](0016-controller-response.md) | 컨트롤러 응답 방식 | 채택 | #40 |
