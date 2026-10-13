@@ -18,7 +18,8 @@ import kr.govbenefit.benefit.repository.BenefitSpecifications;
 import kr.govbenefit.collection.domain.CollectionRun;
 import kr.govbenefit.collection.domain.CollectionStatus;
 import kr.govbenefit.collection.repository.CollectionRunRepository;
-import kr.govbenefit.common.api.NotFoundException;
+import kr.govbenefit.common.api.BusinessException;
+import kr.govbenefit.common.api.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -73,11 +74,11 @@ public class BenefitQueryService {
     /**
      * 저장된 혜택 상세와 오래된 정보 여부. 혜택·상세·기준 실행을 한 읽기 트랜잭션에서 같은 스냅샷으로 읽는다.
      *
-     * @throws NotFoundException 서비스 ID에 해당하는 혜택이 없다.
+     * @throws BusinessException 서비스 ID에 해당하는 혜택이 없다({@code NOT_FOUND}).
      */
     public BenefitDetailResponse getDetail(String serviceId) {
         Benefit benefit = benefitRepository.findByServiceId(serviceId)
-                .orElseThrow(() -> new NotFoundException("혜택이 없습니다. serviceId=" + serviceId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "혜택이 없습니다. serviceId=" + serviceId));
         LocalDateTime referenceAt = collectionRunRepository.findFirstByStatusInOrderByFinishedAtDesc(LIST_UPDATED)
                 .map(CollectionRun::getFinishedAt)
                 .orElse(null);
