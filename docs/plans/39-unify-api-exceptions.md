@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #39 API 실패 응답을 오류 코드 하나로 던지도록 예외 처리 통일
 
