@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #45 리프레시 토큰으로 로그인 유지와 로그아웃 제공
 
