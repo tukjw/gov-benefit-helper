@@ -190,6 +190,7 @@ class ApiDocsTest {
             assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
         }
         assertThat(property("LoginResponse", "expiresAt").path("description").asString()).contains("15분");
+        assertThat(responses.path("200").path("headers").has("Set-Cookie")).isTrue();
     }
 
     @Test

@@ -1,6 +1,7 @@
 package kr.govbenefit.account.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,8 +13,10 @@ import kr.govbenefit.account.dto.LoginRequest;
 import kr.govbenefit.account.dto.LoginResponse;
 import kr.govbenefit.account.dto.SignUpRequest;
 import kr.govbenefit.account.service.AccountService;
+import kr.govbenefit.account.service.AuthTokens;
 import kr.govbenefit.common.api.ApiErrorResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +34,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final String REFRESH_COOKIE_DESCRIPTION = """
+            리프레시 토큰 쿠키. `refresh_token=<토큰>; Path=/api/auth; Max-Age=1209600; Secure; HttpOnly; SameSite=Strict`""";
+
     private final AccountService accountService;
+    private final RefreshTokenCookies refreshTokenCookies;
 
     @Operation(summary = "가입", description = """
             이메일과 비밀번호로 가입한다. 토큰은 주지 않으므로 이어서 로그인한다.
@@ -57,9 +64,10 @@ public class AuthController {
     }
 
     @Operation(summary = "로그인", description = """
-            맞는 이메일·비밀번호면 15분 동안 쓸 수 있는 액세스 토큰을 준다. \
-            비밀번호가 틀린 경우와 가입되지 않은 이메일은 같은 응답이다.""")
-    @ApiResponse(responseCode = "200", description = "액세스 토큰")
+            맞는 이메일·비밀번호면 15분 동안 쓸 수 있는 액세스 토큰을 본문으로, 14일 동안 쓸 수 있는 리프레시 토큰을 \
+            `refresh_token` 쿠키로 준다. 비밀번호가 틀린 경우와 가입되지 않은 이메일은 같은 응답이다.""")
+    @ApiResponse(responseCode = "200", description = "액세스 토큰", headers = @Header(name = HttpHeaders.SET_COOKIE,
+            description = REFRESH_COOKIE_DESCRIPTION, schema = @Schema(type = "string")))
     @ApiResponse(responseCode = "400", description = "이메일이나 비밀번호가 비어 있다. `code`는 `INVALID_INPUT`이다.",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApiErrorResponse.class)))
@@ -70,6 +78,9 @@ public class AuthController {
                             {"code": "INVALID_CREDENTIALS", "message": "이메일 또는 비밀번호가 올바르지 않습니다.", "errors": []}""")))
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(accountService.login(request));
+        AuthTokens tokens = accountService.login(request);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookies.issue(tokens.refreshToken()))
+                .body(LoginResponse.from(tokens.accessToken()));
     }
 }
