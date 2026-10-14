@@ -194,6 +194,40 @@ class ApiDocsTest {
     }
 
     @Test
+    void 재발급_API는_쿠키와_CSRF_헤더를_받고_새_쿠키를_준다() {
+        JsonNode operation = spec.path("paths").path("/api/auth/refresh").path("post");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        JsonNode parameters = operation.path("parameters");
+        assertThat(names(parameters)).containsExactlyInAnyOrder("refresh_token", "X-Requested-With");
+        assertThat(parameter(parameters, "refresh_token").path("in").asString()).isEqualTo("cookie");
+        assertThat(parameter(parameters, "X-Requested-With").path("in").asString()).isEqualTo("header");
+        assertThat(parameter(parameters, "X-Requested-With").path("required").asBoolean()).isTrue();
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("200", "401", "403", "500");
+        assertThat(schemaRef(responses, "200")).isEqualTo("#/components/schemas/LoginResponse");
+        assertThat(responses.path("200").path("headers").has("Set-Cookie")).isTrue();
+        for (String code : List.of("401", "403", "500")) {
+            assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
+        }
+    }
+
+    @Test
+    void 로그아웃_API는_쿠키를_받고_본문_없이_응답한다() {
+        JsonNode operation = spec.path("paths").path("/api/auth/logout").path("post");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(names(operation.path("parameters"))).containsExactly("refresh_token");
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("204", "500");
+        assertThat(responses.path("204").path("content").isMissingNode()).isTrue();
+        assertThat(responses.path("204").path("headers").has("Set-Cookie")).isTrue();
+        assertThat(schemaRef(responses, "500")).isEqualTo(ERROR_REF);
+    }
+
+    @Test
     void 내_정보_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
         JsonNode operation = spec.path("paths").path("/api/me").path("get");
 

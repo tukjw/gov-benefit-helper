@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 가입·로그인·내 정보(REQ-ACCOUNT-01, DEC-AUTH).
+ * 가입·로그인·로그인 유지·로그아웃·내 정보(REQ-ACCOUNT-01, DEC-AUTH).
  */
 @Service
 public class AccountService {
@@ -87,6 +87,23 @@ public class AccountService {
         }
         Long userId = account.get().getId();
         return new AuthTokens(accessTokenIssuer.issue(userId), refreshTokenService.issueNewFamily(userId));
+    }
+
+    /**
+     * 리프레시 토큰을 교체하고 새 액세스 토큰을 발급한다. 쓸 수 없는 토큰이면 빈 결과다({@link RefreshTokenService#rotate}).
+     */
+    @Transactional
+    public Optional<AuthTokens> refresh(String refreshToken) {
+        return refreshTokenService.rotate(refreshToken)
+                .map(rotation -> new AuthTokens(accessTokenIssuer.issue(rotation.userId()), rotation.refreshToken()));
+    }
+
+    /**
+     * 리프레시 토큰이 속한 로그인의 토큰을 모두 폐기한다. 이미 발급된 액세스 토큰은 만료까지 유효하다(DEC-AUTH의 한계).
+     */
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeFamilyOf(refreshToken);
     }
 
     /**
