@@ -17,9 +17,10 @@ public record ApiErrorResponse(
         @Schema(description = """
                 클라이언트가 분기에 쓰는 고정 값. `INVALID_INPUT`(400, 항목 오류는 `errors`), `NOT_FOUND`(404), \
                 `UNAUTHENTICATED`(401, 토큰 없음·위조·만료), `INVALID_CREDENTIALS`(401, 로그인 실패), \
-                `DUPLICATE_EMAIL`(409), `INTERNAL_ERROR`(5xx), `REQUEST_FAILED`(그 밖의 실패, 상태 코드로 원인을 구분).""",
+                `DUPLICATE_EMAIL`(409), `CSRF_REJECTED`(403, 재발급 요청의 CSRF 방어 실패), `INTERNAL_ERROR`(5xx), \
+                `REQUEST_FAILED`(그 밖의 실패, 상태 코드로 원인을 구분).""",
                 allowableValues = {"INVALID_INPUT", "NOT_FOUND", "UNAUTHENTICATED", "INVALID_CREDENTIALS",
-                        "DUPLICATE_EMAIL", "INTERNAL_ERROR", "REQUEST_FAILED"},
+                        "DUPLICATE_EMAIL", "CSRF_REJECTED", "INTERNAL_ERROR", "REQUEST_FAILED"},
                 example = "INVALID_INPUT")
         String code,
         @Schema(description = "사람이 읽는 문구. 분기에 쓰지 않는다.", example = "요청 값이 올바르지 않습니다.")

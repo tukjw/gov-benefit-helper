@@ -28,9 +28,10 @@
   | --- | --- | --- |
   | `INVALID_INPUT` | 400 | 요청 값이 올바르지 않다. 항목 오류는 `errors`에 있다 |
   | `NOT_FOUND` | 404 | 요청한 경로나 자원이 없다 |
-  | `UNAUTHENTICATED` | 401 | 액세스 토큰이 없거나, 형식이 틀렸거나, 위조·만료됐거나, 토큰 주인이 없다. 원인은 나누지 않는다([0015](0015-api-auth-boundary.md)). #38에서 추가 |
+  | `UNAUTHENTICATED` | 401 | 액세스 토큰이 없거나, 형식이 틀렸거나, 위조·만료됐거나, 토큰 주인이 없다. 원인은 나누지 않는다([0015](0015-api-auth-boundary.md)). #38에서 추가. 재발급에서 리프레시 토큰이 없거나 쓸 수 없을 때도 이 코드다([0017](0017-refresh-token.md), #45) |
   | `INVALID_CREDENTIALS` | 401 | 로그인 실패. 비밀번호가 틀린 경우와 가입되지 않은 이메일을 구분하지 않는다([0013](0013-password-storage.md)). #38에서 추가 |
   | `DUPLICATE_EMAIL` | 409 | 이미 가입된 이메일이다. #38에서 추가 |
+  | `CSRF_REJECTED` | 403 | 리프레시 토큰 쿠키로 인증하는 재발급 요청이 CSRF 방어(`X-Requested-With` 헤더, `Origin` 허용 목록)를 통과하지 못했다. 클라이언트 구현 오류라 원인을 숨기지 않는다([0017](0017-refresh-token.md)). #45에서 추가 |
   | `INTERNAL_ERROR` | 5xx | 서버에서 처리하지 못했다 |
   | `REQUEST_FAILED` | 그 밖의 상태 | 위에 해당하지 않는 실패(405 등). 상태 코드로 원인을 구분한다 |
 
@@ -61,6 +62,7 @@
 - `backend/src/main/java/kr/govbenefit/common/api/BusinessException.java`: 응답 오류 코드가 정해진 실패. 오류 코드만 받는다. #38에서 `ApiException`으로 추가, #39에서 이름을 바꾸고 상태 코드 인자 제거
 - `backend/src/main/java/kr/govbenefit/common/api/InvalidInputException.java`: Bean Validation 제약으로 표현하지 않은 입력 검증. `BusinessException`의 하위 클래스(#39)
 - `backend/src/main/java/kr/govbenefit/common/security/ApiAuthenticationEntryPoint.java`: 보안 필터에서 거절한 요청(401·404)을 이 형식으로 쓴다. 상태 코드는 `ErrorCode`를 따른다. #38에서 추가([0015](0015-api-auth-boundary.md))
+- `backend/src/main/java/kr/govbenefit/common/security/CsrfOriginInterceptor.java`: 재발급 요청의 CSRF 방어 실패를 `BusinessException(CSRF_REJECTED)`로 던진다. 인터셉터의 예외도 `GlobalExceptionHandler`가 이 형식으로 바꾼다. #45에서 추가([0017](0017-refresh-token.md))
 - `backend/src/main/java/kr/govbenefit/common/api/OpenApiConfig.java`: API 명세의 공통 500 응답. `ApiErrorResponse`의 스키마 설명과 함께 #33에서 추가([0012](0012-api-spec-docs.md))
 
 ## 영향

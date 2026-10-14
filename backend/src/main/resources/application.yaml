@@ -62,3 +62,6 @@ auth:
   refresh-token:
     ttl: 14d
     reuse-grace: 10s
+  # 재발급 요청에 Origin 헤더가 있으면 이 목록에 있어야 한다(결정 0017). 프론트 주소다(DEC-APP).
+  csrf:
+    allowed-origins: https://govbenefit.kr

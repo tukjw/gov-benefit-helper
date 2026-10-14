@@ -15,6 +15,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
 
+    /** 리프레시 토큰 쿠키로 인증하는 경로(결정 0017) */
+    static final String REFRESH_PATH = "/api/auth/refresh";
+
     /** 로그인 없이 쓰는 경로. 메서드와 관계없이 허용해 잘못된 메서드는 MVC가 405로 응답하게 한다. */
     private static final String[] PUBLIC_PATHS = {
             "/api/benefits/**",
@@ -26,8 +29,8 @@ public class SecurityConfig {
             "/swagger-ui/**"};
 
     /**
-     * 인증은 Authorization 헤더로만 받고 세션·쿠키를 쓰지 않는다. 브라우저가 자동으로 붙이는 자격 증명이 없으므로 CSRF 보호를 끈다.
-     * 리프레시 토큰 쿠키를 도입할 때 재발급 경로에 CSRF 방어를 넣는다(DEC-AUTH).
+     * 개인 API의 인증은 Authorization 헤더로만 받고 세션을 쓰지 않는다. 쿠키는 재발급·로그아웃의 리프레시 토큰뿐이며, 재발급의
+     * CSRF 방어는 {@link CsrfOriginInterceptor}가 한다(결정 0017). 그래서 Spring Security의 CSRF 필터는 끈다.
      */
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, ApiAuthenticationEntryPoint entryPoint) throws Exception {
