@@ -1,6 +1,6 @@
 # 0015. API 인증 경계
 
-- 상태: 채택
+- 상태: 대체됨 → [0018](0018-api-auth-boundary.md)
 - 날짜: 2026-10-10
 - 출처: #38, [플랜](../plans/38-signup-login-access-token.md)
 

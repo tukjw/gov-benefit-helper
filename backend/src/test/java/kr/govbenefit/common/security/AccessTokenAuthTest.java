@@ -38,7 +38,7 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
- * 개인 API의 인증 경계(결정 0014·0015). 토큰 없음·위조·변조·만료는 모두 401 {@code UNAUTHENTICATED}이고,
+ * 개인 API의 인증 경계(결정 0014·0018). 토큰 없음·위조·변조·만료는 모두 401 {@code UNAUTHENTICATED}이고,
  * 처리할 API가 없는 경로는 토큰과 관계없이 404다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")

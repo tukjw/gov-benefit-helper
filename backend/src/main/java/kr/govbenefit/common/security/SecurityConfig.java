@@ -10,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * API 인증 경계(결정 0015). 허용 목록에 없는 경로는 유효한 액세스 토큰이 있어야 한다. 새 공개 API는 이 목록에 추가한다.
+ * API 인증 경계(결정 0018). 허용 목록에 없는 경로는 유효한 액세스 토큰이 있어야 한다. 새 공개 API는 이 목록에 추가한다.
  */
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {

@@ -29,7 +29,7 @@ public class OpenApiConfig {
     private static final String DESCRIPTION = """
             로그인 없이 쓰는 혜택 검색·상세 API와 가입·로그인·내 정보 API.
 
-            - 개인 API는 로그인으로 받은 액세스 토큰을 `Authorization: Bearer <토큰>` 헤더로 보낸다. 토큰은 15분 뒤 만료되며, 토큰이 없거나 위조·만료됐으면 401 `UNAUTHENTICATED`다(결정 0014·0015).
+            - 개인 API는 로그인으로 받은 액세스 토큰을 `Authorization: Bearer <토큰>` 헤더로 보낸다. 토큰은 15분 뒤 만료되며, 토큰이 없거나 위조·만료됐으면 401 `UNAUTHENTICATED`다(결정 0014·0018).
             - 성공 응답은 데이터를 그대로 보낸다. 실패할 때만 HTTP 상태 코드와 `ApiErrorResponse` 본문(`code`, `message`, `errors`)을 보낸다(결정 0009). 분기는 `code`로 한다.
             - 시각은 `+09:00` 오프셋을 붙인 ISO-8601 문자열이다. 예: `2026-10-04T04:00:12.345+09:00`(결정 0010).
             - 값이 없는 필드도 `null`로 응답에 들어간다. 서버는 기본 문구로 채우지 않으므로 '정보 없음' 표시는 클라이언트가 한다.
