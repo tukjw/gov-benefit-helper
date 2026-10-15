@@ -19,7 +19,7 @@ import org.springframework.web.util.ServletRequestPathUtils;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 인증되지 않은 요청의 응답(결정 0015). 처리할 API가 없는 경로는 인증 여부와 관계없이 404 {@code NOT_FOUND}이고,
+ * 인증되지 않은 요청의 응답(결정 0018). 처리할 API가 없는 경로는 인증 여부와 관계없이 404 {@code NOT_FOUND}이고,
  * 그 밖에는 401 {@code UNAUTHENTICATED}다. 보안 필터는 {@code GlobalExceptionHandler}를 거치지 않으므로 본문을
  * 여기서 결정 0009 형식으로 쓴다.
  */

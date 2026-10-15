@@ -57,3 +57,11 @@ auth:
     access-token-ttl: 15m
     # 키가 없을 때 임의 키를 만든다. local과 테스트에서만 켠다.
     generate-secret-if-missing: false
+  # 리프레시 토큰(결정 0017). 재발급할 때마다 새 토큰이 ttl을 새로 받는다(연장 만료).
+  # 교체 직후 reuse-grace 안에 이전 토큰이 다시 오면 거절만 하고 같은 로그인의 토큰을 폐기하지 않는다.
+  refresh-token:
+    ttl: 14d
+    reuse-grace: 10s
+  # 재발급 요청에 Origin 헤더가 있으면 이 목록에 있어야 한다(결정 0017). 프론트 주소다(DEC-APP).
+  csrf:
+    allowed-origins: https://govbenefit.kr

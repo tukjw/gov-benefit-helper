@@ -25,3 +25,6 @@ springdoc:
 auth:
   jwt:
     generate-secret-if-missing: true
+  # 로컬 프론트(Next.js 기본 포트)
+  csrf:
+    allowed-origins: http://localhost:3000

@@ -20,7 +20,7 @@ class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResolver {
     }
 
     /**
-     * 인증 경계(결정 0015)를 통과한 요청만 여기에 온다. 토큰이 없으면 공개 경로에 이 파라미터를 쓴 설정 오류다.
+     * 인증 경계(결정 0018)를 통과한 요청만 여기에 온다. 토큰이 없으면 공개 경로에 이 파라미터를 쓴 설정 오류다.
      */
     @Override
     public Long resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,

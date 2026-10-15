@@ -2,18 +2,28 @@ package kr.govbenefit.common.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
- * API 인증 경계(결정 0015). 허용 목록에 없는 경로는 유효한 액세스 토큰이 있어야 한다. 새 공개 API는 이 목록에 추가한다.
+ * API 인증 경계(결정 0018). 허용 목록에 없는 경로는 유효한 액세스 토큰이 있어야 한다. 새 공개 API는 이 목록에 추가한다.
  */
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
+
+    /** 리프레시 토큰 쿠키로 인증하는 경로(결정 0017) */
+    static final String REFRESH_PATH = "/api/auth/refresh";
+    static final String LOGOUT_PATH = "/api/auth/logout";
 
     /** 로그인 없이 쓰는 경로. 메서드와 관계없이 허용해 잘못된 메서드는 MVC가 405로 응답하게 한다. */
     private static final String[] PUBLIC_PATHS = {
@@ -26,8 +36,8 @@ public class SecurityConfig {
             "/swagger-ui/**"};
 
     /**
-     * 인증은 Authorization 헤더로만 받고 세션·쿠키를 쓰지 않는다. 브라우저가 자동으로 붙이는 자격 증명이 없으므로 CSRF 보호를 끈다.
-     * 리프레시 토큰 쿠키를 도입할 때 재발급 경로에 CSRF 방어를 넣는다(DEC-AUTH).
+     * 개인 API의 인증은 Authorization 헤더로만 받고 세션을 쓰지 않는다. 쿠키는 재발급·로그아웃의 리프레시 토큰뿐이며, 재발급의
+     * CSRF 방어는 {@link CsrfOriginInterceptor}가 한다(결정 0017). 그래서 Spring Security의 CSRF 필터는 끈다.
      */
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, ApiAuthenticationEntryPoint entryPoint) throws Exception {
@@ -37,6 +47,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .jwt(jwt -> { })
+                        .bearerTokenResolver(bearerTokenResolver())
                         .authenticationEntryPoint(entryPoint))
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(entryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -46,6 +57,18 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .build();
+    }
+
+    /**
+     * 재발급·로그아웃은 리프레시 토큰 쿠키로만 판단하고 Authorization 헤더를 읽지 않는다. 액세스 토큰이 만료되어 재발급을 부를 때
+     * 클라이언트가 만료된 토큰을 그대로 붙여 와도 401이 되지 않게 한다. 그 밖의 경로는 보낸 토큰을 항상 검증한다(결정 0018).
+     */
+    static BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
+        RequestMatcher cookieOnly = new OrRequestMatcher(
+                PathPatternRequestMatcher.pathPattern(HttpMethod.POST, REFRESH_PATH),
+                PathPatternRequestMatcher.pathPattern(HttpMethod.POST, LOGOUT_PATH));
+        return request -> cookieOnly.matches(request) ? null : delegate.resolve(request);
     }
 
     /**

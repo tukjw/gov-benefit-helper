@@ -57,5 +57,7 @@
 | [0012](0012-api-spec-docs.md) | API 명세 문서화 방식 | 채택 | #33 |
 | [0013](0013-password-storage.md) | 비밀번호 저장과 길이 규칙 | 채택 | #38 |
 | [0014](0014-access-token.md) | 액세스 토큰 형식과 검증 | 채택 | #38 |
-| [0015](0015-api-auth-boundary.md) | API 인증 경계 | 채택 | #38 |
+| [0015](0015-api-auth-boundary.md) | API 인증 경계 | 대체됨 → [0018](0018-api-auth-boundary.md) | #38 |
 | [0016](0016-controller-response.md) | 컨트롤러 응답 방식 | 채택 | #40 |
+| [0017](0017-refresh-token.md) | 리프레시 토큰 저장·교체와 CSRF 방어 | 채택 | #45 |
+| [0018](0018-api-auth-boundary.md) | API 인증 경계 | 채택 | #45 |

@@ -35,7 +35,7 @@
 - `backend/src/main/resources/application-local.yaml`: springdoc 켜기
 - `backend/src/main/java/kr/govbenefit/common/api/OpenApiConfig.java`: 명세 정보와 공통 500 응답, 액세스 토큰 보안 스키마(`bearerAuth`), 명세에서 뺄 파라미터(`@CurrentUserId`). 보안 스키마는 #38에서 추가
 - `backend/src/main/java/kr/govbenefit/common/security/SecurityConfig.java`: 문서 경로를 인증 없이 허용한다. local 밖에서는 처리할 API가 없어 404다([0015](0015-api-auth-boundary.md))
-- `backend/src/main/java/kr/govbenefit/benefit/controller/BenefitController.java`, `account/controller/`: 작업 설명과 오류 응답
+- `backend/src/main/java/kr/govbenefit/benefit/controller/BenefitController.java`, `account/controller/`: 작업 설명과 오류 응답. 리프레시 토큰 쿠키는 요청에서 쿠키 파라미터로, 응답에서 `Set-Cookie` 헤더(`@Header`)로 적는다. 인터셉터가 검사하는 헤더(`X-Requested-With`)는 `@Operation(parameters = ...)`로 적는다(#45)
 - `backend/src/main/java/kr/govbenefit/benefit/dto/`, `common/api/ApiErrorResponse.java`: 스키마 설명
 - `backend/src/test/java/kr/govbenefit/common/api/ApiDocsTest.java`, `ApiDocsClosedTest.java`
 

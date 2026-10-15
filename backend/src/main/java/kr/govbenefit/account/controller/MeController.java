@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 토큰 주인의 계정 정보(REQ-ACCOUNT-01). 사용자는 토큰으로만 정한다(결정 0015).
+ * 토큰 주인의 계정 정보(REQ-ACCOUNT-01). 사용자는 토큰으로만 정한다(결정 0018).
  */
 @Tag(name = "계정")
 @RestController
