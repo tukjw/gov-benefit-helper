@@ -5,6 +5,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({RefreshTokenProperties.class, EmailVerificationProperties.class,
-        AccountMailProperties.class})
+        PasswordResetProperties.class, AccountMailProperties.class})
 public class AccountConfig {
 }

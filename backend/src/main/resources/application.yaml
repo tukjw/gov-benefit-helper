@@ -70,6 +70,10 @@ auth:
     code-ttl: 10m
     max-attempts: 5
     ticket-ttl: 30m
+  # 비밀번호 재설정(결정 0019). 메일의 링크는 url#token=<토큰>이다. url은 프론트의 재설정 화면이다(DEC-APP).
+  password-reset:
+    token-ttl: 30m
+    url: https://govbenefit.kr/reset-password
   # 인증·재설정 메일 발송 제한(결정 0019). 같은 이메일에 cooldown 간격, 최근 window 안에 max-per-window번까지 보낸다.
   # sender는 발송 구현이다(결정 0020). 지정하지 않으면 구현이 없어 기동에 실패한다. local만 logging을 쓴다.
   mail:

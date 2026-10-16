@@ -219,6 +219,36 @@ class ApiDocsTest {
     }
 
     @Test
+    void 비밀번호_재설정_요청_API는_가입_여부와_관계없이_본문_없이_응답한다() {
+        JsonNode operation = spec.path("paths").path("/api/auth/password-reset").path("post");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(requestRef(operation)).isEqualTo("#/components/schemas/PasswordResetRequest");
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("204", "400", "500");
+        assertThat(responses.path("204").path("content").isMissingNode()).isTrue();
+        assertThat(operation.path("description").asString()).contains("가입 여부를 드러내지 않는다");
+    }
+
+    @Test
+    void 비밀번호_재설정_API는_토큰과_새_비밀번호를_받는다() {
+        JsonNode operation = spec.path("paths").path("/api/auth/password-reset/confirm").path("post");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(requestRef(operation)).isEqualTo("#/components/schemas/PasswordResetConfirmRequest");
+        assertThat(texts(schema("PasswordResetConfirmRequest").path("required")))
+                .containsExactlyInAnyOrder("token", "newPassword");
+        assertThat(property("PasswordResetConfirmRequest", "newPassword").path("description").asString())
+                .contains("72바이트");
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("204", "400", "500");
+        assertThat(responses.path("204").path("content").isMissingNode()).isTrue();
+        assertThat(schemaRef(responses, "400")).isEqualTo(ERROR_REF);
+    }
+
+    @Test
     void 로그인_API의_요청과_응답() {
         JsonNode operation = spec.path("paths").path("/api/auth/login").path("post");
 

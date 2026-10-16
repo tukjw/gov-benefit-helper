@@ -96,6 +96,15 @@ public class RefreshTokenService {
                 .ifPresent(token -> refreshTokenRepository.revokeFamily(token.getFamilyId(), now()));
     }
 
+    /**
+     * 계정의 모든 로그인에서 받은 토큰을 폐기한다. 비밀번호를 재설정할 때 쓴다(결정 0019).
+     */
+    @Transactional
+    public void revokeAllOf(Long userId) {
+        int revoked = refreshTokenRepository.revokeAllByUserId(userId, now());
+        log.info("계정의 리프레시 토큰을 모두 폐기했습니다. userId={}, 폐기={}건", userId, revoked);
+    }
+
     private String issue(Long userId, String familyId, LocalDateTime now) {
         String value = OpaqueTokens.generate();
         refreshTokenRepository.save(
