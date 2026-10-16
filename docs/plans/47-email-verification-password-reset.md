@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #47 가입 전 이메일 인증과 비밀번호 재설정 제공
 
