@@ -27,8 +27,10 @@ public class OpenApiConfig {
     private static final String ERROR_SCHEMA = ApiErrorResponse.class.getSimpleName();
 
     private static final String DESCRIPTION = """
-            로그인 없이 쓰는 혜택 검색·상세 API와 가입·로그인·로그인 유지·로그아웃·내 정보 API.
+            로그인 없이 쓰는 혜택 검색·상세 API와 이메일 인증·가입·로그인·로그인 유지·로그아웃·비밀번호 재설정·내 정보 API.
 
+            - 가입은 인증번호 요청(`POST /api/auth/email-verification`) → 메일의 6자리 번호로 확인(`/confirm`, 가입 티켓을 받음) → 가입(`POST /api/auth/signup`에 티켓을 넣음) 순서다(결정 0019).
+            - 비밀번호를 잊으면 재설정 요청(`POST /api/auth/password-reset`)으로 메일의 링크를 받고, 링크의 `#token=` 값과 새 비밀번호로 재설정(`/confirm`)한다. 재설정하면 그 계정의 모든 로그인이 끝난다(결정 0019).
             - 개인 API는 로그인으로 받은 액세스 토큰을 `Authorization: Bearer <토큰>` 헤더로 보낸다. 토큰은 15분 뒤 만료되며, 토큰이 없거나 위조·만료됐으면 401 `UNAUTHENTICATED`다(결정 0014·0018).
             - 로그인하면 리프레시 토큰을 `refresh_token` 쿠키(HttpOnly)로 준다. 액세스 토큰이 만료되면 재발급 API로 새 액세스 토큰을 받고, 로그아웃 API로 리프레시 토큰을 폐기한다. 리프레시 토큰은 14일 동안 쓰지 않으면 만료된다(결정 0017).
             - 성공 응답은 데이터를 그대로 보낸다. 실패할 때만 HTTP 상태 코드와 `ApiErrorResponse` 본문(`code`, `message`, `errors`)을 보낸다(결정 0009). 분기는 `code`로 한다.

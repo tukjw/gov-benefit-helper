@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import kr.govbenefit.account.domain.EmailVerification;
 import kr.govbenefit.account.domain.Emails;
 import kr.govbenefit.account.domain.PasswordRule;
 import kr.govbenefit.account.domain.UserAccount;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 가입·로그인·로그인 유지·로그아웃·내 정보(REQ-ACCOUNT-01, DEC-AUTH).
+ * 가입·로그인·로그인 유지·로그아웃·내 정보(REQ-ACCOUNT-01, DEC-AUTH). 가입은 이메일 인증을 마친 뒤에만 한다(결정 0019).
  */
 @Service
 public class AccountService {
@@ -29,30 +30,36 @@ public class AccountService {
     private final PasswordEncoder passwordEncoder;
     private final AccessTokenIssuer accessTokenIssuer;
     private final RefreshTokenService refreshTokenService;
+    private final EmailVerificationService emailVerificationService;
     private final Clock clock;
     /** 가입되지 않은 이메일로 로그인할 때도 해시를 비교해 응답 시간으로 가입 여부를 알 수 없게 한다(결정 0013). */
     private final String dummyPasswordHash;
 
     public AccountService(UserAccountRepository userAccountRepository, PasswordEncoder passwordEncoder,
                           AccessTokenIssuer accessTokenIssuer, RefreshTokenService refreshTokenService,
-                          Clock clock) {
+                          EmailVerificationService emailVerificationService, Clock clock) {
         this.userAccountRepository = userAccountRepository;
         this.passwordEncoder = passwordEncoder;
         this.accessTokenIssuer = accessTokenIssuer;
         this.refreshTokenService = refreshTokenService;
+        this.emailVerificationService = emailVerificationService;
         this.clock = clock;
         this.dummyPasswordHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
     /**
-     * 같은 이메일의 동시 가입은 선조회를 함께 통과할 수 있다. 그때는 unique 제약 위반을 같은 409로 바꾼다.
+     * 가입 티켓을 먼저 검사하고 그다음 이메일 중복을 본다. 순서가 반대면 티켓 없이도 409로 가입 여부를 알아낼 수 있다.
+     * 같은 이메일의 동시 가입은 선조회를 함께 통과할 수 있다. 그때는 unique 제약 위반을 같은 409로 바꾼다. 409는 롤백되므로
+     * 티켓 사용도 되돌려진다.
      */
     @Transactional
     public AccountResponse signUp(SignUpRequest request) {
         String email = Emails.normalize(request.email());
+        EmailVerification verification = emailVerificationService.checkTicket(email, request.verificationToken());
         if (userAccountRepository.existsByEmail(email)) {
             throw duplicateEmail();
         }
+        emailVerificationService.useTicket(verification);
         UserAccount account = UserAccount.create(email, passwordEncoder.encode(request.password()),
                 LocalDateTime.now(clock));
         try {

@@ -43,7 +43,7 @@
 - `backend/src/main/resources/db/migration/V5__create_refresh_token.sql`
 - `backend/src/main/resources/application.yaml`: `auth.refresh-token`, `auth.csrf.allowed-origins`(`https://govbenefit.kr`)
 - `backend/src/main/resources/application-local.yaml`: `auth.csrf.allowed-origins`(`http://localhost:3000`)
-- `backend/src/main/java/kr/govbenefit/account/domain/RefreshToken.java`, `RefreshTokenValues.java`
+- `backend/src/main/java/kr/govbenefit/account/domain/RefreshToken.java`, `OpaqueTokens.java`(#47에서 `RefreshTokenValues.java`의 이름을 바꿈)
 - `backend/src/main/java/kr/govbenefit/account/repository/RefreshTokenRepository.java`: 조건부 UPDATE와 가족 폐기
 - `backend/src/main/java/kr/govbenefit/account/service/RefreshTokenService.java`, `AccountService.java`
 - `backend/src/main/java/kr/govbenefit/account/controller/AuthController.java`, `RefreshTokenCookies.java`

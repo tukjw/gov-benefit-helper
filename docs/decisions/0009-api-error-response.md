@@ -32,17 +32,23 @@
   | `INVALID_CREDENTIALS` | 401 | 로그인 실패. 비밀번호가 틀린 경우와 가입되지 않은 이메일을 구분하지 않는다([0013](0013-password-storage.md)). #38에서 추가 |
   | `DUPLICATE_EMAIL` | 409 | 이미 가입된 이메일이다. #38에서 추가 |
   | `CSRF_REJECTED` | 403 | 리프레시 토큰 쿠키로 인증하는 재발급 요청이 CSRF 방어(`X-Requested-With` 헤더, `Origin` 허용 목록)를 통과하지 못했다. 클라이언트 구현 오류라 원인을 숨기지 않는다([0017](0017-refresh-token.md)). #45에서 추가 |
+  | `VERIFICATION_CODE_MISMATCH` | 400 | 가입 인증번호가 틀렸다. 같은 번호로 다시 입력할 수 있다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
+  | `VERIFICATION_CODE_EXPIRED` | 400 | 가입 인증번호가 만료됐거나, 이미 썼거나, 다시 받아 무효가 됐거나, 요청한 적이 없다. 번호를 다시 받아야 한다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
+  | `VERIFICATION_ATTEMPTS_EXCEEDED` | 400 | 가입 인증번호를 비교한 횟수(5번)를 다 썼다. 맞는 번호도 거절한다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
+  | `EMAIL_NOT_VERIFIED` | 403 | 가입 티켓이 없거나, 만료·사용됐거나, 다른 이메일로 받은 것이다. 원인은 나누지 않는다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
+  | `INVALID_RESET_TOKEN` | 400 | 비밀번호 재설정 토큰이 없거나, 형식이 틀렸거나, 만료·사용됐거나, 다시 요청해 무효가 됐다. 원인은 나누지 않는다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
+  | `TOO_MANY_REQUESTS` | 429 | 요청 횟수 제한. `Retry-After` 헤더로 다시 시도할 수 있을 때까지의 초를 준다. 지금은 가입 인증번호 요청에서만 나간다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
   | `INTERNAL_ERROR` | 5xx | 서버에서 처리하지 못했다 |
   | `REQUEST_FAILED` | 그 밖의 상태 | 위에 해당하지 않는 실패(405 등). 상태 코드로 원인을 구분한다 |
 
 - 실패를 던지는 방식(#39에서 추가):
   - 표의 상태 코드는 `ErrorCode` 상수에 한 번만 정한다. 같은 코드가 다른 상태 코드로 나가지 않는다.
   - 서비스와 요청 검증은 `BusinessException(ErrorCode)`로 실패를 던지고 상태 코드를 지정하지 않는다. 응답에 나가지 않는 설명은 `BusinessException(ErrorCode, detail)`로 예외 메시지에 남긴다.
-  - 항목 오류(`errors`)처럼 추가 데이터가 있는 실패만 `BusinessException`의 하위 클래스로 둔다. 지금은 `InvalidInputException`뿐이다.
+  - 항목 오류(`errors`)처럼 추가 데이터가 있는 실패만 `BusinessException`의 하위 클래스로 둔다. 지금은 `InvalidInputException`과 `RateLimitedException`(`Retry-After`의 시간, #47)이다.
   - `INTERNAL_ERROR`·`REQUEST_FAILED`는 상태 코드가 하나로 정해지지 않아 던질 수 없다. Spring MVC 예외와 예상하지 못한 예외에서만 나간다.
 
 - `message`: 사람이 읽는 한국어 문구다. 클라이언트는 이 값으로 분기하지 않는다.
-- `errors`: 입력 항목별 오류이며 항상 배열이다. 항목 오류가 없으면 비어 있다. `field`는 요청 파라미터 이름, `value`는 받은 값(없었으면 `null`), `reason`은 거절한 이유다. 비밀번호 항목(`password`)은 `value`를 항상 `null`로 둔다(#38).
+- `errors`: 입력 항목별 오류이며 항상 배열이다. 항목 오류가 없으면 비어 있다. `field`는 요청 파라미터 이름, `value`는 받은 값(없었으면 `null`), `reason`은 거절한 이유다. 비밀번호 항목(`password`)은 `value`를 항상 `null`로 둔다(#38). 새 비밀번호와 일회용 토큰 항목(`newPassword`, `token`, `verificationToken`)도 같다(#47).
 - 5xx 응답에는 예외 메시지나 내부 정보를 넣지 않고 로그에만 남긴다.
 
 ## 근거
@@ -61,6 +67,7 @@
 - `backend/src/main/java/kr/govbenefit/common/api/GlobalExceptionHandler.java`: Spring MVC 예외, 입력 검증 실패, `BusinessException`을 이 형식으로 바꾼다
 - `backend/src/main/java/kr/govbenefit/common/api/BusinessException.java`: 응답 오류 코드가 정해진 실패. 오류 코드만 받는다. #38에서 `ApiException`으로 추가, #39에서 이름을 바꾸고 상태 코드 인자 제거
 - `backend/src/main/java/kr/govbenefit/common/api/InvalidInputException.java`: Bean Validation 제약으로 표현하지 않은 입력 검증. `BusinessException`의 하위 클래스(#39)
+- `backend/src/main/java/kr/govbenefit/common/api/RateLimitedException.java`: 요청 횟수 제한. `GlobalExceptionHandler`가 `Retry-After` 헤더를 붙인다. `BusinessException`의 하위 클래스. #47에서 추가([0019](0019-email-verification-password-reset.md))
 - `backend/src/main/java/kr/govbenefit/common/security/ApiAuthenticationEntryPoint.java`: 보안 필터에서 거절한 요청(401·404)을 이 형식으로 쓴다. 상태 코드는 `ErrorCode`를 따른다. #38에서 추가([0015](0015-api-auth-boundary.md))
 - `backend/src/main/java/kr/govbenefit/common/security/CsrfOriginInterceptor.java`: 재발급 요청의 CSRF 방어 실패를 `BusinessException(CSRF_REJECTED)`로 던진다. 인터셉터의 예외도 `GlobalExceptionHandler`가 이 형식으로 바꾼다. #45에서 추가([0017](0017-refresh-token.md))
 - `backend/src/main/java/kr/govbenefit/common/api/OpenApiConfig.java`: API 명세의 공통 500 응답. `ApiErrorResponse`의 스키마 설명과 함께 #33에서 추가([0012](0012-api-spec-docs.md))

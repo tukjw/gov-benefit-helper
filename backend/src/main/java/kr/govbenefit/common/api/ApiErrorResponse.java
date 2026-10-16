@@ -17,10 +17,15 @@ public record ApiErrorResponse(
         @Schema(description = """
                 클라이언트가 분기에 쓰는 고정 값. `INVALID_INPUT`(400, 항목 오류는 `errors`), `NOT_FOUND`(404), \
                 `UNAUTHENTICATED`(401, 토큰 없음·위조·만료), `INVALID_CREDENTIALS`(401, 로그인 실패), \
-                `DUPLICATE_EMAIL`(409), `CSRF_REJECTED`(403, 재발급 요청의 CSRF 방어 실패), `INTERNAL_ERROR`(5xx), \
-                `REQUEST_FAILED`(그 밖의 실패, 상태 코드로 원인을 구분).""",
+                `DUPLICATE_EMAIL`(409), `CSRF_REJECTED`(403, 재발급 요청의 CSRF 방어 실패), \
+                `VERIFICATION_CODE_MISMATCH`(400, 인증번호가 틀림), `VERIFICATION_CODE_EXPIRED`(400, 인증번호를 다시 받아야 함), \
+                `VERIFICATION_ATTEMPTS_EXCEEDED`(400, 인증번호 입력 횟수 초과), `EMAIL_NOT_VERIFIED`(403, 가입 티켓을 쓸 수 없음), \
+                `INVALID_RESET_TOKEN`(400, 재설정 토큰을 쓸 수 없음), `TOO_MANY_REQUESTS`(429, `Retry-After` 헤더), \
+                `INTERNAL_ERROR`(5xx), `REQUEST_FAILED`(그 밖의 실패, 상태 코드로 원인을 구분).""",
                 allowableValues = {"INVALID_INPUT", "NOT_FOUND", "UNAUTHENTICATED", "INVALID_CREDENTIALS",
-                        "DUPLICATE_EMAIL", "CSRF_REJECTED", "INTERNAL_ERROR", "REQUEST_FAILED"},
+                        "DUPLICATE_EMAIL", "CSRF_REJECTED", "VERIFICATION_CODE_MISMATCH", "VERIFICATION_CODE_EXPIRED",
+                        "VERIFICATION_ATTEMPTS_EXCEEDED", "EMAIL_NOT_VERIFIED", "INVALID_RESET_TOKEN",
+                        "TOO_MANY_REQUESTS", "INTERNAL_ERROR", "REQUEST_FAILED"},
                 example = "INVALID_INPUT")
         String code,
         @Schema(description = "사람이 읽는 문구. 분기에 쓰지 않는다.", example = "요청 값이 올바르지 않습니다.")
@@ -42,13 +47,13 @@ public record ApiErrorResponse(
 
     /**
      * @param field  요청 파라미터 이름
-     * @param value  받은 값. 값이 없었거나 비밀번호 항목이면 null이다.
+     * @param value  받은 값. 값이 없었거나 비밀번호·토큰 항목이면 null이다.
      * @param reason 거절한 이유
      */
     @Schema(description = "입력 항목 하나의 오류")
     public record InputError(
             @Schema(description = "요청 파라미터 이름", example = "size") String field,
-            @Schema(description = "받은 값. 값이 없었거나 비밀번호 항목이면 `null`이다.", example = "200") String value,
+            @Schema(description = "받은 값. 값이 없었거나 비밀번호·토큰 항목이면 `null`이다.", example = "200") String value,
             @Schema(description = "거절한 이유", example = "1 이상 100 이하여야 합니다.") String reason) {
     }
 }

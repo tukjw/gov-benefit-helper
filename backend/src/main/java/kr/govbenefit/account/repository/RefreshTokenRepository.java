@@ -28,4 +28,11 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("update RefreshToken t set t.revokedAt = :now where t.familyId = :familyId and t.revokedAt is null")
     int revokeFamily(@Param("familyId") String familyId, @Param("now") LocalDateTime now);
+
+    /**
+     * 계정의 모든 로그인에서 받은 토큰 중 폐기되지 않은 것을 모두 폐기한다. 비밀번호를 재설정할 때 쓴다(결정 0019).
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update RefreshToken t set t.revokedAt = :now where t.userId = :userId and t.revokedAt is null")
+    int revokeAllByUserId(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 }

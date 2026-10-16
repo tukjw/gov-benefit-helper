@@ -11,8 +11,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import kr.govbenefit.TestcontainersConfiguration;
+import kr.govbenefit.account.SignUpSteps;
 import kr.govbenefit.account.dto.LoginRequest;
 import kr.govbenefit.account.dto.SignUpRequest;
+import kr.govbenefit.account.mail.RecordingAccountMailSender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +34,19 @@ class RefreshTokenConcurrencyTest {
     @Autowired
     private AccountService accountService;
     @Autowired
+    private EmailVerificationService emailVerificationService;
+    @Autowired
+    private RecordingAccountMailSender mailSender;
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
         jdbcTemplate.update("DELETE FROM user_account");
-        accountService.signUp(new SignUpRequest("race@example.com", "correct-horse"));
+        jdbcTemplate.update("DELETE FROM email_verification");
+        mailSender.clear();
+        String ticket = SignUpSteps.verify(emailVerificationService, mailSender, "race@example.com");
+        accountService.signUp(new SignUpRequest("race@example.com", "correct-horse", ticket));
     }
 
     @Test
