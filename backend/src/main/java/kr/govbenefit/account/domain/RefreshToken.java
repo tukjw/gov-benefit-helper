@@ -31,7 +31,7 @@ public class RefreshToken {
     @Column(columnDefinition = "char(36)")
     private String familyId;
 
-    /** 원문의 SHA-256({@link RefreshTokenValues#hash}). 원문은 저장하지 않는다. */
+    /** 원문의 SHA-256({@link OpaqueTokens#hash}). 원문은 저장하지 않는다. */
     @Column(columnDefinition = "char(64)")
     private String tokenHash;
 

@@ -6,8 +6,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 import kr.govbenefit.account.config.RefreshTokenProperties;
+import kr.govbenefit.account.domain.OpaqueTokens;
 import kr.govbenefit.account.domain.RefreshToken;
-import kr.govbenefit.account.domain.RefreshTokenValues;
 import kr.govbenefit.account.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,10 +51,10 @@ public class RefreshTokenService {
      */
     @Transactional
     public Optional<Rotation> rotate(String rawToken) {
-        if (!RefreshTokenValues.isWellFormed(rawToken)) {
+        if (!OpaqueTokens.isWellFormed(rawToken)) {
             return Optional.empty();
         }
-        Optional<RefreshToken> found = refreshTokenRepository.findByTokenHash(RefreshTokenValues.hash(rawToken));
+        Optional<RefreshToken> found = refreshTokenRepository.findByTokenHash(OpaqueTokens.hash(rawToken));
         if (found.isEmpty()) {
             return Optional.empty();
         }
@@ -89,17 +89,17 @@ public class RefreshTokenService {
      */
     @Transactional
     public void revokeFamilyOf(String rawToken) {
-        if (!RefreshTokenValues.isWellFormed(rawToken)) {
+        if (!OpaqueTokens.isWellFormed(rawToken)) {
             return;
         }
-        refreshTokenRepository.findByTokenHash(RefreshTokenValues.hash(rawToken))
+        refreshTokenRepository.findByTokenHash(OpaqueTokens.hash(rawToken))
                 .ifPresent(token -> refreshTokenRepository.revokeFamily(token.getFamilyId(), now()));
     }
 
     private String issue(Long userId, String familyId, LocalDateTime now) {
-        String value = RefreshTokenValues.generate();
+        String value = OpaqueTokens.generate();
         refreshTokenRepository.save(
-                RefreshToken.issue(userId, familyId, RefreshTokenValues.hash(value), now, properties.ttl()));
+                RefreshToken.issue(userId, familyId, OpaqueTokens.hash(value), now, properties.ttl()));
         return value;
     }
 

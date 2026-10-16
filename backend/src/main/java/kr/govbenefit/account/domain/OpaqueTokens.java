@@ -9,15 +9,16 @@ import java.util.HexFormat;
 import java.util.regex.Pattern;
 
 /**
- * 리프레시 토큰 원문의 생성과 해시(결정 0017). 원문은 32바이트 난수의 base64url(패딩 없음, 43자)이다.
+ * 추측할 수 없는 일회용 값의 생성과 해시. 리프레시 토큰(결정 0017), 가입 티켓과 비밀번호 재설정 토큰(결정 0019)이 쓴다.
+ * 원문은 32바이트 난수의 base64url(패딩 없음, 43자)이다.
  */
-public final class RefreshTokenValues {
+public final class OpaqueTokens {
 
     private static final int RANDOM_BYTES = 32;
     private static final Pattern FORMAT = Pattern.compile("[A-Za-z0-9_-]{43}");
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private RefreshTokenValues() {
+    private OpaqueTokens() {
     }
 
     public static String generate() {
