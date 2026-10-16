@@ -16,6 +16,7 @@ import kr.govbenefit.account.mail.SignupCodeIssued;
 import kr.govbenefit.account.repository.EmailVerificationRepository;
 import kr.govbenefit.account.service.ConfirmOutcome.Confirmed;
 import kr.govbenefit.account.service.ConfirmOutcome.Rejected;
+import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
 import kr.govbenefit.common.api.RateLimitedException;
 import lombok.RequiredArgsConstructor;
@@ -93,6 +94,40 @@ public class EmailVerificationService {
             return new Rejected(ErrorCode.VERIFICATION_CODE_EXPIRED);
         }
         return new Confirmed(ticket, ticketExpiresAt);
+    }
+
+    /**
+     * 가입 티켓을 쓸 수 있는지 본다. 쓰지는 않는다({@link #useTicket}).
+     *
+     * @param email {@link Emails#normalize}로 바꾼 가입 이메일
+     * @throws BusinessException {@code EMAIL_NOT_VERIFIED}. 형식이 틀렸거나, 없거나, 쓴 적이 있거나, 만료됐거나,
+     *                           다른 이메일로 받은 티켓이다.
+     */
+    @Transactional
+    public EmailVerification checkTicket(String email, String verificationToken) {
+        if (!OpaqueTokens.isWellFormed(verificationToken)) {
+            throw notVerified();
+        }
+        LocalDateTime now = now();
+        return repository.findByTicketHash(OpaqueTokens.hash(verificationToken))
+                .filter(verification -> verification.isTicketUsableAt(now, email))
+                .orElseThrow(EmailVerificationService::notVerified);
+    }
+
+    /**
+     * 가입 티켓을 사용 표시한다. 같은 티켓의 동시 가입은 여기서 하나만 통과한다.
+     *
+     * @throws BusinessException {@code EMAIL_NOT_VERIFIED}. 확인한 뒤 다른 요청이 먼저 썼다.
+     */
+    @Transactional
+    public void useTicket(EmailVerification verification) {
+        if (repository.useTicket(verification.getId(), now()) == 0) {
+            throw notVerified();
+        }
+    }
+
+    private static BusinessException notVerified() {
+        return new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
     }
 
     /** DB 컬럼(DATETIME(6))에 맞춰 마이크로초로 자른다. MySQL은 넘치는 자리를 반올림한다. */

@@ -33,9 +33,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 이메일·비밀번호 가입, 로그인, 로그인 유지(재발급), 로그아웃(REQ-ACCOUNT-01, DEC-AUTH). 액세스 토큰 없이 호출한다.
+ * 가입은 이메일 인증으로 받은 가입 티켓이 있어야 한다(결정 0019).
  * 재발급과 로그아웃은 리프레시 토큰 쿠키로만 판단한다(결정 0017).
  */
-@Tag(name = "계정", description = "이메일·비밀번호 가입, 로그인, 로그인 유지, 로그아웃, 내 정보")
+@Tag(name = "계정", description = "이메일 인증, 이메일·비밀번호 가입, 로그인, 로그인 유지, 로그아웃, 비밀번호 재설정, 내 정보")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -49,11 +50,12 @@ public class AuthController {
     private final RefreshTokenCookies refreshTokenCookies;
 
     @Operation(summary = "가입", description = """
-            이메일과 비밀번호로 가입한다. 토큰은 주지 않으므로 이어서 로그인한다.
+            이메일 인증을 마친 이메일과 비밀번호로 가입한다. 토큰은 주지 않으므로 이어서 로그인한다.
 
+            - 먼저 가입 인증번호 요청·확인으로 받은 가입 티켓을 `verificationToken`에 넣는다. 확인한 이메일로만, 한 번만 쓸 수 있다.
             - 이메일은 대소문자를 구분하지 않는다. 대소문자만 다른 이메일도 이미 가입된 이메일이다.
             - 비밀번호는 8자 이상, UTF-8 72바이트 이하다(한글만 쓰면 24자).
-            - 입력 오류의 `errors`에서 비밀번호 항목의 `value`는 항상 `null`이다.""")
+            - 입력 오류의 `errors`에서 비밀번호와 티켓 항목의 `value`는 항상 `null`이다.""")
     @ApiResponse(responseCode = "201", description = "가입한 계정")
     @ApiResponse(responseCode = "400", description = "입력 값이 올바르지 않다. `code`는 `INVALID_INPUT`이고 항목별 이유는 `errors`에 있다.",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -61,6 +63,13 @@ public class AuthController {
                     examples = @ExampleObject(value = """
                             {"code": "INVALID_INPUT", "message": "요청 값이 올바르지 않습니다.",
                              "errors": [{"field": "password", "value": null, "reason": "8자 이상이어야 합니다."}]}""")))
+    @ApiResponse(responseCode = "403", description = """
+            가입 티켓을 쓸 수 없다. 만료(확인 후 30분)됐거나, 이미 썼거나, 다른 이메일로 받았다. `code`는 `EMAIL_NOT_VERIFIED`다. \
+            이메일 인증을 다시 한다.""",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ApiErrorResponse.class),
+                    examples = @ExampleObject(value = """
+                            {"code": "EMAIL_NOT_VERIFIED", "message": "이메일 인증을 마쳐야 가입할 수 있습니다.", "errors": []}""")))
     @ApiResponse(responseCode = "409", description = "이미 가입된 이메일이다. `code`는 `DUPLICATE_EMAIL`이다.",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApiErrorResponse.class),

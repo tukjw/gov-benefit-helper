@@ -11,6 +11,8 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import kr.govbenefit.TestcontainersConfiguration;
+import kr.govbenefit.account.SignUpSteps;
+import kr.govbenefit.account.mail.RecordingAccountMailSender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,10 +46,14 @@ class LoginApiTest {
     private JsonMapper jsonMapper;
     @Autowired
     private JwtDecoder jwtDecoder;
+    @Autowired
+    private RecordingAccountMailSender mailSender;
 
     @BeforeEach
     void setUp() throws Exception {
         jdbcTemplate.update("DELETE FROM user_account");
+        jdbcTemplate.update("DELETE FROM email_verification");
+        mailSender.clear();
         signUp("alice@example.com", "alice-password");
         signUp("bob@example.com", "bob-password");
     }
@@ -137,10 +143,7 @@ class LoginApiTest {
     }
 
     private void signUp(String email, String password) throws Exception {
-        mockMvc.perform(post("/api/auth/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(Map.of("email", email, "password", password))))
-                .andExpect(status().isCreated());
+        new SignUpSteps(mockMvc, jsonMapper, mailSender).signUp(email, password);
     }
 
     private ResultActions login(String email, String password) throws Exception {

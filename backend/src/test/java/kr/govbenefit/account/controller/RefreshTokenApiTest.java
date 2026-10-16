@@ -14,7 +14,9 @@ import java.util.List;
 import java.util.Map;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
+import kr.govbenefit.account.SignUpSteps;
 import kr.govbenefit.account.domain.OpaqueTokens;
+import kr.govbenefit.account.mail.RecordingAccountMailSender;
 import kr.govbenefit.common.security.AccessTokenIssuer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,17 +70,17 @@ class RefreshTokenApiTest {
     private MutableClock clock;
     @Autowired
     private AccessTokenIssuer accessTokenIssuer;
+    @Autowired
+    private RecordingAccountMailSender mailSender;
 
     @BeforeEach
     void setUp() throws Exception {
         clock.set(START);
         // 리프레시 토큰은 계정을 지우면 함께 지워진다(ON DELETE CASCADE).
         jdbcTemplate.update("DELETE FROM user_account");
-        mockMvc.perform(post("/api/auth/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(
-                                Map.of("email", "alice@example.com", "password", "alice-password"))))
-                .andExpect(status().isCreated());
+        jdbcTemplate.update("DELETE FROM email_verification");
+        mailSender.clear();
+        new SignUpSteps(mockMvc, jsonMapper, mailSender).signUp("alice@example.com", "alice-password");
     }
 
     @Test

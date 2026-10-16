@@ -164,13 +164,16 @@ class ApiDocsTest {
         assertThat(operation.path("security").isMissingNode()).isTrue();
         assertThat(operation.path("requestBody").path("content").path("application/json").path("schema").path("$ref")
                 .asString()).isEqualTo("#/components/schemas/SignUpRequest");
-        assertThat(texts(schema("SignUpRequest").path("required"))).containsExactlyInAnyOrder("email", "password");
+        assertThat(texts(schema("SignUpRequest").path("required")))
+                .containsExactlyInAnyOrder("email", "password", "verificationToken");
         assertThat(property("SignUpRequest", "password").path("description").asString()).contains("72바이트");
+        assertThat(property("SignUpRequest", "verificationToken").path("description").asString())
+                .contains("verificationToken");
 
         JsonNode responses = operation.path("responses");
-        assertThat(names(responses)).containsExactlyInAnyOrder("201", "400", "409", "500");
+        assertThat(names(responses)).containsExactlyInAnyOrder("201", "400", "403", "409", "500");
         assertThat(schemaRef(responses, "201")).isEqualTo("#/components/schemas/AccountResponse");
-        for (String code : List.of("400", "409", "500")) {
+        for (String code : List.of("400", "403", "409", "500")) {
             assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
         }
     }
