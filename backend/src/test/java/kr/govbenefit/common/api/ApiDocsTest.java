@@ -28,9 +28,9 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * local 프로필의 OpenAPI 명세와 문서 화면(결정 0012). 실제 application-local.yaml로 켜지는지 함께 확인한다.
- * 설명 문장은 리뷰로 확인하고, 여기서는 설명이 있는지만 본다.
+ * 설명 문장은 리뷰로 확인하고, 여기서는 설명이 있는지만 본다. 메일은 local의 로그 발송 대신 테스트의 가짜 발송만 쓴다(결정 0020).
  */
-@SpringBootTest
+@SpringBootTest(properties = "auth.mail.sender=test")
 @ActiveProfiles("local")
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)

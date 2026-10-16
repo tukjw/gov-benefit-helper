@@ -28,3 +28,6 @@ auth:
   # 로컬 프론트(Next.js 기본 포트)
   csrf:
     allowed-origins: http://localhost:3000
+  # 메일을 보내지 않고 인증번호와 재설정 링크를 로그로 남긴다(결정 0020).
+  mail:
+    sender: logging

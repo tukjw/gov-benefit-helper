@@ -61,3 +61,4 @@
 | [0016](0016-controller-response.md) | 컨트롤러 응답 방식 | 채택 | #40 |
 | [0017](0017-refresh-token.md) | 리프레시 토큰 저장·교체와 CSRF 방어 | 채택 | #45 |
 | [0018](0018-api-auth-boundary.md) | API 인증 경계 | 채택 | #45 |
+| [0020](0020-account-mail-sender.md) | 계정 메일 발송 구현 경계 | 채택 | #47 |
