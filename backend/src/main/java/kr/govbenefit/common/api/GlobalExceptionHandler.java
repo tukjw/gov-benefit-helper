@@ -22,18 +22,21 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final String TYPE_MISMATCH = "형식이 올바르지 않습니다.";
-    /** 입력 오류에 받은 값을 넣지 않는 항목. 비밀번호 원문이 응답에 나가지 않게 한다. */
-    private static final Set<String> SENSITIVE_FIELDS = Set.of("password");
+    /** 입력 오류에 받은 값을 넣지 않는 항목. 비밀번호 원문과 일회용 토큰이 응답에 나가지 않게 한다. */
+    private static final Set<String> SENSITIVE_FIELDS = Set.of("password", "newPassword", "token", "verificationToken");
 
     /**
      * 상태 코드는 오류 코드가 정한다. 토큰은 유효하지만 쓸 수 없는 경우(토큰 주인 없음)도 보안 필터의 401과 같이
-     * WWW-Authenticate를 붙인다(RFC 6750).
+     * WWW-Authenticate를 붙인다(RFC 6750). 요청 횟수 제한은 Retry-After를 붙인다(RFC 9110).
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiErrorResponse> handleBusiness(BusinessException ex) {
         ResponseEntity.BodyBuilder response = ResponseEntity.status(ex.status());
         if (ex.code() == ErrorCode.UNAUTHENTICATED) {
             response.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer error=\"invalid_token\"");
+        }
+        if (ex instanceof RateLimitedException rateLimited) {
+            response.header(HttpHeaders.RETRY_AFTER, String.valueOf(rateLimited.retryAfterSeconds()));
         }
         return response.body(ApiErrorResponse.of(ex.code(), ex.errors()));
     }
