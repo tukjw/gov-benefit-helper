@@ -65,3 +65,14 @@ auth:
   # 재발급 요청에 Origin 헤더가 있으면 이 목록에 있어야 한다(결정 0017). 프론트 주소다(DEC-APP).
   csrf:
     allowed-origins: https://govbenefit.kr
+  # 가입 전 이메일 인증(결정 0019). 인증번호는 max-attempts번까지 비교하고, 맞히면 ticket-ttl 동안 쓸 가입 티켓을 준다.
+  email-verification:
+    code-ttl: 10m
+    max-attempts: 5
+    ticket-ttl: 30m
+  # 인증·재설정 메일 발송 제한(결정 0019). 같은 이메일에 cooldown 간격, 최근 window 안에 max-per-window번까지 보낸다.
+  # sender는 발송 구현이다(결정 0020). 지정하지 않으면 구현이 없어 기동에 실패한다. local만 logging을 쓴다.
+  mail:
+    cooldown: 60s
+    window: 24h
+    max-per-window: 10

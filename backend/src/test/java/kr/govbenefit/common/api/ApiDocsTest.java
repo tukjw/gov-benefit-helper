@@ -176,6 +176,46 @@ class ApiDocsTest {
     }
 
     @Test
+    void 인증번호_요청_API는_본문_없이_응답하고_발송_제한을_알린다() {
+        JsonNode operation = spec.path("paths").path("/api/auth/email-verification").path("post");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(requestRef(operation)).isEqualTo("#/components/schemas/EmailVerificationRequest");
+        assertThat(texts(schema("EmailVerificationRequest").path("required"))).containsExactly("email");
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("204", "400", "429", "500");
+        assertThat(responses.path("204").path("content").isMissingNode()).isTrue();
+        assertThat(responses.path("429").path("headers").has("Retry-After")).isTrue();
+        for (String code : List.of("400", "429", "500")) {
+            assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
+        }
+    }
+
+    @Test
+    void 인증번호_확인_API는_가입_티켓을_준다() {
+        JsonNode operation = spec.path("paths").path("/api/auth/email-verification/confirm").path("post");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(requestRef(operation)).isEqualTo("#/components/schemas/EmailVerificationConfirmRequest");
+        assertThat(texts(schema("EmailVerificationConfirmRequest").path("required")))
+                .containsExactlyInAnyOrder("email", "code");
+        assertThat(property("EmailVerificationConfirmRequest", "code").path("pattern").asString())
+                .isEqualTo("\\d{6}");
+        assertThat(operation.path("description").asString())
+                .contains("VERIFICATION_CODE_MISMATCH", "VERIFICATION_CODE_EXPIRED", "VERIFICATION_ATTEMPTS_EXCEEDED");
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("200", "400", "500");
+        assertThat(schemaRef(responses, "200")).isEqualTo("#/components/schemas/EmailVerificationConfirmResponse");
+        assertThat(names(schema("EmailVerificationConfirmResponse").path("properties")))
+                .containsExactlyInAnyOrder("verificationToken", "expiresAt");
+        for (String code : List.of("400", "500")) {
+            assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
+        }
+    }
+
+    @Test
     void 로그인_API의_요청과_응답() {
         JsonNode operation = spec.path("paths").path("/api/auth/login").path("post");
 
@@ -273,7 +313,8 @@ class ApiDocsTest {
                 new String[] {"BenefitDetailResponse", "lastSeenAt"},
                 new String[] {"Freshness", "referenceAt"},
                 new String[] {"AccountResponse", "createdAt"},
-                new String[] {"LoginResponse", "expiresAt"});
+                new String[] {"LoginResponse", "expiresAt"},
+                new String[] {"EmailVerificationConfirmResponse", "expiresAt"});
         times.forEach(target -> {
             JsonNode time = property(target[0], target[1]);
             assertThat(time.path("type").asString()).as("%s.%s", target[0], target[1]).isEqualTo("string");
@@ -301,6 +342,11 @@ class ApiDocsTest {
             }
         }
         throw new AssertionError("파라미터가 없다: " + name);
+    }
+
+    private static String requestRef(JsonNode operation) {
+        return operation.path("requestBody").path("content").path("application/json").path("schema").path("$ref")
+                .asString();
     }
 
     private static String schemaRef(JsonNode responses, String code) {
