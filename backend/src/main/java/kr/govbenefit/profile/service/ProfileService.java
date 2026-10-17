@@ -3,19 +3,28 @@ package kr.govbenefit.profile.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import kr.govbenefit.account.repository.UserAccountRepository;
 import kr.govbenefit.common.api.ApiTimes;
 import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
 import kr.govbenefit.profile.domain.Ages;
+import kr.govbenefit.profile.domain.HouseholdAttribute;
+import kr.govbenefit.profile.domain.LifeAttribute;
 import kr.govbenefit.profile.domain.ProfileValues;
 import kr.govbenefit.profile.domain.UserProfile;
+import kr.govbenefit.profile.dto.ProfileOptionsResponse;
+import kr.govbenefit.profile.dto.ProfileOptionsResponse.AttributeOption;
+import kr.govbenefit.profile.dto.ProfileOptionsResponse.SidoOption;
 import kr.govbenefit.profile.dto.ProfileRequest;
 import kr.govbenefit.profile.dto.ProfileResponse;
 import kr.govbenefit.profile.dto.RegionResponse;
 import kr.govbenefit.profile.repository.UserProfileRepository;
+import kr.govbenefit.region.domain.Region;
 import kr.govbenefit.region.repository.RegionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -61,6 +70,23 @@ public class ProfileService {
         profile.replace(values, now);
         userProfileRepository.flush();
         return toResponse(profile);
+    }
+
+    /**
+     * 지역 전체(243행)를 한 번 읽어 시도 아래에 시군구를 묶는다. 순서는 시드의 표시 순서다.
+     */
+    @Transactional(readOnly = true)
+    public ProfileOptionsResponse options() {
+        List<Region> regions = regionRepository.findAllByOrderByDisplayOrderAsc();
+        Map<String, List<RegionResponse>> sigungus = new HashMap<>();
+        regions.stream().filter(region -> !region.isSido()).forEach(sigungu -> sigungus
+                .computeIfAbsent(sigungu.getParentCode(), code -> new ArrayList<>()).add(RegionResponse.from(sigungu)));
+        List<SidoOption> options = regions.stream().filter(Region::isSido)
+                .map(sido -> new SidoOption(sido.getCode(), sido.getName(),
+                        List.copyOf(sigungus.getOrDefault(sido.getCode(), List.of()))))
+                .toList();
+        return new ProfileOptionsResponse(options, AttributeOption.of(LifeAttribute.class),
+                AttributeOption.of(HouseholdAttribute.class));
     }
 
     private ProfileResponse toResponse(UserProfile profile) {

@@ -268,7 +268,8 @@ class ProfileApiTest {
     void 인증되지_않은_요청은_거절한다() throws Exception {
         for (ResultActions result : List.of(
                 mockMvc.perform(get("/api/me/profile")),
-                mockMvc.perform(put("/api/me/profile").contentType(MediaType.APPLICATION_JSON).content("{}")))) {
+                mockMvc.perform(put("/api/me/profile").contentType(MediaType.APPLICATION_JSON).content("{}")),
+                mockMvc.perform(get("/api/me/profile/options")))) {
             JsonNode body = json(result.andExpect(status().isUnauthorized()));
             assertThat(body.get("code").asString()).isEqualTo("UNAUTHENTICATED");
         }
@@ -356,6 +357,45 @@ class ProfileApiTest {
         assertThat(json(mockMvc.perform(put("/api/me/profile").header(HttpHeaders.AUTHORIZATION, token)
                 .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized())).get("code").asString()).isEqualTo("UNAUTHENTICATED");
+    }
+
+    @Test
+    void 선택지는_시도별_시군구와_속성의_값과_이름이다() throws Exception {
+        JsonNode body = json(mockMvc.perform(get("/api/me/profile/options").header(HttpHeaders.AUTHORIZATION,
+                "Bearer " + accessTokenIssuer.issue(aliceId).value())).andExpect(status().isOk()));
+
+        JsonNode sidos = body.get("sidos");
+        assertThat(sidos).hasSize(16);
+        assertThat(sidos.get(0).get("name").asString()).isEqualTo("서울특별시");
+        assertThat(sidos.get(15).get("name").asString()).isEqualTo("제주특별자치도");
+        assertThat(sidos.get(0).get("sigungus")).hasSize(25);
+        assertThat(sidos.get(0).get("sigungus").get(0).get("code").asString()).isEqualTo("3000000");
+        assertThat(sidos.get(0).get("sigungus").get(0).get("name").asString()).isEqualTo("종로구");
+        int sigunguCount = 0;
+        for (JsonNode sido : sidos) {
+            sigunguCount += sido.get("sigungus").size();
+            if (List.of(SEJONG, "6500000").contains(sido.get("code").asString())) {
+                assertThat(sido.get("sigungus").isEmpty()).isTrue();
+            }
+        }
+        assertThat(sigunguCount).isEqualTo(227);
+
+        JsonNode life = body.get("lifeAttributes");
+        assertThat(life).hasSize(17);
+        assertThat(life.get(16).get("value").asString()).isEqualTo("NONE");
+        assertThat(life.get(16).get("label").asString()).isEqualTo("해당사항없음");
+        assertThat(life.get(1).get("value").asString()).isEqualTo("PREGNANT");
+        assertThat(life.get(1).get("label").asString()).isEqualTo("임산부");
+        JsonNode household = body.get("householdAttributes");
+        assertThat(household).hasSize(9);
+        assertThat(household.get(8).get("value").asString()).isEqualTo("NONE");
+
+        // 선택지에서 고른 값으로 저장된다.
+        JsonNode sido = sidos.get(12);
+        putProfile(aliceId, body("sidoCode", sido.get("code").asString(),
+                "sigunguCode", sido.get("sigungus").get(0).get("code").asString(),
+                "lifeAttributes", List.of(life.get(0).get("value").asString()),
+                "householdAttributes", List.of(household.get(0).get("value").asString()))).andExpect(status().isOk());
     }
 
     private void assertRejected(Map<String, Object> request, String field) throws Exception {
