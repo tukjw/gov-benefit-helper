@@ -66,7 +66,7 @@
 - `backend/src/main/java/kr/govbenefit/common/api/ErrorCode.java`: 코드 목록과 응답 상태 코드, Spring MVC 예외의 상태 코드 대응
 - `backend/src/main/java/kr/govbenefit/common/api/GlobalExceptionHandler.java`: Spring MVC 예외, 입력 검증 실패, `BusinessException`을 이 형식으로 바꾼다
 - `backend/src/main/java/kr/govbenefit/common/api/BusinessException.java`: 응답 오류 코드가 정해진 실패. 오류 코드만 받는다. #38에서 `ApiException`으로 추가, #39에서 이름을 바꾸고 상태 코드 인자 제거
-- `backend/src/main/java/kr/govbenefit/common/api/InvalidInputException.java`: Bean Validation 제약으로 표현하지 않은 입력 검증. `BusinessException`의 하위 클래스(#39)
+- `backend/src/main/java/kr/govbenefit/common/api/InvalidInputException.java`: Bean Validation 제약으로 표현하지 않은 입력 검증. `BusinessException`의 하위 클래스(#39). 여러 항목의 오류를 한 번에 담을 수 있다(#49)
 - `backend/src/main/java/kr/govbenefit/common/api/RateLimitedException.java`: 요청 횟수 제한. `GlobalExceptionHandler`가 `Retry-After` 헤더를 붙인다. `BusinessException`의 하위 클래스. #47에서 추가([0019](0019-email-verification-password-reset.md))
 - `backend/src/main/java/kr/govbenefit/common/security/ApiAuthenticationEntryPoint.java`: 보안 필터에서 거절한 요청(401·404)을 이 형식으로 쓴다. 상태 코드는 `ErrorCode`를 따른다. #38에서 추가([0015](0015-api-auth-boundary.md))
 - `backend/src/main/java/kr/govbenefit/common/security/CsrfOriginInterceptor.java`: 재발급 요청의 CSRF 방어 실패를 `BusinessException(CSRF_REJECTED)`로 던진다. 인터셉터의 예외도 `GlobalExceptionHandler`가 이 형식으로 바꾼다. #45에서 추가([0017](0017-refresh-token.md))
