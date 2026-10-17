@@ -63,3 +63,5 @@
 | [0018](0018-api-auth-boundary.md) | API 인증 경계 | 채택 | #45 |
 | [0019](0019-email-verification-password-reset.md) | 가입 전 이메일 인증과 비밀번호 재설정 | 채택 | #47 |
 | [0020](0020-account-mail-sender.md) | 계정 메일 발송 구현 경계 | 채택 | #47 |
+| [0021](0021-residence-region-code.md) | 거주 지역 코드 | 채택 | #49 |
+| [0022](0022-profile-attributes.md) | 프로필 속성 값과 미입력 표현 | 채택 | #49 |
