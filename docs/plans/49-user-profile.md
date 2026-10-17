@@ -199,7 +199,8 @@ status: in-progress
 
      두 enum에 `static Optional<…> fromJaCode(String)`을 둔다.
      - 구현 중 변경: 두지 않는다. `UserProfile`이 enum 값을 선언 순서로 돌며 코드가 저장돼 있는지 보면 되므로 코드로 값을 찾을 일이 없다.
-   - 구현 중 추가: 두 enum의 공통 모양(`jaCode`, `label`, `isNone`)을 인터페이스 `ProfileAttribute`로 둔다. 검증·선택지·엔티티가 두 그룹을 같은 코드로 다룬다.
+   - 구현 중 추가: 두 enum의 공통 모양(`jaCode`, `label`)을 인터페이스 `ProfileAttribute`로 둔다. 선택지 응답이 두 그룹을 같은 코드로 만든다.
+   - 구현 중 변경: `ProfileValidator`는 속성을 문자열 단계에서 검사하고(허용 값 목록, 중복, `NONE` 조합), 통과한 뒤에만 enum으로 바꾼다. 제네릭 공통 메서드와 enum 변환을 한 메서드에서 하던 방식이 과해 바꿨다. `null` 원소는 지원하지 않는 값과 같은 문구로 거절한다.
    - `Ages.fullAge(LocalDate birthDate, LocalDate today)`(설계 7).
    - `UserProfile`(엔티티): 컬럼은 V9와 같고 속성은 `@ElementCollection` `Set<String> conditionCodes`(`@CollectionTable(name = "user_profile_attribute")`). `static create(Long userId, LocalDateTime now)`, `replace(ProfileValues values, LocalDateTime now)`, `Set<LifeAttribute> lifeAttributes()`·`Set<HouseholdAttribute> householdAttributes()`(그룹에 행이 없으면 `null`).
      - 구현 중 변경: 두 메서드는 제네릭 공통 메서드 없이 각각 선언 순서의 `List`를 돌려준다. 그룹이 둘뿐이라 세 줄 중복이 추상화보다 읽기 쉽다. 응답이 선언 순서라 서비스에서 다시 정렬하지 않는다.

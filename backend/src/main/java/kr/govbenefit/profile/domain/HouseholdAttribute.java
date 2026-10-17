@@ -32,9 +32,4 @@ public enum HouseholdAttribute implements ProfileAttribute {
     public String label() {
         return label;
     }
-
-    @Override
-    public boolean isNone() {
-        return this == NONE;
-    }
 }

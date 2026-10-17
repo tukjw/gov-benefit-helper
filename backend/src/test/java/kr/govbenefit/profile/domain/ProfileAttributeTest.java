@@ -35,10 +35,7 @@ class ProfileAttributeTest {
     }
 
     @Test
-    void 해당사항없음만_NONE이고_선언_순서의_마지막이다() {
-        assertThat(Arrays.stream(LifeAttribute.values()).filter(ProfileAttribute::isNone)).containsExactly(LifeAttribute.NONE);
-        assertThat(Arrays.stream(HouseholdAttribute.values()).filter(ProfileAttribute::isNone))
-                .containsExactly(HouseholdAttribute.NONE);
+    void NONE은_선언_순서의_마지막이다() {
         assertThat(LifeAttribute.values()[LifeAttribute.values().length - 1]).isEqualTo(LifeAttribute.NONE);
         assertThat(HouseholdAttribute.values()[HouseholdAttribute.values().length - 1]).isEqualTo(HouseholdAttribute.NONE);
     }

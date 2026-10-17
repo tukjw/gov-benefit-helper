@@ -6,17 +6,18 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
-import java.util.EnumSet;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import kr.govbenefit.common.api.ApiErrorResponse.InputError;
 import kr.govbenefit.common.api.InvalidInputException;
 import kr.govbenefit.profile.domain.Ages;
 import kr.govbenefit.profile.domain.Gender;
 import kr.govbenefit.profile.domain.HouseholdAttribute;
 import kr.govbenefit.profile.domain.LifeAttribute;
-import kr.govbenefit.profile.domain.ProfileAttribute;
 import kr.govbenefit.profile.domain.ProfileValues;
 import kr.govbenefit.profile.dto.ProfileRequest;
 import kr.govbenefit.region.domain.Region;
@@ -34,6 +35,10 @@ public class ProfileValidator {
     /** 지원조건 연령 코드의 상한과 같다. */
     static final int MAX_AGE = 120;
 
+    private static final List<String> LIFE_VALUES = Arrays.stream(LifeAttribute.values()).map(Enum::name).toList();
+    private static final List<String> HOUSEHOLD_VALUES =
+            Arrays.stream(HouseholdAttribute.values()).map(Enum::name).toList();
+
     private static final DateTimeFormatter BIRTH_DATE = DateTimeFormatter.ofPattern("uuuu-MM-dd")
             .withResolverStyle(ResolverStyle.STRICT);
 
@@ -49,12 +54,15 @@ public class ProfileValidator {
         Gender gender = gender(request.gender(), errors);
         Region sido = sido(request.sidoCode(), errors);
         Region sigungu = sigungu(request.sigunguCode(), request.sidoCode(), sido, errors);
-        Set<LifeAttribute> life = attributes("lifeAttributes", request.lifeAttributes(), LifeAttribute.class, errors);
-        Set<HouseholdAttribute> household = attributes("householdAttributes", request.householdAttributes(),
-                HouseholdAttribute.class, errors);
+        checkAttributes("lifeAttributes", request.lifeAttributes(), LIFE_VALUES, errors);
+        checkAttributes("householdAttributes", request.householdAttributes(), HOUSEHOLD_VALUES, errors);
         if (!errors.isEmpty()) {
             throw new InvalidInputException(errors);
         }
+        Set<LifeAttribute> life = request.lifeAttributes() == null ? null
+                : request.lifeAttributes().stream().map(LifeAttribute::valueOf).collect(Collectors.toSet());
+        Set<HouseholdAttribute> household = request.householdAttributes() == null ? null
+                : request.householdAttributes().stream().map(HouseholdAttribute::valueOf).collect(Collectors.toSet());
         return new ProfileValues(birthDate, gender, code(sido), code(sigungu), life, household);
     }
 
@@ -128,43 +136,27 @@ public class ProfileValidator {
     /**
      * null은 미입력, NONE 하나는 해당 없음이다. 빈 배열은 둘 중 무엇인지 알 수 없어 거절한다(결정 0022).
      */
-    private static <E extends Enum<E> & ProfileAttribute> Set<E> attributes(
-            String field, List<String> values, Class<E> type, List<InputError> errors) {
+    private static void checkAttributes(String field, List<String> values, List<String> allowed,
+                                        List<InputError> errors) {
         if (values == null) {
-            return null;
+            return;
         }
         if (values.isEmpty()) {
             errors.add(new InputError(field, "", "미입력이면 null, 해당 없음이면 [\"NONE\"]을 보내야 합니다."));
-            return null;
+            return;
         }
-        int errorCount = errors.size();
-        Set<E> attributes = EnumSet.noneOf(type);
+        Set<String> seen = new HashSet<>();
         for (String value : values) {
-            if (value == null) {
-                errors.add(new InputError(field, null, "빈 값은 보낼 수 없습니다."));
-                continue;
-            }
-            Optional<E> attribute = parse(type, value);
-            if (attribute.isEmpty()) {
+            if (value == null || !allowed.contains(value)) {
                 errors.add(new InputError(field, value, "지원하지 않는 값입니다."));
-            } else if (!attributes.add(attribute.get())) {
+            } else if (!seen.add(value)) {
                 errors.add(new InputError(field, value, "같은 값을 두 번 보낼 수 없습니다."));
             }
         }
-        if (attributes.size() > 1 && attributes.stream().anyMatch(ProfileAttribute::isNone)) {
+        if (seen.contains("NONE") && seen.size() > 1) {
             errors.add(new InputError(field, String.join(",", values),
                     "해당 없음(NONE)은 다른 값과 함께 고를 수 없습니다."));
         }
-        return errors.size() == errorCount ? attributes : null;
-    }
-
-    private static <E extends Enum<E>> Optional<E> parse(Class<E> type, String value) {
-        for (E constant : type.getEnumConstants()) {
-            if (constant.name().equals(value)) {
-                return Optional.of(constant);
-            }
-        }
-        return Optional.empty();
     }
 
     private static String code(Region region) {

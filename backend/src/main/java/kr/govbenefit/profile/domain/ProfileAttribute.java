@@ -12,7 +12,4 @@ public interface ProfileAttribute {
 
     /** 사람이 읽는 이름 */
     String label();
-
-    /** 해당사항없음 여부 */
-    boolean isNone();
 }
