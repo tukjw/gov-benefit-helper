@@ -44,14 +44,6 @@ class ProfileAttributeTest {
     }
 
     @Test
-    void 코드로_값을_찾고_다른_그룹의_코드는_찾지_않는다() {
-        assertThat(LifeAttribute.fromJaCode("JA0302")).contains(LifeAttribute.PREGNANT);
-        assertThat(LifeAttribute.fromJaCode("JA0404")).isEmpty();
-        assertThat(HouseholdAttribute.fromJaCode("JA0404")).contains(HouseholdAttribute.SINGLE_PERSON_HOUSEHOLD);
-        assertThat(HouseholdAttribute.fromJaCode("JA0302")).isEmpty();
-    }
-
-    @Test
     void 두_그룹의_코드는_겹치지_않는다() {
         long distinct = Stream.concat(Arrays.stream(LifeAttribute.values()), Arrays.stream(HouseholdAttribute.values()))
                 .map(ProfileAttribute::jaCode).distinct().count();

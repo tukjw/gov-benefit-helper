@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import kr.govbenefit.account.repository.UserAccountRepository;
 import kr.govbenefit.common.api.ApiTimes;
 import kr.govbenefit.common.api.BusinessException;
@@ -93,16 +92,11 @@ public class ProfileService {
         LocalDate birthDate = profile.getBirthDate();
         Integer age = birthDate == null ? null : Ages.fullAge(birthDate, LocalDate.now(clock));
         return new ProfileResponse(birthDate, age, profile.getGender(), region(profile.getSidoCode()),
-                region(profile.getSigunguCode()), sorted(profile.lifeAttributes()),
-                sorted(profile.householdAttributes()), ApiTimes.toOffset(profile.getUpdatedAt()));
+                region(profile.getSigunguCode()), profile.lifeAttributes(), profile.householdAttributes(),
+                ApiTimes.toOffset(profile.getUpdatedAt()));
     }
 
     private RegionResponse region(String code) {
         return code == null ? null : regionRepository.findById(code).map(RegionResponse::from).orElseThrow();
-    }
-
-    /** EnumSet은 선언 순서다. */
-    private static <E extends Enum<E>> List<E> sorted(Set<E> attributes) {
-        return attributes == null ? null : List.copyOf(attributes);
     }
 }

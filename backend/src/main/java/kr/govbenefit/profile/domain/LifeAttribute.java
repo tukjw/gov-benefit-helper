@@ -1,8 +1,5 @@
 package kr.govbenefit.profile.domain;
 
-import java.util.Arrays;
-import java.util.Optional;
-
 /**
  * 생애·직업·건강 속성(결정 0022). 값마다 지원조건 코드(JA03xx)를 가지며 저장은 코드로 한다. 이름은 공식 명세의 설명이다.
  * {@link #NONE}은 해당사항없음이고 다른 값과 함께 고를 수 없다.
@@ -47,9 +44,5 @@ public enum LifeAttribute implements ProfileAttribute {
     @Override
     public boolean isNone() {
         return this == NONE;
-    }
-
-    public static Optional<LifeAttribute> fromJaCode(String jaCode) {
-        return Arrays.stream(values()).filter(value -> value.jaCode.equals(jaCode)).findFirst();
     }
 }

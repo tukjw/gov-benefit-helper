@@ -11,11 +11,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.EnumSet;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -85,19 +84,19 @@ public class UserProfile {
         updatedAt = now;
     }
 
-    /** 생애·직업·건강 속성. 미입력이면 null이다. */
-    public Set<LifeAttribute> lifeAttributes() {
-        return attributes(LifeAttribute.class, LifeAttribute::fromJaCode);
+    /** 생애·직업·건강 속성. 선언 순서이며 미입력이면 null이다. */
+    public List<LifeAttribute> lifeAttributes() {
+        List<LifeAttribute> attributes = Arrays.stream(LifeAttribute.values())
+                .filter(attribute -> conditionCodes.contains(attribute.jaCode()))
+                .toList();
+        return attributes.isEmpty() ? null : attributes;
     }
 
-    /** 가구 속성. 미입력이면 null이다. */
-    public Set<HouseholdAttribute> householdAttributes() {
-        return attributes(HouseholdAttribute.class, HouseholdAttribute::fromJaCode);
-    }
-
-    private <E extends Enum<E>> Set<E> attributes(Class<E> type, Function<String, Optional<E>> fromJaCode) {
-        Set<E> attributes = EnumSet.noneOf(type);
-        conditionCodes.forEach(code -> fromJaCode.apply(code).ifPresent(attributes::add));
+    /** 가구 속성. 선언 순서이며 미입력이면 null이다. */
+    public List<HouseholdAttribute> householdAttributes() {
+        List<HouseholdAttribute> attributes = Arrays.stream(HouseholdAttribute.values())
+                .filter(attribute -> conditionCodes.contains(attribute.jaCode()))
+                .toList();
         return attributes.isEmpty() ? null : attributes;
     }
 }
