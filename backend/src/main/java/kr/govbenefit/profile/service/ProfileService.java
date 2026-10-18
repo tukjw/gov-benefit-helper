@@ -67,7 +67,6 @@ public class ProfileService {
         UserProfile profile = userProfileRepository.findById(userId)
                 .orElseGet(() -> userProfileRepository.save(UserProfile.create(userId, now)));
         profile.replace(values, now);
-        userProfileRepository.flush();
         return toResponse(profile);
     }
 
