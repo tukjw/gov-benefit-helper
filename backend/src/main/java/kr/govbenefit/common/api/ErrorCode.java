@@ -26,6 +26,8 @@ public enum ErrorCode {
     EMAIL_NOT_VERIFIED(HttpStatus.FORBIDDEN, "이메일 인증을 마쳐야 가입할 수 있습니다."),
     /** 재설정 토큰이 없거나, 형식이 틀렸거나, 만료·사용됐거나, 다시 요청해 무효가 됐다. 원인은 나누지 않는다(결정 0019). */
     INVALID_RESET_TOKEN(HttpStatus.BAD_REQUEST, "비밀번호 재설정 링크가 유효하지 않습니다. 재설정을 다시 요청해 주세요."),
+    /** 탈퇴할 때 다시 입력한 비밀번호가 틀렸다. 고쳐서 다시 보내면 된다. 토큰 만료로 오해하지 않게 401을 쓰지 않는다. */
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "비밀번호가 맞지 않습니다."),
     /** 요청 횟수 제한. 다시 시도할 수 있는 시각까지의 초를 Retry-After 헤더로 준다({@link RateLimitedException}). */
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청이 너무 많습니다. 잠시 뒤 다시 시도해 주세요."),
     /** 5xx 전체. 상태 코드가 하나로 정해지지 않는다. */

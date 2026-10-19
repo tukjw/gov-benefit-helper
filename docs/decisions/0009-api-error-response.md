@@ -37,6 +37,7 @@
   | `VERIFICATION_ATTEMPTS_EXCEEDED` | 400 | 가입 인증번호를 비교한 횟수(5번)를 다 썼다. 맞는 번호도 거절한다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
   | `EMAIL_NOT_VERIFIED` | 403 | 가입 티켓이 없거나, 만료·사용됐거나, 다른 이메일로 받은 것이다. 원인은 나누지 않는다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
   | `INVALID_RESET_TOKEN` | 400 | 비밀번호 재설정 토큰이 없거나, 형식이 틀렸거나, 만료·사용됐거나, 다시 요청해 무효가 됐다. 원인은 나누지 않는다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
+  | `PASSWORD_MISMATCH` | 400 | 탈퇴할 때 다시 입력한 비밀번호가 틀렸다. 토큰 만료로 오해하지 않게 401을 쓰지 않는다(`DEC-AUTH`). #51에서 추가 |
   | `TOO_MANY_REQUESTS` | 429 | 요청 횟수 제한. `Retry-After` 헤더로 다시 시도할 수 있을 때까지의 초를 준다. 지금은 가입 인증번호 요청에서만 나간다([0019](0019-email-verification-password-reset.md)). #47에서 추가 |
   | `INTERNAL_ERROR` | 5xx | 서버에서 처리하지 못했다 |
   | `REQUEST_FAILED` | 그 밖의 상태 | 위에 해당하지 않는 실패(405 등). 상태 코드로 원인을 구분한다 |

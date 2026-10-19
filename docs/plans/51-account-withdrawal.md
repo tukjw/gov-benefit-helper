@@ -70,6 +70,7 @@ status: in-progress
 
 1. **오류 코드** `common.api.ErrorCode`
    - `PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "비밀번호가 맞지 않습니다.")`. 주석: 탈퇴할 때 다시 입력한 비밀번호가 틀렸다. 같은 요청을 고쳐 보내면 된다.
+   - 구현 중 추가: `ApiErrorResponse.code`의 설명과 `allowableValues`에도 넣는다. `ApiDocsTest`가 이 목록이 `ErrorCode`와 같은지 확인한다.
 2. **DTO** `account.dto.WithdrawalRequest(String password)`
    - `@NotEmpty(message = "비밀번호를 입력해야 합니다.")`. 길이 규칙은 검사하지 않는다(맞지 않으면 불일치, `LoginRequest`와 같다).
    - `toString()`은 `WithdrawalRequest[password=****]`.
