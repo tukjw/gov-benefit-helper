@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.List;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.collection.Gov24StubServer;
+import kr.govbenefit.profile.domain.HouseholdAttribute;
+import kr.govbenefit.profile.domain.LifeAttribute;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -315,6 +317,42 @@ class ApiDocsTest {
     }
 
     @Test
+    void 프로필_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
+        JsonNode get = spec.path("paths").path("/api/me/profile").path("get");
+        JsonNode put = spec.path("paths").path("/api/me/profile").path("put");
+        JsonNode options = spec.path("paths").path("/api/me/profile/options").path("get");
+
+        for (JsonNode operation : List.of(get, put, options)) {
+            assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
+            assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
+            assertThat(schemaRef(operation.path("responses"), "401")).isEqualTo(ERROR_REF);
+        }
+        assertThat(names(get.path("responses"))).containsExactlyInAnyOrder("200", "401", "500");
+        assertThat(names(options.path("responses"))).containsExactlyInAnyOrder("200", "401", "500");
+        assertThat(names(put.path("responses"))).containsExactlyInAnyOrder("200", "400", "401", "500");
+        assertThat(schemaRef(get.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileResponse");
+        assertThat(schemaRef(put.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileResponse");
+        assertThat(schemaRef(put.path("responses"), "400")).isEqualTo(ERROR_REF);
+        assertThat(schemaRef(options.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileOptionsResponse");
+        assertThat(requestRef(put)).isEqualTo("#/components/schemas/ProfileRequest");
+    }
+
+    @Test
+    void 프로필_요청은_범위_안의_항목만_받고_허용_값을_알린다() {
+        assertThat(names(schema("ProfileRequest").path("properties"))).containsExactlyInAnyOrder("birthDate", "gender",
+                "sidoCode", "sigunguCode", "lifeAttributes", "householdAttributes");
+        assertThat(texts(property("ProfileRequest", "gender").path("enum"))).containsExactly("MALE", "FEMALE");
+        assertThat(texts(property("ProfileRequest", "lifeAttributes").path("items").path("enum")))
+                .containsExactlyElementsOf(Arrays.stream(LifeAttribute.values()).map(Enum::name).toList());
+        assertThat(texts(property("ProfileRequest", "householdAttributes").path("items").path("enum")))
+                .containsExactlyElementsOf(Arrays.stream(HouseholdAttribute.values()).map(Enum::name).toList());
+        assertThat(names(schema("ProfileResponse").path("properties"))).containsExactlyInAnyOrder("birthDate", "age",
+                "gender", "sido", "sigungu", "lifeAttributes", "householdAttributes", "updatedAt");
+        assertThat(names(schema("ProfileOptionsResponse").path("properties")))
+                .containsExactlyInAnyOrder("sidos", "lifeAttributes", "householdAttributes");
+    }
+
+    @Test
     void 액세스_토큰_인증_방식이_명세에_있다() {
         JsonNode bearer = spec.path("components").path("securitySchemes").path("bearerAuth");
 
@@ -347,7 +385,8 @@ class ApiDocsTest {
                 new String[] {"Freshness", "referenceAt"},
                 new String[] {"AccountResponse", "createdAt"},
                 new String[] {"LoginResponse", "expiresAt"},
-                new String[] {"EmailVerificationConfirmResponse", "expiresAt"});
+                new String[] {"EmailVerificationConfirmResponse", "expiresAt"},
+                new String[] {"ProfileResponse", "updatedAt"});
         times.forEach(target -> {
             JsonNode time = property(target[0], target[1]);
             assertThat(time.path("type").asString()).as("%s.%s", target[0], target[1]).isEqualTo("string");

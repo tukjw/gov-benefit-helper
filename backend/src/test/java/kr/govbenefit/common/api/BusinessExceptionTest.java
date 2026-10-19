@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
+import java.util.List;
 import kr.govbenefit.common.api.ApiErrorResponse.InputError;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,6 +33,24 @@ class BusinessExceptionTest {
         assertThat(ex.code()).isEqualTo(ErrorCode.INVALID_INPUT);
         assertThat(ex.status()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(ex.errors()).containsExactly(new InputError("keyword", "가 나", "단어가 많습니다."));
+    }
+
+    @Test
+    void 입력_오류는_여러_항목을_순서대로_싣는다() {
+        InputError gender = new InputError("gender", "OTHER", "MALE 또는 FEMALE이어야 합니다.");
+        InputError sido = new InputError("sidoCode", "9999999", "지원하지 않는 시도 코드입니다.");
+
+        InvalidInputException ex = new InvalidInputException(List.of(gender, sido));
+
+        assertThat(ex.status()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.errors()).containsExactly(gender, sido);
+        assertThat(ex.getMessage()).isEqualTo(
+                "INVALID_INPUT: gender: MALE 또는 FEMALE이어야 합니다., sidoCode: 지원하지 않는 시도 코드입니다.");
+    }
+
+    @Test
+    void 항목_오류가_없는_입력_오류는_만들_수_없다() {
+        assertThatThrownBy(() -> new InvalidInputException(List.of())).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
