@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #49 로그인한 사용자의 최소 프로필 저장·조회·수정 제공
 
