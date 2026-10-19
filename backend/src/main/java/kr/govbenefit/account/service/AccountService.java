@@ -15,14 +15,16 @@ import kr.govbenefit.account.repository.UserAccountRepository;
 import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
 import kr.govbenefit.common.security.AccessTokenIssuer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 가입·로그인·로그인 유지·로그아웃·내 정보(REQ-ACCOUNT-01, DEC-AUTH). 가입은 이메일 인증을 마친 뒤에만 한다(결정 0019).
+ * 가입·로그인·로그인 유지·로그아웃·내 정보·탈퇴(REQ-ACCOUNT-01, DEC-AUTH). 가입은 이메일 인증을 마친 뒤에만 한다(결정 0019).
  */
+@Slf4j
 @Service
 public class AccountService {
 
@@ -121,6 +123,24 @@ public class AccountService {
         return userAccountRepository.findById(userId)
                 .map(AccountResponse::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
+    }
+
+    /**
+     * 비밀번호를 다시 확인하고 계정을 지운다. 프로필·리프레시 토큰·재설정 토큰은 FK {@code ON DELETE CASCADE}로 함께
+     * 지워진다. 계정 행을 잠가 같은 사용자의 프로필 저장·탈퇴와 순서를 정한다. 이미 없는 계정이면(탈퇴 뒤 남은 토큰)
+     * 인증되지 않은 요청이다. 비밀번호 비교는 로그인과 같다(결정 0013).
+     *
+     * <p>한계: 탈퇴가 커밋되는 순간 같은 사용자의 로그인·재발급이 리프레시 토큰을 저장하면 FK 위반으로 실패한다.
+     */
+    @Transactional
+    public void withdraw(Long userId, String password) {
+        UserAccount account = userAccountRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
+        if (!PasswordRule.isWithinMaxBytes(password) || !passwordEncoder.matches(password, account.getPasswordHash())) {
+            throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
+        }
+        userAccountRepository.delete(account);
+        log.info("계정을 탈퇴했습니다. userId={}", userId);
     }
 
     static boolean isEmailUniqueViolation(DataIntegrityViolationException ex) {
