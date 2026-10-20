@@ -70,6 +70,7 @@ class BenefitSearchApiTest {
     @BeforeEach
     void setUp() {
         stub.reset();
+        jdbcTemplate.update("DELETE FROM bookmark");
         jdbcTemplate.update("DELETE FROM benefit_detail");
         jdbcTemplate.update("DELETE FROM benefit");
         // 같은 이름 5건. 서비스 ID를 저장 순서와 다르게 섞는다.
