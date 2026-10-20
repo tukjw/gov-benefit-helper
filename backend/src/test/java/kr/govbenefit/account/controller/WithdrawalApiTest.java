@@ -10,6 +10,7 @@ import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,11 @@ import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
 import kr.govbenefit.account.mail.RecordingAccountMailSender;
+import kr.govbenefit.benefit.domain.ApplyPeriodRule;
+import kr.govbenefit.benefit.domain.Benefit;
+import kr.govbenefit.benefit.domain.BenefitContent;
+import kr.govbenefit.benefit.domain.BenefitNormalization;
+import kr.govbenefit.benefit.repository.BenefitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +43,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 탈퇴(REQ-ACCOUNT-01, DEC-AUTH). 비밀번호를 다시 확인하고 계정을 지우면 프로필·토큰이 FK로 함께 지워진다.
+ * 탈퇴(REQ-ACCOUNT-01, DEC-AUTH). 비밀번호를 다시 확인하고 계정을 지우면 프로필·북마크·토큰이 FK로 함께 지워진다.
  * 같은 이메일을 다시 인증하려면 발송 간격이 지나야 하므로 고정한 시계로 옮긴다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
@@ -46,6 +52,7 @@ import tools.jackson.databind.json.JsonMapper;
 class WithdrawalApiTest {
 
     private static final Instant START = Instant.parse("2026-10-19T01:00:00Z");
+    private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
     private static final Duration COOLDOWN = Duration.ofSeconds(60);
     private static final String ALICE = "alice@example.com";
     private static final String BOB = "bob@example.com";
@@ -53,7 +60,8 @@ class WithdrawalApiTest {
     private static final String COOKIE = "refresh_token";
     /** 사용자 데이터가 있는 테이블. 모두 user_id로 계정을 가리킨다. */
     private static final List<String> USER_TABLES = List.of(
-            "user_profile", "user_profile_attribute", "refresh_token", "password_reset_token");
+            "user_profile", "user_profile_attribute", "refresh_token", "password_reset_token", "bookmark");
+    private static final String BENEFIT_ID = "WITHDRAWAL-BENEFIT";
 
     @TestConfiguration(proxyBeanMethods = false)
     static class FixedClockConfig {
@@ -75,6 +83,8 @@ class WithdrawalApiTest {
     private MutableClock clock;
     @Autowired
     private RecordingAccountMailSender mailSender;
+    @Autowired
+    private BenefitRepository benefitRepository;
 
     private SignUpSteps signUpSteps;
 
@@ -83,6 +93,10 @@ class WithdrawalApiTest {
         clock.set(START);
         jdbcTemplate.update("DELETE FROM user_account");
         jdbcTemplate.update("DELETE FROM email_verification");
+        jdbcTemplate.update("DELETE FROM benefit WHERE service_id = ?", BENEFIT_ID);
+        benefitRepository.save(Benefit.create(BENEFIT_ID, new BenefitContent("탈퇴 테스트 혜택", null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null),
+                new BenefitNormalization(null, null, ApplyPeriodRule.ALWAYS), LocalDateTime.ofInstant(START, ZONE)));
         mailSender.clear();
         signUpSteps = new SignUpSteps(mockMvc, jsonMapper, mailSender);
     }
@@ -100,10 +114,11 @@ class WithdrawalApiTest {
     }
 
     @Test
-    void 탈퇴하면_계정과_프로필_속성_토큰이_남지_않는다() throws Exception {
+    void 탈퇴하면_계정과_프로필_속성_북마크_토큰이_남지_않는다() throws Exception {
         Session alice = signUpAndLogin(ALICE, PASSWORD);
         Long aliceId = userId(ALICE);
         saveProfile(alice.accessToken()).andExpect(status().isOk());
+        saveBookmark(alice.accessToken()).andExpect(status().isNoContent());
         requestPasswordReset(ALICE).andExpect(status().isNoContent());
         for (String table : USER_TABLES) {
             assertThat(count(table, aliceId)).as(table).isPositive();
@@ -199,6 +214,7 @@ class WithdrawalApiTest {
         Session bob = signUpAndLogin(BOB, PASSWORD);
         Long bobId = userId(BOB);
         saveProfile(bob.accessToken()).andExpect(status().isOk());
+        saveBookmark(bob.accessToken()).andExpect(status().isNoContent());
         requestPasswordReset(BOB).andExpect(status().isNoContent());
 
         // 본문에 다른 사용자의 ID를 넣어도 토큰 주인만 탈퇴한다(결정 0018).
@@ -247,6 +263,10 @@ class WithdrawalApiTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"birthDate": "1995-03-01", "sidoCode": "6110000", "lifeAttributes": ["EMPLOYEE"]}"""));
+    }
+
+    private ResultActions saveBookmark(String accessToken) throws Exception {
+        return mockMvc.perform(put("/api/me/bookmarks/" + BENEFIT_ID).header(HttpHeaders.AUTHORIZATION, accessToken));
     }
 
     private ResultActions requestPasswordReset(String email) throws Exception {
