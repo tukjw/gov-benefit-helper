@@ -317,6 +317,25 @@ class ApiDocsTest {
     }
 
     @Test
+    void 탈퇴_API는_액세스_토큰과_비밀번호만_받고_쿠키를_지운다() {
+        JsonNode operation = spec.path("paths").path("/api/me/withdrawal").path("post");
+
+        assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
+        assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(requestRef(operation)).isEqualTo("#/components/schemas/WithdrawalRequest");
+        assertThat(names(schema("WithdrawalRequest").path("properties"))).containsExactly("password");
+        assertThat(texts(schema("WithdrawalRequest").path("required"))).containsExactly("password");
+
+        JsonNode responses = operation.path("responses");
+        assertThat(names(responses)).containsExactlyInAnyOrder("204", "400", "401", "500");
+        assertThat(responses.path("204").path("content").isMissingNode()).isTrue();
+        assertThat(responses.path("204").path("headers").has("Set-Cookie")).isTrue();
+        for (String code : List.of("400", "401", "500")) {
+            assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
+        }
+    }
+
+    @Test
     void 프로필_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
         JsonNode get = spec.path("paths").path("/api/me/profile").path("get");
         JsonNode put = spec.path("paths").path("/api/me/profile").path("put");

@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 가입은 이메일 인증으로 받은 가입 티켓이 있어야 한다(결정 0019).
  * 재발급과 로그아웃은 리프레시 토큰 쿠키로만 판단한다(결정 0017).
  */
-@Tag(name = "계정", description = "이메일 인증, 이메일·비밀번호 가입, 로그인, 로그인 유지, 로그아웃, 비밀번호 재설정, 내 정보")
+@Tag(name = "계정", description = "이메일 인증, 이메일·비밀번호 가입, 로그인, 로그인 유지, 로그아웃, 비밀번호 재설정, 내 정보, 탈퇴")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
