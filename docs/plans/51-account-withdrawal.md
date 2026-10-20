@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #51 로그인한 사용자의 회원 탈퇴 제공
 
