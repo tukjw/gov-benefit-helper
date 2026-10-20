@@ -372,6 +372,38 @@ class ApiDocsTest {
     }
 
     @Test
+    void 북마크_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
+        JsonNode save = spec.path("paths").path("/api/me/bookmarks/{serviceId}").path("put");
+        JsonNode remove = spec.path("paths").path("/api/me/bookmarks/{serviceId}").path("delete");
+        JsonNode list = spec.path("paths").path("/api/me/bookmarks").path("get");
+
+        for (JsonNode operation : List.of(save, remove, list)) {
+            assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
+            assertThat(names(operation.path("parameters"))).doesNotContain("userId");
+            assertThat(operation.has("requestBody")).isFalse();
+            assertThat(schemaRef(operation.path("responses"), "401")).isEqualTo(ERROR_REF);
+        }
+        for (JsonNode operation : List.of(save, remove)) {
+            JsonNode serviceId = parameter(operation.path("parameters"), "serviceId");
+            assertThat(serviceId.path("in").asString()).isEqualTo("path");
+            assertThat(serviceId.path("schema").path("type").asString()).isEqualTo("string");
+            assertThat(operation.path("responses").path("204").path("content").isMissingNode()).isTrue();
+        }
+        assertThat(names(save.path("responses"))).containsExactlyInAnyOrder("204", "401", "404", "500");
+        assertThat(schemaRef(save.path("responses"), "404")).isEqualTo(ERROR_REF);
+        assertThat(names(remove.path("responses"))).containsExactlyInAnyOrder("204", "401", "500");
+
+        assertThat(names(list.path("parameters"))).containsExactly("page", "size");
+        assertThat(parameter(list.path("parameters"), "size").path("schema").path("maximum").asInt()).isEqualTo(100);
+        assertThat(names(list.path("responses"))).containsExactlyInAnyOrder("200", "400", "401", "500");
+        assertThat(schemaRef(list.path("responses"), "200")).isEqualTo("#/components/schemas/BookmarkListResponse");
+        assertThat(schemaRef(list.path("responses"), "400")).isEqualTo(ERROR_REF);
+        assertThat(names(schema("BookmarkListResponse").path("properties")))
+                .containsExactlyInAnyOrder("totalCount", "page", "size", "items");
+        assertThat(names(schema("BookmarkItem").path("properties"))).containsExactlyInAnyOrder("bookmarkedAt", "benefit");
+    }
+
+    @Test
     void 액세스_토큰_인증_방식이_명세에_있다() {
         JsonNode bearer = spec.path("components").path("securitySchemes").path("bearerAuth");
 
@@ -405,7 +437,8 @@ class ApiDocsTest {
                 new String[] {"AccountResponse", "createdAt"},
                 new String[] {"LoginResponse", "expiresAt"},
                 new String[] {"EmailVerificationConfirmResponse", "expiresAt"},
-                new String[] {"ProfileResponse", "updatedAt"});
+                new String[] {"ProfileResponse", "updatedAt"},
+                new String[] {"BookmarkItem", "bookmarkedAt"});
         times.forEach(target -> {
             JsonNode time = property(target[0], target[1]);
             assertThat(time.path("type").asString()).as("%s.%s", target[0], target[1]).isEqualTo("string");
