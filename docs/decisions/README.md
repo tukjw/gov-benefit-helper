@@ -65,3 +65,4 @@
 | [0020](0020-account-mail-sender.md) | 계정 메일 발송 구현 경계 | 채택 | #47 |
 | [0021](0021-residence-region-code.md) | 거주 지역 코드 | 채택 | #49 |
 | [0022](0022-profile-attributes.md) | 프로필 속성 값과 미입력 표현 | 채택 | #49 |
+| [0023](0023-bookmark-benefit-reference.md) | 북마크의 혜택 참조 | 채택 | #56 |
