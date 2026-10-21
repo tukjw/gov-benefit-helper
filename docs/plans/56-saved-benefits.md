@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #56 로그인한 사용자의 관심 혜택 저장·해제·목록 조회 제공
 
