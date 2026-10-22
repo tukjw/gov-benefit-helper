@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #58 혜택 상세에서 내 프로필과 지원조건 비교 결과 제공
 
