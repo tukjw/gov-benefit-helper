@@ -404,6 +404,29 @@ class ApiDocsTest {
     }
 
     @Test
+    void 조건_비교_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
+        JsonNode match = spec.path("paths").path("/api/me/matches/{serviceId}").path("get");
+
+        assertThat(match.path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(names(match.path("parameters"))).containsExactly("serviceId");
+        assertThat(parameter(match.path("parameters"), "serviceId").path("in").asString()).isEqualTo("path");
+        assertThat(match.has("requestBody")).isFalse();
+        assertThat(names(match.path("responses"))).containsExactlyInAnyOrder("200", "401", "404", "500");
+        assertThat(schemaRef(match.path("responses"), "200")).isEqualTo("#/components/schemas/MatchResponse");
+        assertThat(schemaRef(match.path("responses"), "401")).isEqualTo(ERROR_REF);
+        assertThat(schemaRef(match.path("responses"), "404")).isEqualTo(ERROR_REF);
+        assertThat(names(schema("MatchResponse").path("properties"))).containsExactlyInAnyOrder("serviceId", "name",
+                "result", "judgedOn", "notices", "uncomparedConditions", "items", "source");
+        assertThat(texts(property("MatchResponse", "result").path("enum")))
+                .containsExactly("MATCH", "NEEDS_CHECK", "MISMATCH");
+        assertThat(names(schema("MatchItems").path("properties"))).containsExactlyInAnyOrder("personalTarget", "age",
+                "gender", "lifeAttributes", "householdAttributes");
+        assertThat(names(schema("MatchSource").path("properties")))
+                .containsExactlyInAnyOrder("target", "selectionCriteria", "guideUrl");
+        assertThat(schema("MatchResponse").path("description").asString()).contains("신청 가능 확정이 아니다");
+    }
+
+    @Test
     void 액세스_토큰_인증_방식이_명세에_있다() {
         JsonNode bearer = spec.path("components").path("securitySchemes").path("bearerAuth");
 
