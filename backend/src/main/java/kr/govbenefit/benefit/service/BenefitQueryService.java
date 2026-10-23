@@ -33,8 +33,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BenefitQueryService {
 
-    /** 이름순, 동률은 서비스 ID 순(DEC-SEARCH). 서비스 ID가 유일하므로 순서가 하나로 정해진다. */
-    private static final Sort SEARCH_ORDER = Sort.by(Sort.Order.asc("name"), Sort.Order.asc("serviceId"));
+    /**
+     * 이름순, 동률은 서비스 ID 순(DEC-SEARCH). 서비스 ID가 유일하므로 순서가 하나로 정해진다.
+     * 조건 비교 목록도 같은 결과 안에서 이 순서를 쓴다(DEC-MATCH).
+     */
+    public static final Sort SEARCH_ORDER = Sort.by(Sort.Order.asc("name"), Sort.Order.asc("serviceId"));
 
     /** 목록을 갱신한 실행의 상태(결정 0007). FAILED는 갱신이 없는 실행이다. */
     private static final List<CollectionStatus> LIST_UPDATED = List.of(CollectionStatus.SUCCEEDED,
