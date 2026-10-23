@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #59 조건 비교 결과 순으로 혜택 목록 제공
 
