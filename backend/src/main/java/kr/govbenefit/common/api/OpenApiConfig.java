@@ -35,7 +35,7 @@ public class OpenApiConfig {
             - 로그인하면 리프레시 토큰을 `refresh_token` 쿠키(HttpOnly)로 준다. 액세스 토큰이 만료되면 재발급 API로 새 액세스 토큰을 받고, 로그아웃 API로 리프레시 토큰을 폐기한다. 리프레시 토큰은 14일 동안 쓰지 않으면 만료된다(결정 0017).
             - 프로필은 생년월일·거주 시도·시군구·성별·생애·가구 속성이며 모두 선택 입력이다. `PUT /api/me/profile`은 본문 전체로 바꾸고, 빠진 필드와 `null`은 미입력이다. 속성의 `["NONE"]`은 해당 없음이다. 지역 코드(행정표준기관코드)와 속성 값은 `GET /api/me/profile/options`에서 고른다(결정 0021·0022).
             - 북마크는 서비스 ID로 저장(`PUT /api/me/bookmarks/{serviceId}`)·해제(`DELETE`)하고, 둘 다 다시 보내도 결과가 같다. 목록(`GET /api/me/bookmarks`)은 마지막으로 저장한 순서이고 혜택의 현재 정보를 보여준다.
-            - 조건 비교(`GET /api/me/matches/{serviceId}`)는 프로필과 혜택의 지원조건 코드를 비교한 결과이며 신청 가능 확정이 아니다. 결과가 `NEEDS_CHECK`이면 함께 주는 원문과 공식 링크로 확인한다(DEC-MATCH).
+            - 조건 비교(`GET /api/me/matches/{serviceId}`)는 프로필과 혜택의 지원조건 코드를 비교한 결과이며 신청 가능 확정이 아니다. 결과가 `NEEDS_CHECK`이면 함께 주는 원문과 공식 링크로 확인한다(DEC-MATCH). 목록(`GET /api/me/matches`)은 `MATCH` → `NEEDS_CHECK` 순이고 개인 대상이 아닌 혜택은 나오지 않는다.
             - 탈퇴(`POST /api/me/withdrawal`)는 비밀번호를 다시 받고 계정·프로필·북마크·토큰을 즉시 지운다. 되돌릴 수 없고, 같은 이메일로 다시 가입하면 새 사용자다.
             - 성공 응답은 데이터를 그대로 보낸다. 실패할 때만 HTTP 상태 코드와 `ApiErrorResponse` 본문(`code`, `message`, `errors`)을 보낸다(결정 0009). 분기는 `code`로 한다.
             - 시각은 `+09:00` 오프셋을 붙인 ISO-8601 문자열이다. 예: `2026-10-04T04:00:12.345+09:00`(결정 0010).

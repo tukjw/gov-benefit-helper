@@ -8,12 +8,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import kr.govbenefit.common.api.ApiErrorResponse;
 import kr.govbenefit.common.api.OpenApiConfig;
 import kr.govbenefit.common.security.CurrentUserId;
+import kr.govbenefit.match.dto.MatchListRequest;
+import kr.govbenefit.match.dto.MatchListResponse;
 import kr.govbenefit.match.dto.MatchResponse;
 import kr.govbenefit.match.service.MatchService;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +40,33 @@ public class MatchController {
             {"code": "UNAUTHENTICATED", "message": "인증이 필요합니다.", "errors": []}""";
 
     private final MatchService matchService;
+
+    @Operation(summary = "조건 비교 결과 순 혜택 목록", description = """
+            내 프로필로 비교한 결과가 `MATCH`인 혜택, 그다음 `NEEDS_CHECK`인 혜택 순으로 돌려준다(DEC-MATCH). \
+            같은 결과 안에서는 이름순이고 이름이 같으면 서비스 ID 순이며, 혜택 검색의 이름순과 같다.
+
+            - 개인 대상이 아닌 혜택(`MISMATCH`)은 목록에 없다. 혜택 검색으로는 찾을 수 있다.
+            - `NEEDS_CHECK`인 혜택도 숨기지 않는다. 프로필을 입력하지 않았으면 개인 대상 혜택이 모두 `NEEDS_CHECK`다.
+            - 항목의 판정은 같은 혜택의 조건 비교(`GET /api/me/matches/{serviceId}`)와 같다. 비교한 값과 원문은 그 API로 본다.
+            - 프로필은 요청할 때의 값으로 비교하므로, 수정하면 다음 요청에 바로 반영된다.
+            - 마지막 쪽을 넘은 번호는 오류가 아니라 `items`가 빈 배열인 200이다.""",
+            security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @ApiResponse(responseCode = "200", description = "조건 비교 결과 순 혜택 목록")
+    @ApiResponse(responseCode = "400", description = "요청 값이 범위를 벗어났다. `code`는 `INVALID_INPUT`이고 항목별 이유는 `errors`에 있다.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ApiErrorResponse.class),
+                    examples = @ExampleObject(value = """
+                            {"code": "INVALID_INPUT", "message": "요청 값이 올바르지 않습니다.",
+                             "errors": [{"field": "size", "value": "200", "reason": "1 이상 100 이하여야 합니다."}]}""")))
+    @ApiResponse(responseCode = "401", description = UNAUTHENTICATED,
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ApiErrorResponse.class),
+                    examples = @ExampleObject(value = UNAUTHENTICATED_EXAMPLE)))
+    @GetMapping
+    public ResponseEntity<MatchListResponse> list(@CurrentUserId Long userId,
+                                                  @ParameterObject @Valid MatchListRequest request) {
+        return ResponseEntity.ok(matchService.list(userId, request.page(), request.size()));
+    }
 
     @Operation(summary = "혜택 하나의 조건 비교", description = """
             개인 대상 여부·연령·성별·생애·가구 속성을 비교한다(DEC-MATCH). 소득 등 그 밖의 조건은 비교하지 않는다.
