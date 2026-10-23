@@ -66,3 +66,4 @@
 | [0021](0021-residence-region-code.md) | 거주 지역 코드 | 채택 | #49 |
 | [0022](0022-profile-attributes.md) | 프로필 속성 값과 미입력 표현 | 채택 | #49 |
 | [0023](0023-bookmark-benefit-reference.md) | 북마크의 혜택 참조 | 채택 | #56 |
+| [0024](0024-frontend-package-and-ci.md) | 프론트엔드 패키지 관리와 PR 검사 구조 | 채택 | #64 |
