@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SourceRecordRepository extends JpaRepository<SourceRecord, Long> {
 
+    List<SourceRecord> findAllByEndpoint(SourceEndpoint endpoint);
+
     List<SourceRecord> findAllByEndpointAndServiceIdIn(SourceEndpoint endpoint, Collection<String> serviceIds);
 
     Optional<SourceRecord> findByServiceIdAndEndpoint(String serviceId, SourceEndpoint endpoint);
