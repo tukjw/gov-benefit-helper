@@ -30,6 +30,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MatchController {
 
+    private static final String UNAUTHENTICATED = """
+            토큰이 없거나, 형식이 틀렸거나, 위조·만료됐거나, 토큰 주인의 계정이 없다. `code`는 `UNAUTHENTICATED`다.""";
+    private static final String UNAUTHENTICATED_EXAMPLE = """
+            {"code": "UNAUTHENTICATED", "message": "인증이 필요합니다.", "errors": []}""";
+
     private final MatchService matchService;
 
     @Operation(summary = "혜택 하나의 조건 비교", description = """
@@ -40,12 +45,10 @@ public class MatchController {
             - 프로필은 요청할 때의 값으로 비교하므로, 수정하면 다음 요청에 바로 반영된다.""",
             security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     @ApiResponse(responseCode = "200", description = "비교 결과")
-    @ApiResponse(responseCode = "401", description = """
-            토큰이 없거나, 형식이 틀렸거나, 위조·만료됐거나, 토큰 주인의 계정이 없다. `code`는 `UNAUTHENTICATED`다.""",
+    @ApiResponse(responseCode = "401", description = UNAUTHENTICATED,
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApiErrorResponse.class),
-                    examples = @ExampleObject(value = """
-                            {"code": "UNAUTHENTICATED", "message": "인증이 필요합니다.", "errors": []}""")))
+                    examples = @ExampleObject(value = UNAUTHENTICATED_EXAMPLE)))
     @ApiResponse(responseCode = "404", description = "수집되지 않은 서비스 ID다. `code`는 `NOT_FOUND`다.",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApiErrorResponse.class),

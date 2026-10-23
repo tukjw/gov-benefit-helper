@@ -6,6 +6,7 @@ import kr.govbenefit.account.repository.UserAccountRepository;
 import kr.govbenefit.benefit.domain.Benefit;
 import kr.govbenefit.benefit.repository.BenefitRepository;
 import kr.govbenefit.collection.domain.SourceEndpoint;
+import kr.govbenefit.collection.domain.SourceRecord;
 import kr.govbenefit.collection.repository.SourceRecordRepository;
 import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
@@ -41,18 +42,30 @@ public class MatchService {
      * @throws BusinessException 계정이 없다({@code UNAUTHENTICATED}). 수집되지 않은 서비스 ID다({@code NOT_FOUND}).
      */
     public MatchResponse match(Long userId, String serviceId) {
-        if (!userAccountRepository.existsById(userId)) {
-            throw new BusinessException(ErrorCode.UNAUTHENTICATED);
-        }
+        requireAccount(userId);
         Benefit benefit = benefitRepository.findByServiceId(serviceId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "혜택이 없습니다. serviceId=" + serviceId));
         LocalDate today = LocalDate.now(clock);
-        MatchSubject subject = MatchSubject.of(userProfileRepository.findById(userId).orElse(null), today);
+        MatchSubject subject = subject(userId, today);
         SupportConditions conditions = sourceRecordRepository
                 .findByServiceIdAndEndpoint(serviceId, SourceEndpoint.SUPPORT_CONDITIONS)
-                .map(record -> SupportConditions.parse(jsonMapper.readTree(record.getPayload())))
+                .map(this::parse)
                 .orElse(null);
         return MatchResponse.of(benefit, conditions, subject,
                 ConditionMatcher.match(subject, conditions, benefit.getUserType()), today);
+    }
+
+    private void requireAccount(Long userId) {
+        if (!userAccountRepository.existsById(userId)) {
+            throw new BusinessException(ErrorCode.UNAUTHENTICATED);
+        }
+    }
+
+    private MatchSubject subject(Long userId, LocalDate today) {
+        return MatchSubject.of(userProfileRepository.findById(userId).orElse(null), today);
+    }
+
+    private SupportConditions parse(SourceRecord record) {
+        return SupportConditions.parse(jsonMapper.readTree(record.getPayload()));
     }
 }
