@@ -5,6 +5,7 @@
 ## 저장소 구성
 
 - `backend/`: Spring Boot API. 도메인별 레이어드 패키지 구조 (`kr.govbenefit.<도메인>.{controller,service,repository,domain,dto}`). Gradle 명령은 `backend/`에서 실행합니다.
+- `frontend/`: Next.js 웹(App Router, TypeScript). npm 명령은 `frontend/`에서 실행하고, Node 버전은 `frontend/.nvmrc`를 따릅니다.
 - `docs/product/`: 서비스 기획, 요구사항(`REQ-*`), 외부 데이터, 개발 순서와 미정 사항(`DEC-*`). 문서 안내는 `docs/README.md`에 있습니다. 기능 범위나 동작을 판단할 때 먼저 확인합니다.
 - `docs/plans/`: 이슈별 구현 플랜. 파일명은 `<이슈번호>-<브랜치 슬러그>.md`.
 - `scripts/`: 저장소 보조 스크립트.
@@ -16,6 +17,7 @@
 - `docker compose -f docker-compose.local.yml up -d`로 MySQL을 띄우고, `backend/`에서 `SPRING_PROFILES_ACTIVE=local ./gradlew bootRun`으로 실행합니다.
 - API 문서 화면은 `local` 프로필로 실행했을 때만 `http://localhost:8080/swagger-ui.html`에서 열립니다.
 - `local` 프로필의 DB 계정 기본값은 로컬 compose가 만드는 계정과 같으므로 `.env` 없이 실행됩니다. 값을 바꿀 때만 루트 `.env`(compose)와 `backend/.env`(앱)를 `.env.example`에서 복사해 씁니다.
+- 프론트는 `frontend/`에서 `npm ci` 후 `npm run dev`로 실행하면 `http://localhost:3000`에서 열립니다. API 주소(`NEXT_PUBLIC_API_BASE_URL`)는 `.env.development`의 로컬 기본값을 쓰고, 바꿀 때만 `frontend/.env.example`을 `frontend/.env.local`로 복사해 씁니다.
 
 ## 플랜 기반 작업 규칙
 
@@ -29,7 +31,8 @@
 ## 검증
 
 - Java: `backend/`에서 `./gradlew test`가 통과해야 합니다.
-- `develop`·`main` 대상 PR은 CI(`.github/workflows/ci.yml`)의 `test` 체크가 통과해야 머지할 수 있습니다. 건너뛴 테스트가 있어도 실패합니다. 보호 규칙은 `.github/rulesets/`에 있고 관리자도 우회할 수 없습니다.
+- 프론트: `frontend/`에서 `npm run lint`, `npm run typecheck`, `npm run build`가 통과해야 합니다. 의존성을 바꾸면 `package-lock.json`을 함께 커밋합니다.
+- `develop`·`main` 대상 PR은 CI(`.github/workflows/ci.yml`)의 `test`와 `frontend` 체크가 통과해야 머지할 수 있습니다. `test`는 건너뛴 테스트가 있어도 실패합니다. `frontend`는 프론트 검사 결과를 모은 체크로, `frontend/`나 `ci.yml`을 바꾸지 않은 PR에서는 검사 없이 통과합니다. 보호 규칙은 `.github/rulesets/`에 있고 관리자도 우회할 수 없습니다.
 - 테스트는 Testcontainers로 실제 MySQL을 띄우므로 Docker가 필요합니다. Docker가 없으면 skip하지 않고 실패로 둡니다.
 - MySQL 전용 동작과 Flyway 마이그레이션은 H2 같은 대체 DB가 아니라 Testcontainers MySQL로 검증합니다.
 - 새 테스트는 외부 서비스에 의존하지 않아야 합니다. 외부 HTTP는 fake나 로컬 stub 서버로 대체합니다. 실제 외부 API에 요청하는 테스트가 필요하면 기본 `./gradlew test`에 포함되지 않도록 분리합니다.
