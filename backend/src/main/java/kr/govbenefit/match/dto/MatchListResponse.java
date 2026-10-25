@@ -38,6 +38,7 @@ public record MatchListResponse(
                 모든 항목에 함께 보여줄 안내.
                 - `CODE_BASED`: 원문이 아니라 지원조건 코드로 비교한 결과다.
                 - `GROUP_RULE_INTERPRETED`: 그룹 안은 OR, 그룹 사이는 AND로 해석했다. 검증된 관계가 아니다.
+                - `AGENCY_REGION_BASED`: 지역 항목은 거주 요건이 아니라 운영 기관 소재지로 비교했다.
                 - `NOT_FINAL`: 신청 가능 확정이 아니다.""") List<MatchNotice> notices,
         @Schema(description = "비교하지 않은 조건. 모든 항목에 같은 고정 목록이다.") List<UncomparedCondition> uncomparedConditions,
         @Schema(description = "이 쪽의 항목. 마지막 쪽을 넘으면 빈 배열이다.") List<MatchListItem> items) {
@@ -66,7 +67,8 @@ public record MatchListResponse(
                     MatchItemResult.from(outcome.age()),
                     MatchItemResult.from(outcome.gender()),
                     MatchItemResult.from(outcome.lifeAttributes()),
-                    MatchItemResult.from(outcome.householdAttributes())));
+                    MatchItemResult.from(outcome.householdAttributes()),
+                    MatchItemResult.from(outcome.agencyRegion())));
         }
     }
 
@@ -78,7 +80,9 @@ public record MatchListResponse(
             @Schema(description = "연령") MatchItemResult age,
             @Schema(description = "성별") MatchItemResult gender,
             @Schema(description = "생애·직업·건강 속성") MatchItemResult lifeAttributes,
-            @Schema(description = "가구 속성") MatchItemResult householdAttributes) {
+            @Schema(description = "가구 속성") MatchItemResult householdAttributes,
+            @Schema(description = "운영 기관 지역. 거주 요건이 아니라 운영 기관 소재지로 비교한다.")
+            MatchItemResult agencyRegion) {
     }
 
     @Schema(description = "비교 항목 하나의 판정과 이유")

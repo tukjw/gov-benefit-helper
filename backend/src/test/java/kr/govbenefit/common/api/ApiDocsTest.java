@@ -438,7 +438,11 @@ class ApiDocsTest {
         assertThat(texts(property("MatchResponse", "result").path("enum")))
                 .containsExactly("MATCH", "NEEDS_CHECK", "MISMATCH");
         assertThat(names(schema("MatchItems").path("properties"))).containsExactlyInAnyOrder("personalTarget", "age",
-                "gender", "lifeAttributes", "householdAttributes");
+                "gender", "lifeAttributes", "householdAttributes", "agencyRegion");
+        assertThat(names(schema("AgencyRegionItem").path("properties"))).containsExactlyInAnyOrder("status",
+                "reason", "agencyType", "agencyRegion", "profileRegion");
+        assertThat(names(schema("RegionValue").path("properties"))).containsExactlyInAnyOrder("sido", "sigungu");
+        assertThat(schema("AgencyRegionItem").path("description").asString()).contains("거주 요건이 아니라");
         assertThat(names(schema("MatchSource").path("properties")))
                 .containsExactlyInAnyOrder("target", "selectionCriteria", "guideUrl");
         assertThat(schema("MatchResponse").path("description").asString()).contains("신청 가능 확정이 아니다");
@@ -460,7 +464,7 @@ class ApiDocsTest {
         assertThat(names(schema("MatchListItem").path("properties")))
                 .containsExactlyInAnyOrder("benefit", "result", "items");
         assertThat(names(schema("MatchItemResults").path("properties"))).containsExactlyInAnyOrder("personalTarget",
-                "age", "gender", "lifeAttributes", "householdAttributes");
+                "age", "gender", "lifeAttributes", "householdAttributes", "agencyRegion");
         assertThat(names(schema("MatchItemResult").path("properties"))).containsExactlyInAnyOrder("status", "reason");
         assertThat(schema("MatchListResponse").path("description").asString()).contains("신청 가능 확정이 아니다");
     }

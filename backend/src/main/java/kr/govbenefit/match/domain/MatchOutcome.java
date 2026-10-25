@@ -9,5 +9,6 @@ public record MatchOutcome(
         ItemJudgement age,
         ItemJudgement gender,
         ItemJudgement lifeAttributes,
-        ItemJudgement householdAttributes) {
+        ItemJudgement householdAttributes,
+        ItemJudgement agencyRegion) {
 }

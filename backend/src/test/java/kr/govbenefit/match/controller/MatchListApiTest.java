@@ -71,6 +71,10 @@ class MatchListApiTest {
      */
     private static final String HANWOO = "511000000138";
     private static final List<String> FIXTURE_IDS = List.of(HANWOO, "403000000173", "O00024000031");
+    /** 본 레코드의 운영 기관(경상북도 상주시)과 프로필 거주지 */
+    private static final String GYEONGBUK = "6470000";
+    private static final String SANGJU = "5110000";
+    private static final String SUYEONG = "3380000";
     /** 2026-10-20에 만 36세 */
     private static final String BIRTH_DATE = "1990-01-01";
     private static final Map<String, Object> ALICE_PROFILE = profile("FEMALE", List.of("LIVESTOCK_FARMER"),
@@ -169,7 +173,8 @@ class MatchListApiTest {
         assertThat(body.get("page").asInt()).isEqualTo(1);
         assertThat(body.get("size").asInt()).isEqualTo(20);
         assertThat(body.get("judgedOn").asString()).isEqualTo("2026-10-20");
-        assertThat(texts(body.get("notices"))).containsExactly("CODE_BASED", "GROUP_RULE_INTERPRETED", "NOT_FINAL");
+        assertThat(texts(body.get("notices"))).containsExactly("CODE_BASED", "GROUP_RULE_INTERPRETED",
+                "AGENCY_REGION_BASED", "NOT_FINAL");
         assertThat(texts(body.get("uncomparedConditions")))
                 .containsExactly("INCOME", "RESIDENCE", "OTHER_SOURCE_CONDITIONS");
 
@@ -178,6 +183,7 @@ class MatchListApiTest {
         assertThat(first.get("benefit").has("lastSeenAt")).isTrue();
         assertItem(first.get("items").get("personalTarget"), "MET", "PERSONAL_USER_TYPE");
         assertItem(first.get("items").get("lifeAttributes"), "MET", "CODE_INCLUDES");
+        assertItem(first.get("items").get("agencyRegion"), "MET", "REGION_INCLUDES");
         assertItem(body.get("items").get(3).get("items").get("age"), "NEEDS_CHECK", "AGE_ON_BOUNDARY");
         // 비교한 값과 원문은 혜택 하나의 조건 비교에서 본다.
         assertThat(first.get("items").get("age").has("ageStart")).isFalse();
@@ -234,7 +240,7 @@ class MatchListApiTest {
         assertThat(ids(body)).containsExactly("E01", "E02");
         assertThat(results(body)).containsOnly("NEEDS_CHECK");
         for (JsonNode element : body.get("items")) {
-            for (String item : List.of("age", "gender", "lifeAttributes", "householdAttributes")) {
+            for (String item : List.of("age", "gender", "lifeAttributes", "householdAttributes", "agencyRegion")) {
                 assertItem(element.get("items").get(item), "NEEDS_CHECK", "PROFILE_MISSING");
             }
         }
@@ -247,17 +253,21 @@ class MatchListApiTest {
         service("D03", "사용자구분 없는 혜택", null, UNCHANGED);
         service("D04", "지원조건 없는 혜택", "개인", null);
         service("D05", "성별 밖 혜택", "개인", conditions -> conditions.putNull("JA0102"));
+        service("D06", "다른 시도 혜택", "개인", UNCHANGED, "시군구", SUYEONG);
+        service("D07", "지역 모름 혜택", "개인", UNCHANGED, "시군구", "9999999");
+        service("D08", "중앙 혜택", "개인", UNCHANGED, "중앙행정기관", "1741000");
         collectionService.collectAll();
         putProfile(ALICE, ALICE_PROFILE);
 
         JsonNode body = list(ALICE);
 
-        assertThat(body.get("items").size()).isEqualTo(5);
+        assertThat(body.get("items").size()).isEqualTo(8);
         for (JsonNode element : body.get("items")) {
             String serviceId = element.get("benefit").get("serviceId").asString();
             JsonNode detail = json(perform(ALICE, PATH + "/" + serviceId).andExpect(status().isOk()));
             assertThat(element.get("result").asString()).as(serviceId).isEqualTo(detail.get("result").asString());
-            for (String item : List.of("personalTarget", "age", "gender", "lifeAttributes", "householdAttributes")) {
+            for (String item : List.of("personalTarget", "age", "gender", "lifeAttributes", "householdAttributes",
+                    "agencyRegion")) {
                 JsonNode expected = detail.get("items").get(item);
                 assertItem(element.get("items").get(item), expected.get("status").asString(),
                         expected.get("reason").asString());
@@ -381,12 +391,21 @@ class MatchListApiTest {
     }
 
     /**
-     * 본 레코드를 세 경로에 복사해 혜택 하나를 stub에 더한다.
+     * 본 레코드를 세 경로에 복사해 혜택 하나를 stub에 더한다. 운영 기관은 본 레코드(경상북도 상주시)다.
      *
      * @param userType   사용자구분. null이면 필드를 뺀다.
      * @param conditions 지원조건 레코드를 바꾸는 함수. null이면 지원조건 레코드를 넣지 않는다(수집되지 않음).
      */
     private void service(String serviceId, String name, String userType, Consumer<ObjectNode> conditions) {
+        service(serviceId, name, userType, conditions, null, null);
+    }
+
+    /**
+     * @param agencyType 소관기관유형. null이면 본 레코드 값이다.
+     * @param agencyCode 소관기관코드. null이면 본 레코드 값이다.
+     */
+    private void service(String serviceId, String name, String userType, Consumer<ObjectNode> conditions,
+                         String agencyType, String agencyCode) {
         for (SourceEndpoint endpoint : SourceEndpoint.values()) {
             if (endpoint == SUPPORT_CONDITIONS && conditions == null) {
                 continue;
@@ -399,6 +418,10 @@ class MatchListApiTest {
                     record.remove("사용자구분");
                 } else {
                     record.put("사용자구분", userType);
+                }
+                if (agencyType != null) {
+                    record.put("소관기관유형", agencyType);
+                    record.put("소관기관코드", agencyCode);
                 }
             }
             if (endpoint == SUPPORT_CONDITIONS) {
@@ -414,6 +437,8 @@ class MatchListApiTest {
         body.put("gender", gender);
         body.put("lifeAttributes", life);
         body.put("householdAttributes", household);
+        body.put("sidoCode", GYEONGBUK);
+        body.put("sigunguCode", SANGJU);
         return body;
     }
 

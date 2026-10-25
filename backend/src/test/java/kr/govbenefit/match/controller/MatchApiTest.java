@@ -20,6 +20,7 @@ import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
 import kr.govbenefit.account.mail.RecordingAccountMailSender;
 import kr.govbenefit.collection.Gov24StubServer;
+import kr.govbenefit.collection.domain.SourceEndpoint;
 import kr.govbenefit.collection.service.CollectionService;
 import kr.govbenefit.common.security.AccessTokenIssuer;
 import org.junit.jupiter.api.AfterAll;
@@ -41,6 +42,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * 조건 비교(REQ-MATCH-01, DEC-MATCH)를 Testcontainers MySQL로 검증한다. 혜택과 지원조건은 로컬 stub으로 실제 수집해 넣고,
@@ -61,6 +63,9 @@ class MatchApiTest {
      * stub fixture의 실제 레코드. 사용자구분 개인, 성별 둘 다 Y, 연령 19~120, 생애는 축산업인만 Y, 가구 전부 Y.
      */
     private static final String HANWOO = "511000000138";
+    /** {@link #HANWOO}의 운영 기관(경상북도 상주시)과 기본 프로필 거주지 */
+    private static final String GYEONGBUK = "6470000";
+    private static final String SANGJU = "5110000";
     /** 2026-10-20에 만 36세 */
     private static final String BIRTH_DATE = "1990-01-01";
 
@@ -129,11 +134,16 @@ class MatchApiTest {
         assertThat(body.get("name").asString()).isEqualTo("한우 친자확인 지원");
         assertThat(body.get("result").asString()).isEqualTo("MATCH");
         assertThat(body.get("judgedOn").asString()).isEqualTo("2026-10-20");
-        assertThat(texts(body.get("notices"))).containsExactly("CODE_BASED", "GROUP_RULE_INTERPRETED", "NOT_FINAL");
+        assertThat(texts(body.get("notices"))).containsExactly("CODE_BASED", "GROUP_RULE_INTERPRETED",
+                "AGENCY_REGION_BASED", "NOT_FINAL");
         assertThat(texts(body.get("uncomparedConditions")))
                 .containsExactly("INCOME", "RESIDENCE", "OTHER_SOURCE_CONDITIONS");
 
         JsonNode items = body.get("items");
+        assertItem(items.get("agencyRegion"), "MET", "REGION_INCLUDES");
+        assertThat(items.get("agencyRegion").get("agencyType").asString()).isEqualTo("시군구");
+        assertRegion(items.get("agencyRegion").get("agencyRegion"), GYEONGBUK, "경상북도", SANGJU, "상주시");
+        assertRegion(items.get("agencyRegion").get("profileRegion"), GYEONGBUK, "경상북도", SANGJU, "상주시");
         assertItem(items.get("personalTarget"), "MET", "PERSONAL_USER_TYPE");
         assertThat(items.get("personalTarget").get("userType").asString()).isEqualTo("개인");
         assertItem(items.get("age"), "MET", "CODE_INCLUDES");
@@ -213,9 +223,10 @@ class MatchApiTest {
 
         assertThat(body.get("result").asString()).isEqualTo("NEEDS_CHECK");
         assertItem(body.get("items").get("personalTarget"), "MET", "PERSONAL_USER_TYPE");
-        for (String item : List.of("age", "gender", "lifeAttributes", "householdAttributes")) {
+        for (String item : List.of("age", "gender", "lifeAttributes", "householdAttributes", "agencyRegion")) {
             assertItem(body.get("items").get(item), "NEEDS_CHECK", "PROFILE_MISSING");
         }
+        assertThat(body.get("items").get("agencyRegion").get("profileRegion").isNull()).isTrue();
         assertThat(body.get("items").get("age").get("profileAge").isNull()).isTrue();
         assertThat(body.get("items").get("lifeAttributes").get("profileAttributes").isNull()).isTrue();
         // 혜택 쪽 값은 그대로 보여준다.
@@ -240,6 +251,78 @@ class MatchApiTest {
         assertThat(body.get("items").get("age").get("ageStart").isNull()).isTrue();
         assertThat(body.get("items").get("gender").get("allowedGenders").isNull()).isTrue();
         assertThat(body.get("items").get("age").get("profileAge").asInt()).isEqualTo(36);
+    }
+
+    @Test
+    void 운영_기관_지역은_기관_소재지와_거주지로_판정한다() throws Exception {
+        service("A01", "중앙행정기관", "1741000");
+        service("A02", "공공기관", "B552015");
+        service("A03", "광역시도", GYEONGBUK);
+        service("A04", "지방출자_출연기관", SANGJU);
+        service("A05", "시군구", "5020000");
+        service("A06", "광역시도", "6260000");
+        service("A07", "시군구", "3380000");
+        service("A08", "교육청", "8750000");
+        service("A09", "교육청", "7150000");
+        collectionService.collectAll();
+        List<String> services = List.of("A01", "A02", "A03", HANWOO, "A04", "A05", "A06", "A07", "A08", "A09");
+        // 기관: 중앙, 공공, 경상북도, 상주시, 상주시 출연기관, 포항시, 부산광역시, 부산 수영구, 경상북도교육청, 부산광역시교육청
+        Map<String, List<String>> expected = Map.of(
+                "경상북도 상주시", List.of("NO_RESTRICTION", "NO_RESTRICTION", "REGION_INCLUDES", "REGION_INCLUDES",
+                        "REGION_INCLUDES", "REGION_EXCLUDES", "REGION_EXCLUDES", "REGION_EXCLUDES", "REGION_INCLUDES",
+                        "REGION_EXCLUDES"),
+                "경상북도만", List.of("NO_RESTRICTION", "NO_RESTRICTION", "REGION_INCLUDES", "PROFILE_MISSING",
+                        "PROFILE_MISSING", "PROFILE_MISSING", "REGION_EXCLUDES", "REGION_EXCLUDES", "REGION_INCLUDES",
+                        "REGION_EXCLUDES"),
+                "미입력", List.of("NO_RESTRICTION", "NO_RESTRICTION", "PROFILE_MISSING", "PROFILE_MISSING",
+                        "PROFILE_MISSING", "PROFILE_MISSING", "PROFILE_MISSING", "PROFILE_MISSING", "PROFILE_MISSING",
+                        "PROFILE_MISSING"));
+        Map<String, String[]> residences = Map.of("경상북도 상주시", new String[]{GYEONGBUK, SANGJU},
+                "경상북도만", new String[]{GYEONGBUK, null}, "미입력", new String[]{null, null});
+
+        for (String residence : List.of("경상북도 상주시", "경상북도만", "미입력")) {
+            Map<String, Object> profile = profile("FEMALE", List.of("LIVESTOCK_FARMER"), List.of("NONE"));
+            profile.put("sidoCode", residences.get(residence)[0]);
+            profile.put("sigunguCode", residences.get(residence)[1]);
+            // 거주지를 바꾸면 다음 비교에 바로 반영된다.
+            putProfile(ALICE, profile);
+            for (int i = 0; i < services.size(); i++) {
+                JsonNode body = match(ALICE, services.get(i));
+                String reason = expected.get(residence).get(i);
+                boolean met = reason.equals("NO_RESTRICTION") || reason.equals("REGION_INCLUDES");
+
+                assertThat(body.get("items").get("agencyRegion").get("reason").asString())
+                        .as(residence + " " + services.get(i)).isEqualTo(reason);
+                assertItem(body.get("items").get("agencyRegion"), met ? "MET" : "NEEDS_CHECK", reason);
+                // 다른 항목은 모두 충족이라 지역 판정이 곧 결과다. 다른 지역도 불일치가 아니다.
+                assertThat(body.get("result").asString()).isEqualTo(met ? "MATCH" : "NEEDS_CHECK");
+            }
+        }
+    }
+
+    @Test
+    void 운영_기관_지역은_기관_지역과_프로필_지역을_함께_보여준다() throws Exception {
+        service("A01", "중앙행정기관", "1741000");
+        service("A03", "교육청", "7150000");
+        service("A04", "시군구", "9999999");
+        collectionService.collectAll();
+        Map<String, Object> profile = profile("FEMALE", List.of("LIVESTOCK_FARMER"), List.of("NONE"));
+        profile.put("sigunguCode", null);
+        putProfile(ALICE, profile);
+
+        JsonNode central = match(ALICE, "A01").get("items").get("agencyRegion");
+        assertThat(central.get("agencyType").asString()).isEqualTo("중앙행정기관");
+        assertThat(central.get("agencyRegion").isNull()).isTrue();
+        assertRegion(central.get("profileRegion"), GYEONGBUK, "경상북도", null, null);
+
+        JsonNode education = match(ALICE, "A03").get("items").get("agencyRegion");
+        assertItem(education, "NEEDS_CHECK", "REGION_EXCLUDES");
+        assertRegion(education.get("agencyRegion"), "6260000", "부산광역시", null, null);
+
+        JsonNode unknown = match(ALICE, "A04").get("items").get("agencyRegion");
+        assertItem(unknown, "NEEDS_CHECK", "AGENCY_REGION_UNKNOWN");
+        assertThat(unknown.get("agencyRegion").isNull()).isTrue();
+        assertThat(match(ALICE, "A04").get("result").asString()).isEqualTo("NEEDS_CHECK");
     }
 
     @Test
@@ -303,7 +386,34 @@ class MatchApiTest {
         body.put("gender", gender);
         body.put("lifeAttributes", life);
         body.put("householdAttributes", household);
+        body.put("sidoCode", GYEONGBUK);
+        body.put("sigunguCode", SANGJU);
         return body;
+    }
+
+    /** {@link #HANWOO}를 세 경로에 복사해 운영 기관만 다른 혜택을 stub에 더한다. */
+    private void service(String serviceId, String agencyType, String agencyCode) {
+        for (SourceEndpoint endpoint : SourceEndpoint.values()) {
+            ObjectNode record = stub.record(endpoint, HANWOO).deepCopy();
+            record.put("서비스ID", serviceId);
+            if (endpoint == SERVICE_LIST) {
+                record.put("소관기관유형", agencyType);
+                record.put("소관기관코드", agencyCode);
+            }
+            stub.records(endpoint).add(record);
+        }
+    }
+
+    private static void assertRegion(JsonNode region, String sidoCode, String sidoName, String sigunguCode,
+                                     String sigunguName) {
+        assertThat(region.get("sido").get("code").asString()).isEqualTo(sidoCode);
+        assertThat(region.get("sido").get("name").asString()).isEqualTo(sidoName);
+        if (sigunguCode == null) {
+            assertThat(region.get("sigungu").isNull()).isTrue();
+        } else {
+            assertThat(region.get("sigungu").get("code").asString()).isEqualTo(sigunguCode);
+            assertThat(region.get("sigungu").get("name").asString()).isEqualTo(sigunguName);
+        }
     }
 
     private void putProfile(String email, Map<String, Object> body) throws Exception {
