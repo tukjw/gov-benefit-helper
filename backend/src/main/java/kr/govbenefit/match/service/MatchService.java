@@ -56,10 +56,13 @@ public class MatchService {
      */
     public MatchResponse match(Long userId, String serviceId) {
         requireAccount(userId);
+        LocalDate today = LocalDate.now(clock);
+        return match(subject(userId, today), serviceId, today);
+    }
+
+    private MatchResponse match(MatchSubject subject, String serviceId, LocalDate today) {
         Benefit benefit = benefitRepository.findByServiceId(serviceId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "혜택이 없습니다. serviceId=" + serviceId));
-        LocalDate today = LocalDate.now(clock);
-        MatchSubject subject = subject(userId, today);
         SupportConditions conditions = sourceRecordRepository
                 .findByServiceIdAndEndpoint(serviceId, SourceEndpoint.SUPPORT_CONDITIONS)
                 .map(this::parse)
@@ -84,7 +87,11 @@ public class MatchService {
     public MatchListResponse list(Long userId, RegionScope requested, int page, int size) {
         requireAccount(userId);
         LocalDate today = LocalDate.now(clock);
-        MatchSubject subject = subject(userId, today);
+        return list(subject(userId, today), requested, page, size, today);
+    }
+
+    private MatchListResponse list(MatchSubject subject, RegionScope requested, int page, int size,
+                                   LocalDate today) {
         RegionScope scope = scope(requested, subject);
         Regions regions = regionService.regions();
         Map<String, SupportConditions> conditions = sourceRecordRepository
