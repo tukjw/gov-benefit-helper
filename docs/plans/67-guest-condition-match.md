@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #67 비회원도 프로필을 입력해 조건 비교 결과 확인
 
