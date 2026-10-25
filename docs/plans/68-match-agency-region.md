@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #68 조건 비교에 운영 기관 지역 판정과 내 지역·전체 지역 보기 추가
 
