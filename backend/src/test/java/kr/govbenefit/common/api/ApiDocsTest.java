@@ -89,7 +89,8 @@ class ApiDocsTest {
         JsonNode operation = spec.path("paths").path("/api/benefits").path("get");
         JsonNode parameters = operation.path("parameters");
 
-        assertThat(names(parameters)).containsExactly("keyword", "field", "agencyType", "page", "size");
+        assertThat(names(parameters)).containsExactly("keyword", "field", "agencyType", "agencySidoCode",
+                "agencySigunguCode", "page", "size");
         parameters.forEach(parameter -> {
             assertThat(parameter.path("in").asString()).isEqualTo("query");
             assertThat(parameter.path("required").asBoolean()).isFalse();
@@ -103,6 +104,10 @@ class ApiDocsTest {
             assertThat(schema.path("items").has("enum")).isFalse();
             assertThat(parameter(parameters, filter).path("description").asString()).isNotBlank();
         }
+        for (String region : List.of("agencySidoCode", "agencySigunguCode")) {
+            assertThat(parameter(parameters, region).path("schema").path("type").asString()).isEqualTo("string");
+            assertThat(parameter(parameters, region).path("description").asString()).contains("거주 요건이 아니다");
+        }
         JsonNode page = parameter(parameters, "page").path("schema");
         assertThat(page.path("type").asString()).isEqualTo("integer");
         assertThat(page.path("minimum").asInt()).isEqualTo(1);
@@ -112,6 +117,19 @@ class ApiDocsTest {
         assertThat(size.path("minimum").asInt()).isEqualTo(1);
         assertThat(size.path("maximum").asInt()).isEqualTo(100);
         assertThat(size.path("default").asInt()).isEqualTo(20);
+    }
+
+    @Test
+    void 지역_목록_API는_로그인_없이_쓴다() {
+        JsonNode operation = spec.path("paths").path("/api/benefits/regions").path("get");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
+        assertThat(schemaRef(operation.path("responses"), "200"))
+                .isEqualTo("#/components/schemas/RegionListResponse");
+        assertThat(names(schema("SidoOption").path("properties"))).containsExactlyInAnyOrder("code", "name",
+                "sigungus");
+        assertThat(names(schema("RegionResponse").path("properties"))).containsExactlyInAnyOrder("code", "name");
     }
 
     @Test
@@ -420,29 +438,35 @@ class ApiDocsTest {
         assertThat(texts(property("MatchResponse", "result").path("enum")))
                 .containsExactly("MATCH", "NEEDS_CHECK", "MISMATCH");
         assertThat(names(schema("MatchItems").path("properties"))).containsExactlyInAnyOrder("personalTarget", "age",
-                "gender", "lifeAttributes", "householdAttributes");
+                "gender", "lifeAttributes", "householdAttributes", "agencyRegion");
+        assertThat(names(schema("AgencyRegionItem").path("properties"))).containsExactlyInAnyOrder("status",
+                "reason", "agencyType", "agencyRegion", "profileRegion");
+        assertThat(names(schema("RegionValue").path("properties"))).containsExactlyInAnyOrder("sido", "sigungu");
+        assertThat(schema("AgencyRegionItem").path("description").asString()).contains("거주 요건이 아니라");
         assertThat(names(schema("MatchSource").path("properties")))
                 .containsExactlyInAnyOrder("target", "selectionCriteria", "guideUrl");
         assertThat(schema("MatchResponse").path("description").asString()).contains("신청 가능 확정이 아니다");
     }
 
     @Test
-    void 조건_비교_목록_API는_액세스_토큰을_요구하고_쪽_번호와_크기만_받는다() {
+    void 조건_비교_목록_API는_액세스_토큰을_요구하고_지역_범위와_쪽_번호와_크기만_받는다() {
         JsonNode list = spec.path("paths").path("/api/me/matches").path("get");
 
         assertThat(list.path("security").get(0).has("bearerAuth")).isTrue();
-        assertThat(names(list.path("parameters"))).containsExactly("page", "size");
+        assertThat(names(list.path("parameters"))).containsExactly("regionScope", "page", "size");
+        assertThat(texts(parameter(list.path("parameters"), "regionScope").path("schema").path("enum")))
+                .containsExactly("MY_REGION", "ALL");
         assertThat(parameter(list.path("parameters"), "size").path("schema").path("maximum").asInt()).isEqualTo(100);
         assertThat(names(list.path("responses"))).containsExactlyInAnyOrder("200", "400", "401", "500");
         assertThat(schemaRef(list.path("responses"), "200")).isEqualTo("#/components/schemas/MatchListResponse");
         assertThat(schemaRef(list.path("responses"), "400")).isEqualTo(ERROR_REF);
         assertThat(schemaRef(list.path("responses"), "401")).isEqualTo(ERROR_REF);
         assertThat(names(schema("MatchListResponse").path("properties"))).containsExactlyInAnyOrder("totalCount",
-                "page", "size", "judgedOn", "notices", "uncomparedConditions", "items");
+                "regionScope", "page", "size", "judgedOn", "notices", "uncomparedConditions", "items");
         assertThat(names(schema("MatchListItem").path("properties")))
                 .containsExactlyInAnyOrder("benefit", "result", "items");
         assertThat(names(schema("MatchItemResults").path("properties"))).containsExactlyInAnyOrder("personalTarget",
-                "age", "gender", "lifeAttributes", "householdAttributes");
+                "age", "gender", "lifeAttributes", "householdAttributes", "agencyRegion");
         assertThat(names(schema("MatchItemResult").path("properties"))).containsExactlyInAnyOrder("status", "reason");
         assertThat(schema("MatchListResponse").path("description").asString()).contains("신청 가능 확정이 아니다");
     }

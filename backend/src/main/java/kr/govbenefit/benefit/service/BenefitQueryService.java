@@ -2,6 +2,7 @@ package kr.govbenefit.benefit.service;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import kr.govbenefit.benefit.domain.Benefit;
@@ -18,8 +19,14 @@ import kr.govbenefit.benefit.repository.BenefitSpecifications;
 import kr.govbenefit.collection.domain.CollectionRun;
 import kr.govbenefit.collection.domain.CollectionStatus;
 import kr.govbenefit.collection.repository.CollectionRunRepository;
+import kr.govbenefit.common.api.ApiErrorResponse.InputError;
 import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
+import kr.govbenefit.common.api.InvalidInputException;
+import kr.govbenefit.region.domain.AgencyFilter;
+import kr.govbenefit.region.service.RegionCodeValidator;
+import kr.govbenefit.region.service.RegionCodeValidator.RegionSelection;
+import kr.govbenefit.region.service.RegionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +53,8 @@ public class BenefitQueryService {
     private final BenefitRepository benefitRepository;
     private final BenefitDetailRepository benefitDetailRepository;
     private final CollectionRunRepository collectionRunRepository;
+    private final RegionCodeValidator regionCodeValidator;
+    private final RegionService regionService;
     private final Clock clock;
 
     public Optional<BenefitView> findByServiceId(String serviceId) {
@@ -59,12 +68,14 @@ public class BenefitQueryService {
      * 조건에 맞는 혜택의 한 쪽과 전체 건수. 목록과 건수는 한 읽기 트랜잭션에서 같은 스냅샷을 본다.
      *
      * @param page 1부터 센 쪽 번호
+     * @throws InvalidInputException 운영 기관 지역 코드가 프로필 저장과 같은 기준으로 올바르지 않다.
      */
     public BenefitSearchResponse search(BenefitSearchCondition condition, int page, int size) {
         Specification<Benefit> spec = Specification.allOf(
                 BenefitSpecifications.nameContainsAll(condition.keywords()),
                 BenefitSpecifications.serviceFieldIn(condition.fields()),
-                BenefitSpecifications.agencyTypeIn(condition.agencyTypes()));
+                BenefitSpecifications.agencyTypeIn(condition.agencyTypes()),
+                BenefitSpecifications.agencyRegionIn(agencyFilter(condition)));
         if ((long) (page - 1) * size > Integer.MAX_VALUE) {
             // JPA의 시작 위치는 int라 넘길 수 없다. 건수도 int 범위이므로 이 쪽은 항상 마지막 쪽을 넘는다.
             return new BenefitSearchResponse(benefitRepository.count(spec), page, size, List.of());
@@ -87,5 +98,21 @@ public class BenefitQueryService {
                 .orElse(null);
         return BenefitDetailResponse.of(benefit, benefitDetailRepository.findById(benefit.getId()).orElse(null),
                 Freshness.judge(referenceAt, LocalDateTime.now(clock)));
+    }
+
+    /**
+     * 운영 기관 지역 필터(결정 0025). 코드는 프로필 저장과 같은 기준으로 검증한다.
+     */
+    private AgencyFilter agencyFilter(BenefitSearchCondition condition) {
+        if (condition.agencySidoCode() == null && condition.agencySigunguCode() == null) {
+            return null;
+        }
+        List<InputError> errors = new ArrayList<>();
+        RegionSelection selection = regionCodeValidator.validate("agencySidoCode", condition.agencySidoCode(),
+                "agencySigunguCode", condition.agencySigunguCode(), errors);
+        if (!errors.isEmpty()) {
+            throw new InvalidInputException(errors);
+        }
+        return regionService.regions().agencyFilterOf(selection.sido(), selection.sigungu());
     }
 }

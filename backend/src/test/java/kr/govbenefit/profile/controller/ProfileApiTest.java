@@ -379,6 +379,9 @@ class ProfileApiTest {
             }
         }
         assertThat(sigunguCount).isEqualTo(227);
+        // 공개 지역 목록(운영 기관 지역 필터)과 같은 목록이다.
+        assertThat(sidos).isEqualTo(json(mockMvc.perform(get("/api/benefits/regions")).andExpect(status().isOk()))
+                .get("sidos"));
 
         JsonNode life = body.get("lifeAttributes");
         assertThat(life).hasSize(17);

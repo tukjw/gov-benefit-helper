@@ -25,6 +25,10 @@ public record BenefitSearchRequest(
         @BindParam("field") List<String> fields,
         @Parameter(name = "agencyType", description = FILTER_VALUE + "운영 기관 유형 원문 값이다.", example = "시군구")
         @BindParam("agencyType") List<String> agencyTypes,
+        @Parameter(description = AGENCY_REGION + "시도를 고르면 그 시도 기관, 도내 시군구 기관, 교육청 혜택이다.",
+                example = "6410000") String agencySidoCode,
+        @Parameter(description = AGENCY_REGION + "시도와 함께 보내야 하며 그 시군구 기관 혜택만 찾는다.",
+                example = "3740000") String agencySigunguCode,
         @Parameter(description = "1부터 센 쪽 번호", schema = @Schema(implementation = Integer.class, defaultValue = "1"))
         @Min(value = 1, message = BenefitSearchRequest.PAGE_RANGE) Integer page,
         @Parameter(description = "쪽 크기", schema = @Schema(implementation = Integer.class, defaultValue = "20"))
@@ -39,6 +43,9 @@ public record BenefitSearchRequest(
     static final String SIZE_RANGE = "1 이상 100 이하여야 합니다.";
     static final String FILTER_VALUE = "원문 값과 같은 혜택만 찾는다. 값을 검증하지 않으므로 없는 값이면 결과가 0건이고, 빈 값은 무시한다. "
             + "반복하면 OR이다. ";
+    static final String AGENCY_REGION = "운영 기관 지역(소관기관 소재지, 결정 0025). 거주 요건이 아니다. "
+            + "행정표준기관코드이며 지역 목록 API(`GET /api/benefits/regions`)에서 고른다. "
+            + "지역이 없는 기관(중앙행정기관, 공공기관)의 혜택은 나오지 않는다. 빈 값은 무시한다. ";
 
     public BenefitSearchRequest {
         page = page == null ? 1 : page;
@@ -46,6 +53,6 @@ public record BenefitSearchRequest(
     }
 
     public BenefitSearchCondition toCondition() {
-        return BenefitSearchCondition.of(keyword, fields, agencyTypes);
+        return BenefitSearchCondition.of(keyword, fields, agencyTypes, agencySidoCode, agencySigunguCode);
     }
 }

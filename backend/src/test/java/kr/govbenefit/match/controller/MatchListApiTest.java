@@ -71,6 +71,12 @@ class MatchListApiTest {
      */
     private static final String HANWOO = "511000000138";
     private static final List<String> FIXTURE_IDS = List.of(HANWOO, "403000000173", "O00024000031");
+    /** 본 레코드의 운영 기관(경상북도 상주시)과 프로필 거주지 */
+    private static final String GYEONGBUK = "6470000";
+    private static final String SANGJU = "5110000";
+    private static final String POHANG = "5020000";
+    private static final String GYEONGBUK_EDUCATION = "8750000";
+    private static final String SUYEONG = "3380000";
     /** 2026-10-20에 만 36세 */
     private static final String BIRTH_DATE = "1990-01-01";
     private static final Map<String, Object> ALICE_PROFILE = profile("FEMALE", List.of("LIVESTOCK_FARMER"),
@@ -169,7 +175,9 @@ class MatchListApiTest {
         assertThat(body.get("page").asInt()).isEqualTo(1);
         assertThat(body.get("size").asInt()).isEqualTo(20);
         assertThat(body.get("judgedOn").asString()).isEqualTo("2026-10-20");
-        assertThat(texts(body.get("notices"))).containsExactly("CODE_BASED", "GROUP_RULE_INTERPRETED", "NOT_FINAL");
+        assertThat(texts(body.get("notices"))).containsExactly("CODE_BASED", "GROUP_RULE_INTERPRETED",
+                "AGENCY_REGION_BASED", "NOT_FINAL");
+        assertThat(body.get("regionScope").asString()).isEqualTo("MY_REGION");
         assertThat(texts(body.get("uncomparedConditions")))
                 .containsExactly("INCOME", "RESIDENCE", "OTHER_SOURCE_CONDITIONS");
 
@@ -178,6 +186,7 @@ class MatchListApiTest {
         assertThat(first.get("benefit").has("lastSeenAt")).isTrue();
         assertItem(first.get("items").get("personalTarget"), "MET", "PERSONAL_USER_TYPE");
         assertItem(first.get("items").get("lifeAttributes"), "MET", "CODE_INCLUDES");
+        assertItem(first.get("items").get("agencyRegion"), "MET", "REGION_INCLUDES");
         assertItem(body.get("items").get(3).get("items").get("age"), "NEEDS_CHECK", "AGE_ON_BOUNDARY");
         // 비교한 값과 원문은 혜택 하나의 조건 비교에서 본다.
         assertThat(first.get("items").get("age").has("ageStart")).isFalse();
@@ -234,7 +243,7 @@ class MatchListApiTest {
         assertThat(ids(body)).containsExactly("E01", "E02");
         assertThat(results(body)).containsOnly("NEEDS_CHECK");
         for (JsonNode element : body.get("items")) {
-            for (String item : List.of("age", "gender", "lifeAttributes", "householdAttributes")) {
+            for (String item : List.of("age", "gender", "lifeAttributes", "householdAttributes", "agencyRegion")) {
                 assertItem(element.get("items").get(item), "NEEDS_CHECK", "PROFILE_MISSING");
             }
         }
@@ -247,17 +256,21 @@ class MatchListApiTest {
         service("D03", "사용자구분 없는 혜택", null, UNCHANGED);
         service("D04", "지원조건 없는 혜택", "개인", null);
         service("D05", "성별 밖 혜택", "개인", conditions -> conditions.putNull("JA0102"));
+        service("D06", "다른 시도 혜택", "개인", UNCHANGED, "시군구", SUYEONG);
+        service("D07", "지역 모름 혜택", "개인", UNCHANGED, "시군구", "9999999");
+        service("D08", "중앙 혜택", "개인", UNCHANGED, "중앙행정기관", "1741000");
         collectionService.collectAll();
         putProfile(ALICE, ALICE_PROFILE);
 
-        JsonNode body = list(ALICE);
+        JsonNode body = list(ALICE, "regionScope", "ALL");
 
-        assertThat(body.get("items").size()).isEqualTo(5);
+        assertThat(body.get("items").size()).isEqualTo(8);
         for (JsonNode element : body.get("items")) {
             String serviceId = element.get("benefit").get("serviceId").asString();
             JsonNode detail = json(perform(ALICE, PATH + "/" + serviceId).andExpect(status().isOk()));
             assertThat(element.get("result").asString()).as(serviceId).isEqualTo(detail.get("result").asString());
-            for (String item : List.of("personalTarget", "age", "gender", "lifeAttributes", "householdAttributes")) {
+            for (String item : List.of("personalTarget", "age", "gender", "lifeAttributes", "householdAttributes",
+                    "agencyRegion")) {
                 JsonNode expected = detail.get("items").get(item);
                 assertItem(element.get("items").get(item), expected.get("status").asString(),
                         expected.get("reason").asString());
@@ -380,13 +393,149 @@ class MatchListApiTest {
                 .andExpect(status().isUnauthorized()), "UNAUTHENTICATED");
     }
 
+    @Test
+    void 기본_범위는_내_지역_기관과_지역_없는_기관이고_전체_지역은_개인_대상_혜택_전체다() throws Exception {
+        regionServices();
+        putProfile(ALICE, ALICE_PROFILE);
+
+        JsonNode mine = list(ALICE);
+        assertThat(mine.get("regionScope").asString()).isEqualTo("MY_REGION");
+        assertThat(ids(mine)).containsExactly("R01", "R02", "R03", "R04", "R06");
+        assertThat(results(mine)).containsOnly("MATCH");
+        assertThat(mine.get("totalCount").asLong()).isEqualTo(5);
+
+        JsonNode all = list(ALICE, "regionScope", "ALL");
+        assertThat(all.get("regionScope").asString()).isEqualTo("ALL");
+        // 다른 지역과 지역 모름은 확인 필요라 부합 뒤에 온다. 개인 대상이 아닌 혜택은 어느 범위에도 없다.
+        assertThat(ids(all)).containsExactly("R01", "R02", "R03", "R04", "R06", "R05", "R07", "R08");
+        assertThat(all.get("totalCount").asLong()).isEqualTo(8);
+        assertItem(item(all, "R01").get("agencyRegion"), "MET", "REGION_INCLUDES");
+        assertItem(item(all, "R03").get("agencyRegion"), "MET", "REGION_INCLUDES");
+        assertItem(item(all, "R06").get("agencyRegion"), "MET", "NO_RESTRICTION");
+        assertItem(item(all, "R05").get("agencyRegion"), "NEEDS_CHECK", "REGION_EXCLUDES");
+        assertItem(item(all, "R07").get("agencyRegion"), "NEEDS_CHECK", "REGION_EXCLUDES");
+        assertItem(item(all, "R08").get("agencyRegion"), "NEEDS_CHECK", "AGENCY_REGION_UNKNOWN");
+        // 다른 지역 혜택도 나머지 항목은 모두 충족이다. 지역 때문에 확인 필요다.
+        assertItem(item(all, "R07").get("age"), "MET", "CODE_INCLUDES");
+        assertThat(searchIds()).contains("C01");
+    }
+
+    @Test
+    void 시도만_입력했으면_기본_범위에_도내_시군구_기관이_모두_든다() throws Exception {
+        regionServices();
+        Map<String, Object> profile = new HashMap<>(ALICE_PROFILE);
+        profile.put("sigunguCode", null);
+        putProfile(ALICE, profile);
+
+        JsonNode body = list(ALICE);
+
+        assertThat(body.get("regionScope").asString()).isEqualTo("MY_REGION");
+        // 시도 기관과 지역 없는 기관은 부합이고, 도내 시군구 기관은 비교할 수 없어 확인 필요다.
+        assertThat(ids(body)).containsExactly("R02", "R03", "R06", "R01", "R04", "R05");
+        assertItem(item(body, "R01").get("agencyRegion"), "NEEDS_CHECK", "PROFILE_MISSING");
+        assertItem(item(body, "R05").get("agencyRegion"), "NEEDS_CHECK", "PROFILE_MISSING");
+        assertItem(item(body, "R02").get("agencyRegion"), "MET", "REGION_INCLUDES");
+    }
+
+    @Test
+    void 거주지가_없으면_요청과_관계없이_전체_지역이다() throws Exception {
+        regionServices();
+        Map<String, Object> profile = new HashMap<>(ALICE_PROFILE);
+        profile.put("sidoCode", null);
+        profile.put("sigunguCode", null);
+        putProfile(ALICE, profile);
+
+        for (String[] params : List.of(new String[0], new String[]{"regionScope", "MY_REGION"},
+                new String[]{"regionScope", "ALL"})) {
+            JsonNode body = list(ALICE, params);
+
+            assertThat(body.get("regionScope").asString()).isEqualTo("ALL");
+            assertThat(body.get("totalCount").asLong()).isEqualTo(8);
+            // 지역 없는 기관만 부합이다.
+            assertThat(ids(body).getFirst()).isEqualTo("R06");
+            assertThat(results(body)).containsExactly("MATCH", "NEEDS_CHECK", "NEEDS_CHECK", "NEEDS_CHECK",
+                    "NEEDS_CHECK", "NEEDS_CHECK", "NEEDS_CHECK", "NEEDS_CHECK");
+        }
+    }
+
+    @Test
+    void 지역_범위를_바꿔도_순서와_쪽_처리는_같다() throws Exception {
+        regionServices();
+        putProfile(ALICE, ALICE_PROFILE);
+
+        for (String scope : List.of("MY_REGION", "ALL")) {
+            List<String> whole = ids(list(ALICE, "regionScope", scope, "size", "100"));
+            List<String> paged = new ArrayList<>();
+            for (int page = 1; page <= 4; page++) {
+                JsonNode body = list(ALICE, "regionScope", scope, "size", "2", "page", String.valueOf(page));
+                assertThat(body.get("totalCount").asLong()).isEqualTo(whole.size());
+                paged.addAll(ids(body));
+            }
+            assertThat(paged).isEqualTo(whole);
+        }
+        List<String> all = ids(list(ALICE, "regionScope", "ALL"));
+        List<String> mine = ids(list(ALICE));
+        assertThat(all.stream().filter(mine::contains).toList()).isEqualTo(mine);
+    }
+
+    @Test
+    void 프로필의_거주지를_바꾸면_다음_목록에_바로_반영된다() throws Exception {
+        regionServices();
+        putProfile(ALICE, ALICE_PROFILE);
+        assertThat(ids(list(ALICE))).contains("R01").doesNotContain("R07");
+
+        Map<String, Object> busan = new HashMap<>(ALICE_PROFILE);
+        busan.put("sidoCode", "6260000");
+        busan.put("sigunguCode", SUYEONG);
+        putProfile(ALICE, busan);
+
+        JsonNode body = list(ALICE);
+        assertThat(ids(body)).containsExactly("R06", "R07");
+        assertItem(item(body, "R07").get("agencyRegion"), "MET", "REGION_INCLUDES");
+    }
+
+    @Test
+    void 잘못된_지역_범위는_잘못된_입력이다() throws Exception {
+        putProfile(ALICE, ALICE_PROFILE);
+
+        JsonNode body = json(perform(ALICE, PATH, "regionScope", "NEARBY").andExpect(status().isBadRequest()));
+
+        assertThat(body.get("code").asString()).isEqualTo("INVALID_INPUT");
+        assertThat(errors(body)).containsExactly(List.of("regionScope", "NEARBY", "형식이 올바르지 않습니다."));
+    }
+
     /**
-     * 본 레코드를 세 경로에 복사해 혜택 하나를 stub에 더한다.
+     * 경상북도 상주시 거주자 기준으로 운영 기관 지역이 다른 개인 대상 혜택을 넣는다. 지원조건은 모두 {@link #ALICE_PROFILE}에 부합한다.
+     */
+    private void regionServices() {
+        service("R01", "가 상주시", "개인", UNCHANGED, "시군구", SANGJU);
+        service("R02", "나 경상북도", "개인", UNCHANGED, "광역시도", GYEONGBUK);
+        service("R03", "다 경상북도교육청", "개인", UNCHANGED, "교육청", GYEONGBUK_EDUCATION);
+        service("R04", "라 상주시 공기업", "개인", UNCHANGED, "지방공기업", SANGJU);
+        service("R05", "마 포항시", "개인", UNCHANGED, "시군구", POHANG);
+        service("R06", "바 중앙", "개인", UNCHANGED, "중앙행정기관", "1741000");
+        service("R07", "사 부산 수영구", "개인", UNCHANGED, "시군구", SUYEONG);
+        service("R08", "아 지역 모름", "개인", UNCHANGED, "시군구", "9999999");
+        service("C01", "자 상주시 기관 대상", "법인/시설/단체", UNCHANGED, "시군구", SANGJU);
+        collectionService.collectAll();
+    }
+
+    /**
+     * 본 레코드를 세 경로에 복사해 혜택 하나를 stub에 더한다. 운영 기관은 본 레코드(경상북도 상주시)다.
      *
      * @param userType   사용자구분. null이면 필드를 뺀다.
      * @param conditions 지원조건 레코드를 바꾸는 함수. null이면 지원조건 레코드를 넣지 않는다(수집되지 않음).
      */
     private void service(String serviceId, String name, String userType, Consumer<ObjectNode> conditions) {
+        service(serviceId, name, userType, conditions, null, null);
+    }
+
+    /**
+     * @param agencyType 소관기관유형. null이면 본 레코드 값이다.
+     * @param agencyCode 소관기관코드. null이면 본 레코드 값이다.
+     */
+    private void service(String serviceId, String name, String userType, Consumer<ObjectNode> conditions,
+                         String agencyType, String agencyCode) {
         for (SourceEndpoint endpoint : SourceEndpoint.values()) {
             if (endpoint == SUPPORT_CONDITIONS && conditions == null) {
                 continue;
@@ -399,6 +548,10 @@ class MatchListApiTest {
                     record.remove("사용자구분");
                 } else {
                     record.put("사용자구분", userType);
+                }
+                if (agencyType != null) {
+                    record.put("소관기관유형", agencyType);
+                    record.put("소관기관코드", agencyCode);
                 }
             }
             if (endpoint == SUPPORT_CONDITIONS) {
@@ -414,6 +567,8 @@ class MatchListApiTest {
         body.put("gender", gender);
         body.put("lifeAttributes", life);
         body.put("householdAttributes", household);
+        body.put("sidoCode", GYEONGBUK);
+        body.put("sigunguCode", SANGJU);
         return body;
     }
 

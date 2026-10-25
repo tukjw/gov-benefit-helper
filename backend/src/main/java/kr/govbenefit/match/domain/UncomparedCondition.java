@@ -6,7 +6,7 @@ package kr.govbenefit.match.domain;
 public enum UncomparedCondition {
     /** 소득 */
     INCOME,
-    /** 거주 지역 */
+    /** 원문의 거주 요건. 운영 기관 지역만 비교한다. */
     RESIDENCE,
     /** 원문의 그 밖의 조건 */
     OTHER_SOURCE_CONDITIONS

@@ -6,6 +6,8 @@ import kr.govbenefit.profile.domain.Gender;
 import kr.govbenefit.profile.domain.HouseholdAttribute;
 import kr.govbenefit.profile.domain.LifeAttribute;
 import kr.govbenefit.profile.domain.ProfileAttribute;
+import kr.govbenefit.region.domain.AgencyRegion;
+import kr.govbenefit.region.domain.AgencyRegion.Kind;
 
 /**
  * 프로필과 혜택의 지원조건을 비교한다(REQ-MATCH-01, DEC-MATCH). DB를 모르며 같은 입력이면 같은 결과다.
@@ -14,6 +16,8 @@ import kr.govbenefit.profile.domain.ProfileAttribute;
  *   <li>개인 대상이면 모든 항목이 충족일 때 부합, 아니면 확인 필요다. 그룹 사이는 AND로 해석한다.</li>
  *   <li>항목 이유는 지원조건 미수집 → 코드 없음·해석 불가 → 프로필 미입력 → 비교 결과 순으로 정한다.
  *       그래서 혜택에 제한이 없어도 프로필이 미입력이면 확인 필요다.</li>
+ *   <li>운영 기관 지역은 거주 요건이 아니라 기관 소재지로 비교한다(결정 0025). 다른 지역은 확인 필요다.
+ *       지역 없는 기관은 프로필 값과 무관하게 충족이라 위 규칙의 예외다.</li>
  * </ul>
  */
 public final class ConditionMatcher {
@@ -30,14 +34,16 @@ public final class ConditionMatcher {
     }
 
     /**
-     * @param conditions 지원조건을 수집하지 못했으면 null이다.
-     * @param userType   목록의 사용자구분 원문
+     * @param conditions   지원조건을 수집하지 못했으면 null이다.
+     * @param userType     목록의 사용자구분 원문
+     * @param agencyRegion 목록의 소관기관유형·코드로 정한 운영 기관 지역
      */
-    public static MatchOutcome match(MatchSubject subject, SupportConditions conditions, String userType) {
+    public static MatchOutcome match(MatchSubject subject, SupportConditions conditions, String userType,
+                                     AgencyRegion agencyRegion) {
         ItemJudgement personalTarget = PersonalTarget.judge(userType);
         if (personalTarget.status() == ItemStatus.NOT_MET) {
             return new MatchOutcome(MatchResult.MISMATCH, personalTarget, NOT_EVALUATED, NOT_EVALUATED,
-                    NOT_EVALUATED, NOT_EVALUATED);
+                    NOT_EVALUATED, NOT_EVALUATED, NOT_EVALUATED);
         }
         ItemJudgement age = age(subject.age(), conditions);
         ItemJudgement gender = gender(subject.gender(), conditions);
@@ -45,10 +51,39 @@ public final class ConditionMatcher {
                 conditions);
         ItemJudgement household = attributeGroup(subject.householdAttributes(), HouseholdAttribute.values(),
                 HouseholdAttribute.NONE, conditions);
-        boolean allMet = Stream.of(personalTarget, age, gender, life, household)
+        ItemJudgement region = agencyRegion(subject, agencyRegion);
+        boolean allMet = Stream.of(personalTarget, age, gender, life, household, region)
                 .allMatch(judgement -> judgement.status() == ItemStatus.MET);
         return new MatchOutcome(allMet ? MatchResult.MATCH : MatchResult.NEEDS_CHECK, personalTarget, age, gender,
-                life, household);
+                life, household, region);
+    }
+
+    /**
+     * 시도 기관은 그 시도나 도내 시군구 거주자에게, 시군구 기관은 같은 시군구 거주자에게 충족이다. 다른 지역은 불일치가 아니라
+     * 확인 필요다. 거주지가 시도까지만 있으면 같은 시도의 시군구 기관과는 비교할 수 없어 프로필 미입력이다.
+     */
+    static ItemJudgement agencyRegion(MatchSubject subject, AgencyRegion agencyRegion) {
+        if (agencyRegion.kind() == Kind.UNKNOWN) {
+            return ItemJudgement.needsCheck(MatchReason.AGENCY_REGION_UNKNOWN);
+        }
+        if (agencyRegion.kind() == Kind.NONE) {
+            return ItemJudgement.met(MatchReason.NO_RESTRICTION);
+        }
+        if (subject.sidoCode() == null) {
+            return ItemJudgement.needsCheck(MatchReason.PROFILE_MISSING);
+        }
+        if (!agencyRegion.sidoCode().equals(subject.sidoCode())) {
+            return ItemJudgement.needsCheck(MatchReason.REGION_EXCLUDES);
+        }
+        if (agencyRegion.sigunguCode() == null) {
+            return ItemJudgement.met(MatchReason.REGION_INCLUDES);
+        }
+        if (subject.sigunguCode() == null) {
+            return ItemJudgement.needsCheck(MatchReason.PROFILE_MISSING);
+        }
+        return agencyRegion.sigunguCode().equals(subject.sigunguCode())
+                ? ItemJudgement.met(MatchReason.REGION_INCLUDES)
+                : ItemJudgement.needsCheck(MatchReason.REGION_EXCLUDES);
     }
 
     /**

@@ -8,6 +8,8 @@ public enum MatchNotice {
     CODE_BASED,
     /** 그룹 안은 OR, 그룹 사이는 AND로 해석했다. 검증된 관계가 아니다. */
     GROUP_RULE_INTERPRETED,
+    /** 지역 항목은 거주 요건이 아니라 운영 기관 소재지로 비교했다(결정 0025). */
+    AGENCY_REGION_BASED,
     /** 신청 가능 확정이 아니다. 공식 안내로 확인해야 한다. */
     NOT_FINAL
 }

@@ -1,4 +1,4 @@
-package kr.govbenefit.profile.dto;
+package kr.govbenefit.region.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import kr.govbenefit.region.domain.Region;

@@ -7,6 +7,7 @@ import java.util.List;
 import kr.govbenefit.profile.domain.Gender;
 import kr.govbenefit.profile.domain.HouseholdAttribute;
 import kr.govbenefit.profile.domain.LifeAttribute;
+import kr.govbenefit.region.dto.RegionResponse;
 
 /**
  * 프로필. 미입력 항목은 null이다. 사용자 ID는 넣지 않는다(결정 0018).
