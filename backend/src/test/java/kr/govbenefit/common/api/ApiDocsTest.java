@@ -357,21 +357,28 @@ class ApiDocsTest {
     void 프로필_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
         JsonNode get = spec.path("paths").path("/api/me/profile").path("get");
         JsonNode put = spec.path("paths").path("/api/me/profile").path("put");
-        JsonNode options = spec.path("paths").path("/api/me/profile/options").path("get");
 
-        for (JsonNode operation : List.of(get, put, options)) {
+        for (JsonNode operation : List.of(get, put)) {
             assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
             assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
             assertThat(schemaRef(operation.path("responses"), "401")).isEqualTo(ERROR_REF);
         }
         assertThat(names(get.path("responses"))).containsExactlyInAnyOrder("200", "401", "500");
-        assertThat(names(options.path("responses"))).containsExactlyInAnyOrder("200", "401", "500");
         assertThat(names(put.path("responses"))).containsExactlyInAnyOrder("200", "400", "401", "500");
         assertThat(schemaRef(get.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileResponse");
         assertThat(schemaRef(put.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileResponse");
         assertThat(schemaRef(put.path("responses"), "400")).isEqualTo(ERROR_REF);
-        assertThat(schemaRef(options.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileOptionsResponse");
         assertThat(requestRef(put)).isEqualTo("#/components/schemas/ProfileRequest");
+    }
+
+    @Test
+    void 프로필_선택지는_로그인_없이_받는다() {
+        JsonNode options = spec.path("paths").path("/api/profile/options").path("get");
+
+        assertThat(options.path("security").isMissingNode()).isTrue();
+        assertThat(names(options.path("responses"))).containsExactlyInAnyOrder("200", "500");
+        assertThat(schemaRef(options.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileOptionsResponse");
+        assertThat(spec.path("paths").has("/api/me/profile/options")).isFalse();
     }
 
     @Test
@@ -469,6 +476,26 @@ class ApiDocsTest {
                 "age", "gender", "lifeAttributes", "householdAttributes", "agencyRegion");
         assertThat(names(schema("MatchItemResult").path("properties"))).containsExactlyInAnyOrder("status", "reason");
         assertThat(schema("MatchListResponse").path("description").asString()).contains("신청 가능 확정이 아니다");
+    }
+
+    @Test
+    void 비회원_조건_비교_API는_로그인_없이_프로필_값을_본문으로_받고_같은_응답을_준다() {
+        JsonNode list = spec.path("paths").path("/api/matches").path("post");
+        JsonNode match = spec.path("paths").path("/api/matches/{serviceId}").path("post");
+
+        for (JsonNode operation : List.of(list, match)) {
+            assertThat(operation.path("security").isMissingNode()).isTrue();
+            assertThat(requestRef(operation)).isEqualTo("#/components/schemas/ProfileRequest");
+            assertThat(operation.path("requestBody").path("required").asBoolean()).isFalse();
+            assertThat(schemaRef(operation.path("responses"), "400")).isEqualTo(ERROR_REF);
+        }
+        assertThat(names(list.path("parameters"))).containsExactly("regionScope", "page", "size");
+        assertThat(names(list.path("responses"))).containsExactlyInAnyOrder("200", "400", "500");
+        assertThat(schemaRef(list.path("responses"), "200")).isEqualTo("#/components/schemas/MatchListResponse");
+        assertThat(names(match.path("parameters"))).containsExactly("serviceId");
+        assertThat(names(match.path("responses"))).containsExactlyInAnyOrder("200", "400", "404", "500");
+        assertThat(schemaRef(match.path("responses"), "200")).isEqualTo("#/components/schemas/MatchResponse");
+        assertThat(schemaRef(match.path("responses"), "404")).isEqualTo(ERROR_REF);
     }
 
     @Test

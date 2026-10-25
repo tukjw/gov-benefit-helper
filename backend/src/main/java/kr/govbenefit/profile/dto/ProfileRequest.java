@@ -5,10 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * 프로필 저장 요청. 본문 전체가 새 프로필이며 빠진 필드와 null은 미입력이다. 값은 문자열로 받아 {@code ProfileValidator}가
- * 항목별로 검사한다. 지원하지 않는 값이 본문 읽기 실패가 되면 어느 항목인지 응답에 담을 수 없기 때문이다.
+ * 프로필 저장과 비회원 조건 비교의 요청. 본문 전체가 프로필 값이며 빠진 필드와 null은 미입력이다. 값은 문자열로 받아
+ * {@code ProfileValidator}가 항목별로 검사한다. 지원하지 않는 값이 본문 읽기 실패가 되면 어느 항목인지 응답에 담을 수 없기 때문이다.
  */
-@Schema(description = "프로필 저장 요청. 모든 항목은 선택이며 빠진 필드와 `null`은 미입력이다. 사용자는 토큰으로만 정한다.")
+@Schema(description = """
+        프로필 값. 프로필 저장과 비회원 조건 비교에 쓴다. 모든 항목은 선택이며 빠진 필드와 `null`은 미입력이다. \
+        사용자 ID는 받지 않는다.""")
 public record ProfileRequest(
         @Schema(description = "생년월일(`yyyy-MM-dd`). 미래 날짜와 만 120세를 넘는 날짜는 거절한다.",
                 example = "1995-03-01", format = "date")
@@ -38,4 +40,9 @@ public record ProfileRequest(
                         "SINGLE_PARENT_OR_GRANDPARENT_FAMILY", "SINGLE_PERSON_HOUSEHOLD", "MULTI_CHILD_HOUSEHOLD",
                         "NON_HOMEOWNER_HOUSEHOLD", "NEW_RESIDENT", "EXTENDED_FAMILY", "NONE"}))
         List<String> householdAttributes) {
+
+    /** 모든 항목이 미입력인 요청. 본문 없이 온 비회원 조건 비교에 쓴다. */
+    public static ProfileRequest empty() {
+        return new ProfileRequest(null, null, null, null, null, null);
+    }
 }

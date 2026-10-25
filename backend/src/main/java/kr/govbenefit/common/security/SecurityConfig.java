@@ -29,6 +29,10 @@ public class SecurityConfig {
     private static final String[] PUBLIC_PATHS = {
             "/api/benefits/**",
             "/api/auth/**",
+            // 요청에 담은 프로필 값으로 비교하고 저장하지 않는다(DEC-AUTH 공개 범위).
+            "/api/matches/**",
+            // 비회원 조건 비교의 입력 선택지
+            "/api/profile/options",
             "/error",
             // 문서는 local 프로필에서만 열린다. 그 밖에서는 처리할 API가 없어 404다(결정 0012).
             "/v3/api-docs/**",
