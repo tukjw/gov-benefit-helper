@@ -22,6 +22,7 @@ import kr.govbenefit.match.domain.SupportConditions;
 import kr.govbenefit.match.dto.MatchListResponse;
 import kr.govbenefit.match.dto.MatchListResponse.MatchListItem;
 import kr.govbenefit.match.dto.MatchResponse;
+import kr.govbenefit.match.dto.RegionScope;
 import kr.govbenefit.profile.repository.UserProfileRepository;
 import kr.govbenefit.region.domain.AgencyRegion;
 import kr.govbenefit.region.domain.Regions;
@@ -71,17 +72,20 @@ public class MatchService {
 
     /**
      * 비교 결과 순(부합 → 확인 필요) 혜택 한 쪽. 개인 대상이 아닌 혜택(불일치)은 뺀다.
+     * 운영 기관 지역 범위는 판정과 같은 운영 기관 지역으로 메모리에서 거른다. 범위 규칙을 SQL에 따로 두지 않는다.
      * 순서가 프로필에 따라 달라 DB에서 자를 수 없으므로 요청마다 전체 혜택을 판정한다. 같은 결과 안에서는 검색과 같은 순서가
      * 되도록 DB가 정렬한 순서를 그대로 두고 결과별로 나눈다. DB 콜레이션은 Java 문자열 비교와 순서가 달라 다시 정렬하지 않는다.
      * 프로필·혜택·지원조건을 한 읽기 트랜잭션에서 같은 스냅샷으로 읽는다.
      *
-     * @param page 1부터 센 쪽 번호
+     * @param requested 요청한 지역 범위. 없으면 null이다.
+     * @param page      1부터 센 쪽 번호
      * @throws BusinessException 계정이 없다({@code UNAUTHENTICATED}).
      */
-    public MatchListResponse list(Long userId, int page, int size) {
+    public MatchListResponse list(Long userId, RegionScope requested, int page, int size) {
         requireAccount(userId);
         LocalDate today = LocalDate.now(clock);
         MatchSubject subject = subject(userId, today);
+        RegionScope scope = scope(requested, subject);
         Regions regions = regionService.regions();
         Map<String, SupportConditions> conditions = sourceRecordRepository
                 .findAllByEndpoint(SourceEndpoint.SUPPORT_CONDITIONS).stream()
@@ -91,6 +95,9 @@ public class MatchService {
         List<MatchListItem> needsCheck = new ArrayList<>();
         for (Benefit benefit : benefitRepository.findAll(BenefitQueryService.SEARCH_ORDER)) {
             AgencyRegion agencyRegion = regions.agencyRegionOf(benefit.getAgencyType(), benefit.getAgencyCode());
+            if (scope == RegionScope.MY_REGION && !agencyRegion.isWithin(subject.sidoCode(), subject.sigunguCode())) {
+                continue;
+            }
             // 지원조건을 수집하지 못한 혜택은 null로 판정해 확인 필요가 된다. 상세 비교와 같다.
             MatchOutcome outcome = ConditionMatcher.match(subject, conditions.get(benefit.getServiceId()),
                     benefit.getUserType(), agencyRegion);
@@ -105,7 +112,17 @@ public class MatchService {
         long from = (long) (page - 1) * size;
         List<MatchListItem> items = from >= listed.size() ? List.of()
                 : List.copyOf(listed.subList((int) from, (int) Math.min(from + size, listed.size())));
-        return MatchListResponse.of(listed.size(), page, size, today, items);
+        return MatchListResponse.of(listed.size(), scope, page, size, today, items);
+    }
+
+    /**
+     * 거주지가 없으면 범위를 정할 수 없어 요청과 관계없이 전체 지역이다. 거주지가 있으면 요청이 없을 때 내 지역이다.
+     */
+    private static RegionScope scope(RegionScope requested, MatchSubject subject) {
+        if (subject.sidoCode() == null) {
+            return RegionScope.ALL;
+        }
+        return requested == null ? RegionScope.MY_REGION : requested;
     }
 
     private void requireAccount(Long userId) {

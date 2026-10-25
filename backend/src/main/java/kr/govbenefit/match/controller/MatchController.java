@@ -46,6 +46,9 @@ public class MatchController {
             같은 결과 안에서는 이름순이고 이름이 같으면 서비스 ID 순이며, 혜택 검색의 이름순과 같다.
 
             - 개인 대상이 아닌 혜택(`MISMATCH`)은 목록에 없다. 혜택 검색으로는 찾을 수 있다.
+            - 운영 기관 지역 범위(`regionScope`) 안의 혜택만 담는다. 기본은 거주지가 있으면 `MY_REGION`, 없으면 `ALL`이고, \
+            적용한 범위는 응답의 `regionScope`다. 범위는 거주 요건이 아니라 운영 기관 소재지 기준이다(결정 0025).
+            - 다른 지역 기관의 혜택은 `NEEDS_CHECK`이며 `ALL`에서 나온다. 지역을 모르는 지자체 기관의 혜택도 `ALL`에서만 나온다.
             - `NEEDS_CHECK`인 혜택도 숨기지 않는다. 프로필을 입력하지 않았으면 개인 대상 혜택이 모두 `NEEDS_CHECK`다.
             - 항목의 판정은 같은 혜택의 조건 비교(`GET /api/me/matches/{serviceId}`)와 같다. 비교한 값과 원문은 그 API로 본다.
             - 프로필은 요청할 때의 값으로 비교하므로, 수정하면 다음 요청에 바로 반영된다.
@@ -65,7 +68,7 @@ public class MatchController {
     @GetMapping
     public ResponseEntity<MatchListResponse> list(@CurrentUserId Long userId,
                                                   @ParameterObject @Valid MatchListRequest request) {
-        return ResponseEntity.ok(matchService.list(userId, request.page(), request.size()));
+        return ResponseEntity.ok(matchService.list(userId, request.regionScope(), request.page(), request.size()));
     }
 
     @Operation(summary = "혜택 하나의 조건 비교", description = """

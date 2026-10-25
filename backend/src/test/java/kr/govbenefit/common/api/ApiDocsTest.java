@@ -449,18 +449,20 @@ class ApiDocsTest {
     }
 
     @Test
-    void 조건_비교_목록_API는_액세스_토큰을_요구하고_쪽_번호와_크기만_받는다() {
+    void 조건_비교_목록_API는_액세스_토큰을_요구하고_지역_범위와_쪽_번호와_크기만_받는다() {
         JsonNode list = spec.path("paths").path("/api/me/matches").path("get");
 
         assertThat(list.path("security").get(0).has("bearerAuth")).isTrue();
-        assertThat(names(list.path("parameters"))).containsExactly("page", "size");
+        assertThat(names(list.path("parameters"))).containsExactly("regionScope", "page", "size");
+        assertThat(texts(parameter(list.path("parameters"), "regionScope").path("schema").path("enum")))
+                .containsExactly("MY_REGION", "ALL");
         assertThat(parameter(list.path("parameters"), "size").path("schema").path("maximum").asInt()).isEqualTo(100);
         assertThat(names(list.path("responses"))).containsExactlyInAnyOrder("200", "400", "401", "500");
         assertThat(schemaRef(list.path("responses"), "200")).isEqualTo("#/components/schemas/MatchListResponse");
         assertThat(schemaRef(list.path("responses"), "400")).isEqualTo(ERROR_REF);
         assertThat(schemaRef(list.path("responses"), "401")).isEqualTo(ERROR_REF);
         assertThat(names(schema("MatchListResponse").path("properties"))).containsExactlyInAnyOrder("totalCount",
-                "page", "size", "judgedOn", "notices", "uncomparedConditions", "items");
+                "regionScope", "page", "size", "judgedOn", "notices", "uncomparedConditions", "items");
         assertThat(names(schema("MatchListItem").path("properties")))
                 .containsExactlyInAnyOrder("benefit", "result", "items");
         assertThat(names(schema("MatchItemResults").path("properties"))).containsExactlyInAnyOrder("personalTarget",

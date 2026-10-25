@@ -18,7 +18,8 @@ import kr.govbenefit.match.domain.UncomparedCondition;
  * 항목에는 판정과 이유만 담고, 비교한 값과 원문은 혜택 하나의 조건 비교({@link MatchResponse})에서 본다.
  * 개인 대상이 아닌 혜택은 목록에 없으므로 안내·비교하지 않은 조건·기준일이 모든 항목에 같아 한 번만 담는다.
  *
- * @param totalCount 목록에 나오는 전체 혜택 수(부합과 확인 필요)
+ * @param totalCount  지역 범위 안에서 목록에 나오는 전체 혜택 수(부합과 확인 필요)
+ * @param regionScope 실제로 적용한 운영 기관 지역 범위
  * @param page       요청한 쪽 번호. 1부터 센다.
  * @param size       요청한 쪽 크기
  * @param judgedOn   만 나이를 계산한 기준일(서울 날짜)
@@ -27,10 +28,13 @@ import kr.govbenefit.match.domain.UncomparedCondition;
 @Schema(description = """
         조건 비교 결과 순 혜택 목록(REQ-MATCH-01, DEC-MATCH). 프로필과 지원조건 코드를 비교한 것이며 신청 가능 확정이 아니다. \
         `MATCH` → `NEEDS_CHECK` 순이고 같은 결과 안에서는 이름순, 이름이 같으면 서비스 ID 순이다(검색과 같은 이름순). \
-        개인 대상이 아닌 혜택(`MISMATCH`)은 목록에 없고 검색으로는 찾을 수 있다.""")
+        개인 대상이 아닌 혜택(`MISMATCH`)은 목록에 없고 검색으로는 찾을 수 있다. \
+        운영 기관 지역 범위(`regionScope`) 안의 혜택만 담는다.""")
 public record MatchListResponse(
-        @Schema(description = "목록에 나오는 전체 혜택 수(`MATCH`와 `NEEDS_CHECK`). "
+        @Schema(description = "지역 범위 안에서 목록에 나오는 전체 혜택 수(`MATCH`와 `NEEDS_CHECK`). "
                 + "규모가 커지면 빠지거나 다음 쪽 여부로 바뀔 수 있으므로 의존하지 않는다(DEC-SEARCH).") long totalCount,
+        @Schema(description = "실제로 적용한 운영 기관 지역 범위. 거주지가 없으면 요청과 관계없이 `ALL`이다.")
+        RegionScope regionScope,
         @Schema(description = "요청한 쪽 번호. 1부터 센다.") int page,
         @Schema(description = "요청한 쪽 크기") int size,
         @Schema(description = "만 나이를 계산한 기준일(서울 날짜). 모든 항목에 같다.", example = "2026-10-21") LocalDate judgedOn,
@@ -46,9 +50,9 @@ public record MatchListResponse(
     private static final List<MatchNotice> NOTICES = List.of(MatchNotice.values());
     private static final List<UncomparedCondition> UNCOMPARED = List.of(UncomparedCondition.values());
 
-    public static MatchListResponse of(long totalCount, int page, int size, LocalDate judgedOn,
-                                       List<MatchListItem> items) {
-        return new MatchListResponse(totalCount, page, size, judgedOn, NOTICES, UNCOMPARED, items);
+    public static MatchListResponse of(long totalCount, RegionScope regionScope, int page, int size,
+                                       LocalDate judgedOn, List<MatchListItem> items) {
+        return new MatchListResponse(totalCount, regionScope, page, size, judgedOn, NOTICES, UNCOMPARED, items);
     }
 
     @Schema(description = "조건 비교 목록 항목. 판정은 같은 혜택의 조건 비교(`GET /api/me/matches/{serviceId}`)와 같다.")
