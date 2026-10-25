@@ -13,6 +13,8 @@ import kr.govbenefit.benefit.dto.BenefitSearchRequest;
 import kr.govbenefit.benefit.dto.BenefitSearchResponse;
 import kr.govbenefit.benefit.service.BenefitQueryService;
 import kr.govbenefit.common.api.ApiErrorResponse;
+import kr.govbenefit.region.dto.RegionListResponse;
+import kr.govbenefit.region.service.RegionService;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
@@ -32,16 +34,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class BenefitController {
 
     private final BenefitQueryService benefitQueryService;
+    private final RegionService regionService;
 
     @Operation(summary = "혜택 검색", description = """
-            혜택 이름으로 찾고 분야·운영 기관 유형으로 거른다(DEC-SEARCH).
+            혜택 이름으로 찾고 분야·운영 기관 유형·운영 기관 지역으로 거른다(DEC-SEARCH).
 
             - 키워드는 공백으로 나눈 단어를 모두 이름에 포함한 혜택을 찾는다. 키워드가 없으면 전체 목록이다.
             - 한 필터 안의 여러 값은 OR, 필터 사이와 키워드는 AND다. 값이 여럿이면 파라미터를 반복한다(`field=a&field=b`).
+            - 운영 기관 지역은 소관기관 소재지이며 거주 요건이 아니다(결정 0025). 시도를 고르면 그 시도 기관, 도내 시군구 기관, \
+            교육청 혜택이고, 시군구를 고르면 그 시군구 기관 혜택만이다. 지역이 없는 기관(중앙행정기관, 공공기관)의 혜택은 \
+            지역 필터를 걸면 나오지 않는다. 코드는 지역 목록 API에서 고르고, 프로필 저장과 같은 기준으로 검증한다.
             - 정렬은 이름순이고 이름이 같으면 서비스 ID 순이다.
             - 마지막 쪽을 넘은 번호는 오류가 아니라 `items`가 빈 배열인 200이다.""")
     @ApiResponse(responseCode = "200", description = "검색 결과")
-    @ApiResponse(responseCode = "400", description = "요청 값이 범위를 벗어났다. `code`는 `INVALID_INPUT`이고 항목별 이유는 `errors`에 있다.",
+    @ApiResponse(responseCode = "400", description = "요청 값이 범위를 벗어났거나 지역 코드가 올바르지 않다. `code`는 `INVALID_INPUT`이고 항목별 이유는 `errors`에 있다.",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApiErrorResponse.class),
                     examples = @ExampleObject(value = """
@@ -50,6 +56,15 @@ public class BenefitController {
     @GetMapping
     public ResponseEntity<BenefitSearchResponse> search(@ParameterObject @Valid BenefitSearchRequest request) {
         return ResponseEntity.ok(benefitQueryService.search(request.toCondition(), request.page(), request.size()));
+    }
+
+    @Operation(summary = "지역 목록", description = """
+            운영 기관 지역 필터(`agencySidoCode`·`agencySigunguCode`)에 쓰는 시도·시군구 코드(결정 0021, 0025). \
+            프로필 거주지 선택지의 지역과 같다. 교육청은 따로 없고 시도 필터에 포함된다.""")
+    @ApiResponse(responseCode = "200", description = "지역 목록")
+    @GetMapping("/regions")
+    public ResponseEntity<RegionListResponse> regions() {
+        return ResponseEntity.ok(new RegionListResponse(regionService.sidos()));
     }
 
     /**

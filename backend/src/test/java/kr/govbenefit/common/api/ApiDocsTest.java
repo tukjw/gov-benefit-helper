@@ -89,7 +89,8 @@ class ApiDocsTest {
         JsonNode operation = spec.path("paths").path("/api/benefits").path("get");
         JsonNode parameters = operation.path("parameters");
 
-        assertThat(names(parameters)).containsExactly("keyword", "field", "agencyType", "page", "size");
+        assertThat(names(parameters)).containsExactly("keyword", "field", "agencyType", "agencySidoCode",
+                "agencySigunguCode", "page", "size");
         parameters.forEach(parameter -> {
             assertThat(parameter.path("in").asString()).isEqualTo("query");
             assertThat(parameter.path("required").asBoolean()).isFalse();
@@ -103,6 +104,10 @@ class ApiDocsTest {
             assertThat(schema.path("items").has("enum")).isFalse();
             assertThat(parameter(parameters, filter).path("description").asString()).isNotBlank();
         }
+        for (String region : List.of("agencySidoCode", "agencySigunguCode")) {
+            assertThat(parameter(parameters, region).path("schema").path("type").asString()).isEqualTo("string");
+            assertThat(parameter(parameters, region).path("description").asString()).contains("거주 요건이 아니다");
+        }
         JsonNode page = parameter(parameters, "page").path("schema");
         assertThat(page.path("type").asString()).isEqualTo("integer");
         assertThat(page.path("minimum").asInt()).isEqualTo(1);
@@ -112,6 +117,19 @@ class ApiDocsTest {
         assertThat(size.path("minimum").asInt()).isEqualTo(1);
         assertThat(size.path("maximum").asInt()).isEqualTo(100);
         assertThat(size.path("default").asInt()).isEqualTo(20);
+    }
+
+    @Test
+    void 지역_목록_API는_로그인_없이_쓴다() {
+        JsonNode operation = spec.path("paths").path("/api/benefits/regions").path("get");
+
+        assertThat(operation.path("security").isMissingNode()).isTrue();
+        assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
+        assertThat(schemaRef(operation.path("responses"), "200"))
+                .isEqualTo("#/components/schemas/RegionListResponse");
+        assertThat(names(schema("SidoOption").path("properties"))).containsExactlyInAnyOrder("code", "name",
+                "sigungus");
+        assertThat(names(schema("RegionResponse").path("properties"))).containsExactlyInAnyOrder("code", "name");
     }
 
     @Test

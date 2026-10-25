@@ -43,13 +43,23 @@ class BenefitSearchConditionTest {
     @Test
     void 필터는_빈_값과_중복만_빼고_원문_그대로_둔다() {
         BenefitSearchCondition condition = BenefitSearchCondition.of(null,
-                Arrays.asList("보육·교육", "", " ", null, "보육·교육", " 생활안정"), null);
+                Arrays.asList("보육·교육", "", " ", null, "보육·교육", " 생활안정"), null, null, null);
 
         assertThat(condition.fields()).containsExactly("보육·교육", " 생활안정");
         assertThat(condition.agencyTypes()).isEmpty();
     }
 
+    @Test
+    void 지역_코드는_빈_값이면_조건이_없다() {
+        assertThat(BenefitSearchCondition.of(null, null, null, " ", "")).satisfies(condition -> {
+            assertThat(condition.agencySidoCode()).isNull();
+            assertThat(condition.agencySigunguCode()).isNull();
+        });
+        assertThat(BenefitSearchCondition.of(null, null, null, "6410000", "3740000").agencySigunguCode())
+                .isEqualTo("3740000");
+    }
+
     private static List<String> keywords(String keyword) {
-        return BenefitSearchCondition.of(keyword, null, null).keywords();
+        return BenefitSearchCondition.of(keyword, null, null, null, null).keywords();
     }
 }

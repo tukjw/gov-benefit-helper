@@ -44,6 +44,8 @@ class BenefitSearchApiTest {
 
     private static final LocalDateTime SEEN_AT = LocalDateTime.of(2026, 10, 4, 4, 0, 12, 345_000_000);
     private static final int FIXTURE_COUNT = 15;
+    private static final String GYEONGGI = "6410000";
+    private static final String SUWON = "3740000";
 
     private static final Gov24StubServer stub = Gov24StubServer.start();
 
@@ -299,6 +301,70 @@ class BenefitSearchApiTest {
     }
 
     @Test
+    void 시도를_고르면_그_시도_기관과_도내_시군구_기관과_교육청_혜택만_나온다() throws Exception {
+        agencyBenefits();
+
+        assertThat(ids(search("agencySidoCode", GYEONGGI)))
+                .containsExactlyInAnyOrder("G-SIDO", "G-SUWON", "G-CORP", "G-EDU", "G-SEONGNAM");
+        assertThat(ids(search("agencySidoCode", "5690000"))).containsExactlyInAnyOrder("S-SIDO", "S-EDU");
+    }
+
+    @Test
+    void 지역이_없는_기관과_지역을_모르는_기관은_지역_필터에_나오지_않는다() throws Exception {
+        agencyBenefits();
+
+        // 중앙행정기관은 코드가 시도 코드와 같아도, 광역시도 유형은 코드가 교육청 코드여도 나오지 않는다(유형 기준).
+        assertThat(ids(search("agencySidoCode", GYEONGGI)))
+                .doesNotContain("C-NAT", "C-PUB", "X-TYPE", "X-UNKNOWN");
+        assertThat(ids(search("agencySidoCode", "6260000"))).containsExactlyInAnyOrder("B-SUYEONG", "B-EDU");
+    }
+
+    @Test
+    void 시군구를_고르면_그_시군구_기관_혜택만_나온다() throws Exception {
+        agencyBenefits();
+
+        assertThat(ids(search("agencySidoCode", GYEONGGI, "agencySigunguCode", SUWON)))
+                .containsExactlyInAnyOrder("G-SUWON", "G-CORP");
+    }
+
+    @Test
+    void 지역_필터는_다른_필터와_AND이고_빈_값은_무시한다() throws Exception {
+        agencyBenefits();
+
+        assertThat(ids(search("agencySidoCode", GYEONGGI, "agencyType", "시군구")))
+                .containsExactlyInAnyOrder("G-SUWON", "G-SEONGNAM");
+        assertThat(ids(search("agencySidoCode", GYEONGGI, "field", "주거·자립"))).containsExactly("G-CORP");
+        assertThat(ids(search("agencySidoCode", GYEONGGI, "keyword", "교육청"))).containsExactly("G-EDU");
+        assertThat(search("agencySidoCode", "", "agencySigunguCode", " ").get("totalCount").asLong())
+                .isEqualTo(FIXTURE_COUNT + 13);
+    }
+
+    @Test
+    void 잘못된_지역_코드는_프로필_저장과_같은_항목별_오류다() throws Exception {
+        assertRegionError(List.of("agencySidoCode", "9999999"), "agencySidoCode", "지원하지 않는 시도 코드입니다.");
+        assertRegionError(List.of("agencySidoCode", SUWON), "agencySidoCode", "지원하지 않는 시도 코드입니다.");
+        assertRegionError(List.of("agencySidoCode", GYEONGGI, "agencySigunguCode", GYEONGGI), "agencySigunguCode",
+                "지원하지 않는 시군구 코드입니다.");
+        assertRegionError(List.of("agencySidoCode", "6260000", "agencySigunguCode", SUWON), "agencySigunguCode",
+                "선택한 시도의 시군구가 아닙니다.");
+        assertRegionError(List.of("agencySigunguCode", SUWON), "agencySigunguCode", "시도와 함께 입력해야 합니다.");
+    }
+
+    @Test
+    void 지역_목록은_로그인_없이_시도_아래에_시군구를_묶어_준다() throws Exception {
+        JsonNode body = json(mockMvc.perform(get("/api/benefits/regions")).andExpect(status().isOk()));
+
+        List<JsonNode> sidos = elements(body, "sidos");
+        assertThat(sidos).hasSize(16);
+        assertThat(sidos.getFirst().get("code").asString()).isEqualTo("6110000");
+        assertThat(sidos.getFirst().get("name").asString()).isEqualTo("서울특별시");
+        assertThat(sidos.getFirst().get("sigungus").get(0).get("name").asString()).isEqualTo("종로구");
+        assertThat(sidos).filteredOn(sido -> sido.get("code").asString().equals("5690000"))
+                .singleElement().satisfies(sido -> assertThat(sido.get("sigungus").size()).isZero());
+        assertThat(sidos.stream().mapToInt(sido -> sido.get("sigungus").size()).sum()).isEqualTo(227);
+    }
+
+    @Test
     void 없는_경로와_지원하지_않는_메서드도_같은_오류_형식이다() throws Exception {
         JsonNode notFound = json(mockMvc.perform(get("/api/unknown")).andExpect(status().isNotFound()));
         assertThat(notFound.get("code").asString()).isEqualTo("NOT_FOUND");
@@ -317,10 +383,48 @@ class BenefitSearchApiTest {
 
     private void save(String serviceId, String name, String summary, String field, String agencyType,
                       String agencyName, String applyPeriodText, ApplyPeriodRule rule) {
+        save(serviceId, name, summary, field, agencyType, null, agencyName, applyPeriodText, rule);
+    }
+
+    private void save(String serviceId, String name, String summary, String field, String agencyType,
+                      String agencyCode, String agencyName, String applyPeriodText, ApplyPeriodRule rule) {
         BenefitContent content = new BenefitContent(name, summary, field, null, null, null, null, null,
-                applyPeriodText, null, null, null, agencyName, agencyType, null, null, null);
+                applyPeriodText, null, null, null, agencyName, agencyType, agencyCode, null, null);
         benefitRepository.save(Benefit.create(serviceId, content, new BenefitNormalization(null, null, rule),
                 SEEN_AT));
+    }
+
+    /** 운영 기관 지역이 다른 혜택 13건. 기본 혜택은 소관기관코드가 없다. */
+    private void agencyBenefits() {
+        agencyBenefit("G-SIDO", "경기도 혜택", "광역시도", GYEONGGI);
+        agencyBenefit("G-SUWON", "수원시 혜택", "시군구", SUWON);
+        agencyBenefit("G-SEONGNAM", "성남시 혜택", "시군구", "3780000");
+        save("G-CORP", "수원시 공사 혜택", "요약", "주거·자립", "지방공기업", SUWON, "수원도시공사", "상시",
+                ApplyPeriodRule.ALWAYS);
+        agencyBenefit("G-EDU", "경기도교육청 혜택", "교육청", "7530000");
+        agencyBenefit("B-SUYEONG", "수영구 혜택", "시군구", "3380000");
+        agencyBenefit("B-EDU", "부산광역시교육청 혜택", "교육청", "7150000");
+        agencyBenefit("S-SIDO", "세종 혜택", "광역시도", "5690000");
+        agencyBenefit("S-EDU", "세종교육청 혜택", "교육청", "9300000");
+        agencyBenefit("C-NAT", "중앙 혜택", "중앙행정기관", GYEONGGI);
+        agencyBenefit("C-PUB", "공공기관 혜택", "공공기관", "B552015");
+        agencyBenefit("X-TYPE", "유형이 다른 혜택", "광역시도", "7530000");
+        agencyBenefit("X-UNKNOWN", "지역 모름 혜택", "시군구", "9999999");
+    }
+
+    private void agencyBenefit(String serviceId, String name, String agencyType, String agencyCode) {
+        save(serviceId, name, "요약 " + serviceId, "생활안정", agencyType, agencyCode, "기관 " + serviceId, "상시",
+                ApplyPeriodRule.ALWAYS);
+    }
+
+    private void assertRegionError(List<String> params, String field, String reason) throws Exception {
+        JsonNode body = json(mockMvc.perform(request(params.toArray(String[]::new)))
+                .andExpect(status().isBadRequest()));
+        assertThat(body.get("code").asString()).isEqualTo("INVALID_INPUT");
+        assertThat(elements(body, "errors")).singleElement().satisfies(error -> {
+            assertThat(error.get("field").asString()).isEqualTo(field);
+            assertThat(error.get("reason").asString()).isEqualTo(reason);
+        });
     }
 
     private JsonNode search(String... params) throws Exception {
