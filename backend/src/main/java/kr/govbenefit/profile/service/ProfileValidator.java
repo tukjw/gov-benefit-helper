@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import kr.govbenefit.common.api.ApiErrorResponse.InputError;
@@ -21,7 +20,8 @@ import kr.govbenefit.profile.domain.LifeAttribute;
 import kr.govbenefit.profile.domain.ProfileValues;
 import kr.govbenefit.profile.dto.ProfileRequest;
 import kr.govbenefit.region.domain.Region;
-import kr.govbenefit.region.repository.RegionRepository;
+import kr.govbenefit.region.service.RegionCodeValidator;
+import kr.govbenefit.region.service.RegionCodeValidator.RegionSelection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +42,7 @@ public class ProfileValidator {
     private static final DateTimeFormatter BIRTH_DATE = DateTimeFormatter.ofPattern("uuuu-MM-dd")
             .withResolverStyle(ResolverStyle.STRICT);
 
-    private final RegionRepository regionRepository;
+    private final RegionCodeValidator regionCodeValidator;
     private final Clock clock;
 
     /**
@@ -52,8 +52,8 @@ public class ProfileValidator {
         List<InputError> errors = new ArrayList<>();
         LocalDate birthDate = birthDate(request.birthDate(), errors);
         Gender gender = gender(request.gender(), errors);
-        Region sido = sido(request.sidoCode(), errors);
-        Region sigungu = sigungu(request.sigunguCode(), request.sidoCode(), sido, errors);
+        RegionSelection region = regionCodeValidator.validate("sidoCode", request.sidoCode(), "sigunguCode",
+                request.sigunguCode(), errors);
         checkAttributes("lifeAttributes", request.lifeAttributes(), LIFE_VALUES, errors);
         checkAttributes("householdAttributes", request.householdAttributes(), HOUSEHOLD_VALUES, errors);
         if (!errors.isEmpty()) {
@@ -63,7 +63,7 @@ public class ProfileValidator {
                 : request.lifeAttributes().stream().map(LifeAttribute::valueOf).collect(Collectors.toSet());
         Set<HouseholdAttribute> household = request.householdAttributes() == null ? null
                 : request.householdAttributes().stream().map(HouseholdAttribute::valueOf).collect(Collectors.toSet());
-        return new ProfileValues(birthDate, gender, code(sido), code(sigungu), life, household);
+        return new ProfileValues(birthDate, gender, code(region.sido()), code(region.sigungu()), life, household);
     }
 
     private LocalDate birthDate(String value, List<InputError> errors) {
@@ -97,40 +97,6 @@ public class ProfileValidator {
         }
         errors.add(new InputError("gender", value, "MALE 또는 FEMALE이어야 합니다."));
         return null;
-    }
-
-    private Region sido(String code, List<InputError> errors) {
-        if (code == null) {
-            return null;
-        }
-        Optional<Region> region = regionRepository.findById(code).filter(Region::isSido);
-        if (region.isEmpty()) {
-            errors.add(new InputError("sidoCode", code, "지원하지 않는 시도 코드입니다."));
-        }
-        return region.orElse(null);
-    }
-
-    /**
-     * 시도가 틀렸으면 시군구는 코드가 있는지만 본다. 소속 오류를 함께 내면 원인이 하나인데 오류가 둘이 된다.
-     */
-    private Region sigungu(String code, String sidoCode, Region sido, List<InputError> errors) {
-        if (code == null) {
-            return null;
-        }
-        if (sidoCode == null) {
-            errors.add(new InputError("sigunguCode", code, "시도와 함께 입력해야 합니다."));
-            return null;
-        }
-        Optional<Region> region = regionRepository.findById(code).filter(found -> !found.isSido());
-        if (region.isEmpty()) {
-            errors.add(new InputError("sigunguCode", code, "지원하지 않는 시군구 코드입니다."));
-            return null;
-        }
-        if (sido != null && !sido.getCode().equals(region.get().getParentCode())) {
-            errors.add(new InputError("sigunguCode", code, "선택한 시도의 시군구가 아닙니다."));
-            return null;
-        }
-        return region.get();
     }
 
     /**
