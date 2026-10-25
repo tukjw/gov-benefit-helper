@@ -472,6 +472,26 @@ class ApiDocsTest {
     }
 
     @Test
+    void 비회원_조건_비교_API는_로그인_없이_프로필_값을_본문으로_받고_같은_응답을_준다() {
+        JsonNode list = spec.path("paths").path("/api/matches").path("post");
+        JsonNode match = spec.path("paths").path("/api/matches/{serviceId}").path("post");
+
+        for (JsonNode operation : List.of(list, match)) {
+            assertThat(operation.path("security").isMissingNode()).isTrue();
+            assertThat(requestRef(operation)).isEqualTo("#/components/schemas/ProfileRequest");
+            assertThat(operation.path("requestBody").path("required").asBoolean()).isFalse();
+            assertThat(schemaRef(operation.path("responses"), "400")).isEqualTo(ERROR_REF);
+        }
+        assertThat(names(list.path("parameters"))).containsExactly("regionScope", "page", "size");
+        assertThat(names(list.path("responses"))).containsExactlyInAnyOrder("200", "400", "500");
+        assertThat(schemaRef(list.path("responses"), "200")).isEqualTo("#/components/schemas/MatchListResponse");
+        assertThat(names(match.path("parameters"))).containsExactly("serviceId");
+        assertThat(names(match.path("responses"))).containsExactlyInAnyOrder("200", "400", "404", "500");
+        assertThat(schemaRef(match.path("responses"), "200")).isEqualTo("#/components/schemas/MatchResponse");
+        assertThat(schemaRef(match.path("responses"), "404")).isEqualTo(ERROR_REF);
+    }
+
+    @Test
     void 액세스_토큰_인증_방식이_명세에_있다() {
         JsonNode bearer = spec.path("components").path("securitySchemes").path("bearerAuth");
 

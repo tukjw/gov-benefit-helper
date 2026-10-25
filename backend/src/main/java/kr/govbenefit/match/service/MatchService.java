@@ -15,6 +15,7 @@ import kr.govbenefit.collection.domain.SourceRecord;
 import kr.govbenefit.collection.repository.SourceRecordRepository;
 import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
+import kr.govbenefit.common.api.InvalidInputException;
 import kr.govbenefit.match.domain.ConditionMatcher;
 import kr.govbenefit.match.domain.MatchOutcome;
 import kr.govbenefit.match.domain.MatchSubject;
@@ -23,7 +24,10 @@ import kr.govbenefit.match.dto.MatchListResponse;
 import kr.govbenefit.match.dto.MatchListResponse.MatchListItem;
 import kr.govbenefit.match.dto.MatchResponse;
 import kr.govbenefit.match.dto.RegionScope;
+import kr.govbenefit.profile.domain.ProfileValues;
+import kr.govbenefit.profile.dto.ProfileRequest;
 import kr.govbenefit.profile.repository.UserProfileRepository;
+import kr.govbenefit.profile.service.ProfileValidator;
 import kr.govbenefit.region.domain.AgencyRegion;
 import kr.govbenefit.region.domain.Regions;
 import kr.govbenefit.region.service.RegionService;
@@ -33,7 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 토큰 주인의 프로필과 혜택의 지원조건 비교(REQ-MATCH-01, DEC-MATCH). 사용자는 토큰으로만 정한다(결정 0018).
+ * 프로필과 혜택의 지원조건 비교(REQ-MATCH-01, DEC-MATCH). 로그인 사용자는 토큰 주인의 저장된 프로필로(결정 0018), 비회원은
+ * 요청에 담은 값으로 비교한다. 요청 값은 저장하지 않으며, 두 경로는 같은 판정·범위·정렬·페이지를 쓴다.
  * 지원조건은 저장된 원문(supportConditions)을 조회할 때마다 읽으므로(결정 0008) 프로필을 바꾸면 다음 비교에 바로 반영된다.
  */
 @Service
@@ -46,6 +51,7 @@ public class MatchService {
     private final BenefitRepository benefitRepository;
     private final SourceRecordRepository sourceRecordRepository;
     private final RegionService regionService;
+    private final ProfileValidator profileValidator;
     private final JsonMapper jsonMapper;
     private final Clock clock;
 
@@ -58,6 +64,18 @@ public class MatchService {
         requireAccount(userId);
         LocalDate today = LocalDate.now(clock);
         return match(subject(userId, today), serviceId, today);
+    }
+
+    /**
+     * 요청에 담은 프로필 값으로 비교한다. 값을 검증한 뒤 혜택을 찾으므로 잘못된 값이면 서비스 ID와 관계없이 거절한다.
+     *
+     * @throws InvalidInputException 지원하지 않는 값이나 모순된 입력이다. 프로필 저장과 같은 항목별 오류다.
+     * @throws BusinessException     수집되지 않은 서비스 ID다({@code NOT_FOUND}).
+     */
+    public MatchResponse matchWith(ProfileRequest profile, String serviceId) {
+        ProfileValues values = profileValidator.validate(profile);
+        LocalDate today = LocalDate.now(clock);
+        return match(MatchSubject.of(values, today), serviceId, today);
     }
 
     private MatchResponse match(MatchSubject subject, String serviceId, LocalDate today) {
@@ -88,6 +106,17 @@ public class MatchService {
         requireAccount(userId);
         LocalDate today = LocalDate.now(clock);
         return list(subject(userId, today), requested, page, size, today);
+    }
+
+    /**
+     * 요청에 담은 프로필 값으로 비교한 목록. 규칙은 {@link #list(Long, RegionScope, int, int)}와 같다.
+     *
+     * @throws InvalidInputException 지원하지 않는 값이나 모순된 입력이다. 프로필 저장과 같은 항목별 오류다.
+     */
+    public MatchListResponse listWith(ProfileRequest profile, RegionScope requested, int page, int size) {
+        ProfileValues values = profileValidator.validate(profile);
+        LocalDate today = LocalDate.now(clock);
+        return list(MatchSubject.of(values, today), requested, page, size, today);
     }
 
     private MatchListResponse list(MatchSubject subject, RegionScope requested, int page, int size,
