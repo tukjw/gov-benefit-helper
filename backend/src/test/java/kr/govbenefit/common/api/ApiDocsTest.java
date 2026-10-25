@@ -357,21 +357,28 @@ class ApiDocsTest {
     void 프로필_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
         JsonNode get = spec.path("paths").path("/api/me/profile").path("get");
         JsonNode put = spec.path("paths").path("/api/me/profile").path("put");
-        JsonNode options = spec.path("paths").path("/api/me/profile/options").path("get");
 
-        for (JsonNode operation : List.of(get, put, options)) {
+        for (JsonNode operation : List.of(get, put)) {
             assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
             assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
             assertThat(schemaRef(operation.path("responses"), "401")).isEqualTo(ERROR_REF);
         }
         assertThat(names(get.path("responses"))).containsExactlyInAnyOrder("200", "401", "500");
-        assertThat(names(options.path("responses"))).containsExactlyInAnyOrder("200", "401", "500");
         assertThat(names(put.path("responses"))).containsExactlyInAnyOrder("200", "400", "401", "500");
         assertThat(schemaRef(get.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileResponse");
         assertThat(schemaRef(put.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileResponse");
         assertThat(schemaRef(put.path("responses"), "400")).isEqualTo(ERROR_REF);
-        assertThat(schemaRef(options.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileOptionsResponse");
         assertThat(requestRef(put)).isEqualTo("#/components/schemas/ProfileRequest");
+    }
+
+    @Test
+    void 프로필_선택지는_로그인_없이_받는다() {
+        JsonNode options = spec.path("paths").path("/api/profile/options").path("get");
+
+        assertThat(options.path("security").isMissingNode()).isTrue();
+        assertThat(names(options.path("responses"))).containsExactlyInAnyOrder("200", "500");
+        assertThat(schemaRef(options.path("responses"), "200")).isEqualTo("#/components/schemas/ProfileOptionsResponse");
+        assertThat(spec.path("paths").has("/api/me/profile/options")).isFalse();
     }
 
     @Test

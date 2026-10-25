@@ -39,6 +39,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -268,8 +269,7 @@ class ProfileApiTest {
     void 인증되지_않은_요청은_거절한다() throws Exception {
         for (ResultActions result : List.of(
                 mockMvc.perform(get("/api/me/profile")),
-                mockMvc.perform(put("/api/me/profile").contentType(MediaType.APPLICATION_JSON).content("{}")),
-                mockMvc.perform(get("/api/me/profile/options")))) {
+                mockMvc.perform(put("/api/me/profile").contentType(MediaType.APPLICATION_JSON).content("{}")))) {
             JsonNode body = json(result.andExpect(status().isUnauthorized()));
             assertThat(body.get("code").asString()).isEqualTo("UNAUTHENTICATED");
         }
@@ -360,9 +360,17 @@ class ProfileApiTest {
     }
 
     @Test
-    void 선택지는_시도별_시군구와_속성의_값과_이름이다() throws Exception {
-        JsonNode body = json(mockMvc.perform(get("/api/me/profile/options").header(HttpHeaders.AUTHORIZATION,
-                "Bearer " + accessTokenIssuer.issue(aliceId).value())).andExpect(status().isOk()));
+    void 선택지는_로그인_없이_받는_시도별_시군구와_속성의_값과_이름이다() throws Exception {
+        JsonNode body = json(mockMvc.perform(get("/api/profile/options")).andExpect(status().isOk()));
+        // 토큰을 붙여도 같다. 옛 경로는 처리할 API가 없어 토큰과 관계없이 찾을 수 없음이다(결정 0018).
+        String token = "Bearer " + accessTokenIssuer.issue(aliceId).value();
+        assertThat(json(mockMvc.perform(get("/api/profile/options").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk()))).isEqualTo(body);
+        for (MockHttpServletRequestBuilder old : List.of(get("/api/me/profile/options"),
+                get("/api/me/profile/options").header(HttpHeaders.AUTHORIZATION, token))) {
+            assertThat(json(mockMvc.perform(old).andExpect(status().isNotFound())).get("code").asString())
+                    .isEqualTo("NOT_FOUND");
+        }
 
         JsonNode sidos = body.get("sidos");
         assertThat(sidos).hasSize(16);

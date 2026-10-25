@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.govbenefit.common.api.ApiErrorResponse;
 import kr.govbenefit.common.api.OpenApiConfig;
 import kr.govbenefit.common.security.CurrentUserId;
-import kr.govbenefit.profile.dto.ProfileOptionsResponse;
 import kr.govbenefit.profile.dto.ProfileRequest;
 import kr.govbenefit.profile.dto.ProfileResponse;
 import kr.govbenefit.profile.service.ProfileService;
@@ -55,7 +54,7 @@ public class ProfileController {
             본문 전체로 프로필을 바꾼다. 처음이면 만든다. 빠진 필드와 `null`은 미입력이다.
 
             - 속성은 `null`이면 미입력, `["NONE"]`이면 해당 없음이다. 빈 배열은 거절한다.
-            - 지역 코드와 속성 값은 선택지 API(`GET /api/me/profile/options`)에서 고른다.
+            - 지역 코드와 속성 값은 선택지 API(`GET /api/profile/options`)에서 고른다.
             - 잘못된 항목은 모두 `errors`에 담아 한 번에 거절하며, 거절하면 아무것도 바꾸지 않는다.""",
             security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     @ApiResponse(responseCode = "200", description = "저장한 프로필")
@@ -75,17 +74,5 @@ public class ProfileController {
     @PutMapping
     public ResponseEntity<ProfileResponse> put(@CurrentUserId Long userId, @RequestBody ProfileRequest request) {
         return ResponseEntity.ok(profileService.put(userId, request));
-    }
-
-    @Operation(summary = "프로필 선택지", description = "시도별 시군구 목록과 생애·가구 속성의 값·이름이다.",
-            security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
-    @ApiResponse(responseCode = "200", description = "선택지")
-    @ApiResponse(responseCode = "401", description = UNAUTHENTICATED,
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    schema = @Schema(implementation = ApiErrorResponse.class),
-                    examples = @ExampleObject(value = UNAUTHENTICATED_EXAMPLE)))
-    @GetMapping("/options")
-    public ResponseEntity<ProfileOptionsResponse> options() {
-        return ResponseEntity.ok(profileService.options());
     }
 }
