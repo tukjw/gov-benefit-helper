@@ -1,9 +1,8 @@
 package kr.govbenefit.match.domain;
 
 import java.time.LocalDate;
-import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import kr.govbenefit.profile.domain.Ages;
 import kr.govbenefit.profile.domain.Gender;
 import kr.govbenefit.profile.domain.HouseholdAttribute;
@@ -40,17 +39,15 @@ public record MatchSubject(
 
     /**
      * 저장하지 않은 프로필 값. 속성은 저장된 프로필({@link UserProfile#lifeAttributes()})과 같은 enum 선언 순서로 둔다.
-     * 순서가 다르면 같은 값인데 상세 비교 응답이 달라진다.
+     * 순서가 다르면 같은 값인데 상세 비교 응답이 달라진다. {@link EnumSet}은 선언 순서로 순회한다.
+     * 검증을 통과한 속성 집합은 비어 있지 않으므로(결정 0022) {@link EnumSet#copyOf}에 그대로 넘긴다.
      */
     public static MatchSubject of(ProfileValues values, LocalDate today) {
         Integer age = values.birthDate() == null ? null : Ages.fullAge(values.birthDate(), today);
-        return new MatchSubject(age, values.gender(), ordered(LifeAttribute.class, values.lifeAttributes()),
-                ordered(HouseholdAttribute.class, values.householdAttributes()), values.sidoCode(),
-                values.sigunguCode());
-    }
-
-    private static <E extends Enum<E>> List<E> ordered(Class<E> type, Set<E> values) {
-        return values == null ? null
-                : Arrays.stream(type.getEnumConstants()).filter(values::contains).toList();
+        List<LifeAttribute> life = values.lifeAttributes() == null ? null
+                : List.copyOf(EnumSet.copyOf(values.lifeAttributes()));
+        List<HouseholdAttribute> household = values.householdAttributes() == null ? null
+                : List.copyOf(EnumSet.copyOf(values.householdAttributes()));
+        return new MatchSubject(age, values.gender(), life, household, values.sidoCode(), values.sigunguCode());
     }
 }
