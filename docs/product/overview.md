@@ -21,7 +21,7 @@
 | Group·기본 패키지 | `kr.govbenefit` | `backend/build.gradle`·현재 Java 코드 |
 | 백엔드 기반 | Java 21, Spring Boot 4.1.1, Gradle wrapper 9.7.1, JPA, Flyway, MySQL 8.4, Testcontainers | 현재 설정·초기 구성 플랜 |
 | 구현 상태 | 백엔드 초기 구성이 있고, 정책·사용자 등 제품 기능은 아직 없음 | 현재 소스 확인 |
-| 클라이언트·도메인 | Next.js 웹(PWA). 도메인은 `govbenefit.kr`(2026-09-27 등록)이고 API는 같은 사이트의 하위 도메인에 둔다 | [DEC-APP](development.md#결정한-사항) |
+| 클라이언트·도메인 | React + Vite 웹(PWA). 정적 파일로 배포한다. 도메인은 `govbenefit.kr`(2026-09-27 등록)이고 API는 같은 사이트의 하위 도메인에 둔다 | [DEC-APP](development.md#결정한-사항) |
 
 버전과 실행 방법의 최신 기준은 빌드 파일·[저장소 지침](../../AGENTS.md)이다. 과거 조사 문서의 패키지 예시와 ‘DB 미정’ 같은 설명을 현재 설정으로 사용하지 않는다.
 
