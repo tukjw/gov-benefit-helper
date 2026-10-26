@@ -124,7 +124,7 @@ class MatchApiTest {
     }
 
     @Test
-    void 코드상_모두_충족하면_부합이고_비교한_값과_원문이_함께_온다() throws Exception {
+    void 코드상_모두_충족하면_해당이고_비교한_값과_원문이_함께_온다() throws Exception {
         collectionService.collectAll();
         putProfile(ALICE, profile("FEMALE", List.of("LIVESTOCK_FARMER"), List.of("NONE")));
 
@@ -184,7 +184,7 @@ class MatchApiTest {
     }
 
     @Test
-    void 개인_대상이_아닌_혜택만_불일치이고_나머지_항목은_판정하지_않는다() throws Exception {
+    void 개인_대상이_아닌_혜택만_미해당이고_나머지_항목은_판정하지_않는다() throws Exception {
         stub.record(SERVICE_LIST, HANWOO).put("사용자구분", "법인/시설/단체");
         collectionService.collectAll();
         putProfile(ALICE, profile("FEMALE", List.of("LIVESTOCK_FARMER"), List.of("NONE")));
@@ -234,7 +234,7 @@ class MatchApiTest {
     }
 
     @Test
-    void 지원조건을_수집하지_못한_혜택은_확인_필요이고_불일치가_아니다() throws Exception {
+    void 지원조건을_수집하지_못한_혜택은_확인_필요이고_미해당이_아니다() throws Exception {
         stub.override(SUPPORT_CONDITIONS, 1, 503, "{\"code\":-1,\"msg\":\"일시 장애\"}");
         collectionService.collectAll();
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM source_record WHERE endpoint = 'SUPPORT_CONDITIONS'",
@@ -294,7 +294,7 @@ class MatchApiTest {
                 assertThat(body.get("items").get("agencyRegion").get("reason").asString())
                         .as(residence + " " + services.get(i)).isEqualTo(reason);
                 assertItem(body.get("items").get("agencyRegion"), met ? "MET" : "NEEDS_CHECK", reason);
-                // 다른 항목은 모두 충족이라 지역 판정이 곧 결과다. 다른 지역도 불일치가 아니다.
+                // 다른 항목은 모두 충족이라 지역 판정이 곧 결과다. 다른 지역도 미해당이 아니다.
                 assertThat(body.get("result").asString()).isEqualTo(met ? "MATCH" : "NEEDS_CHECK");
             }
         }

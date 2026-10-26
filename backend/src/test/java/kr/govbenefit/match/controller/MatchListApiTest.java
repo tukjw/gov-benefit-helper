@@ -67,7 +67,7 @@ class MatchListApiTest {
     private static final String PATH = "/api/me/matches";
     /**
      * 본으로 쓰는 stub fixture 레코드. 사용자구분 개인, 성별 둘 다 Y, 연령 19~120, 생애는 축산업인만 Y, 가구 전부 Y.
-     * {@link #ALICE_PROFILE}이면 부합이다.
+     * {@link #ALICE_PROFILE}이면 해당이다.
      */
     private static final String HANWOO = "511000000138";
     private static final List<String> FIXTURE_IDS = List.of(HANWOO, "403000000173", "O00024000031");
@@ -146,7 +146,7 @@ class MatchListApiTest {
     }
 
     @Test
-    void 부합_다음_확인_필요_순이고_같은_결과_안에서는_검색과_같은_이름_서비스_ID_순이다() throws Exception {
+    void 해당_다음_확인_필요_순이고_같은_결과_안에서는_검색과_같은_이름_서비스_ID_순이다() throws Exception {
         // 수집 순서가 정렬 순서와 다르도록 섞어 넣는다.
         service("T07", "가 혜택", "개인", AGE_ON_BOUNDARY);
         service("T03", "ABD 지원", "개인", UNCHANGED);
@@ -251,7 +251,7 @@ class MatchListApiTest {
 
     @Test
     void 목록_항목의_판정은_같은_혜택의_상세_비교와_같다() throws Exception {
-        service("D01", "부합 혜택", "개인", UNCHANGED);
+        service("D01", "해당 혜택", "개인", UNCHANGED);
         service("D02", "경계값 혜택", "개인", AGE_ON_BOUNDARY);
         service("D03", "사용자구분 없는 혜택", null, UNCHANGED);
         service("D04", "지원조건 없는 혜택", "개인", null);
@@ -296,7 +296,7 @@ class MatchListApiTest {
     }
 
     @Test
-    void 쪽_크기는_기본_20건_최대_100건이고_전체_건수는_불일치를_뺀_건수다() throws Exception {
+    void 쪽_크기는_기본_20건_최대_100건이고_전체_건수는_미해당을_뺀_건수다() throws Exception {
         for (int i = 1; i <= 25; i++) {
             service("S%02d".formatted(i), "혜택 %02d".formatted(i), "개인", UNCHANGED);
         }
@@ -406,7 +406,7 @@ class MatchListApiTest {
 
         JsonNode all = list(ALICE, "regionScope", "ALL");
         assertThat(all.get("regionScope").asString()).isEqualTo("ALL");
-        // 다른 지역과 지역 모름은 확인 필요라 부합 뒤에 온다. 개인 대상이 아닌 혜택은 어느 범위에도 없다.
+        // 다른 지역과 지역 모름은 확인 필요라 해당 뒤에 온다. 개인 대상이 아닌 혜택은 어느 범위에도 없다.
         assertThat(ids(all)).containsExactly("R01", "R02", "R03", "R04", "R06", "R05", "R07", "R08");
         assertThat(all.get("totalCount").asLong()).isEqualTo(8);
         assertItem(item(all, "R01").get("agencyRegion"), "MET", "REGION_INCLUDES");
@@ -430,7 +430,7 @@ class MatchListApiTest {
         JsonNode body = list(ALICE);
 
         assertThat(body.get("regionScope").asString()).isEqualTo("MY_REGION");
-        // 시도 기관과 지역 없는 기관은 부합이고, 도내 시군구 기관은 비교할 수 없어 확인 필요다.
+        // 시도 기관과 지역 없는 기관은 해당이고, 도내 시군구 기관은 비교할 수 없어 확인 필요다.
         assertThat(ids(body)).containsExactly("R02", "R03", "R06", "R01", "R04", "R05");
         assertItem(item(body, "R01").get("agencyRegion"), "NEEDS_CHECK", "PROFILE_MISSING");
         assertItem(item(body, "R05").get("agencyRegion"), "NEEDS_CHECK", "PROFILE_MISSING");
@@ -451,7 +451,7 @@ class MatchListApiTest {
 
             assertThat(body.get("regionScope").asString()).isEqualTo("ALL");
             assertThat(body.get("totalCount").asLong()).isEqualTo(8);
-            // 지역 없는 기관만 부합이다.
+            // 지역 없는 기관만 해당이다.
             assertThat(ids(body).getFirst()).isEqualTo("R06");
             assertThat(results(body)).containsExactly("MATCH", "NEEDS_CHECK", "NEEDS_CHECK", "NEEDS_CHECK",
                     "NEEDS_CHECK", "NEEDS_CHECK", "NEEDS_CHECK", "NEEDS_CHECK");
@@ -505,7 +505,7 @@ class MatchListApiTest {
     }
 
     /**
-     * 경상북도 상주시 거주자 기준으로 운영 기관 지역이 다른 개인 대상 혜택을 넣는다. 지원조건은 모두 {@link #ALICE_PROFILE}에 부합한다.
+     * 경상북도 상주시 거주자 기준으로 운영 기관 지역이 다른 개인 대상 혜택을 넣는다. 지원조건은 모두 {@link #ALICE_PROFILE}에 해당한다.
      */
     private void regionServices() {
         service("R01", "가 상주시", "개인", UNCHANGED, "시군구", SANGJU);

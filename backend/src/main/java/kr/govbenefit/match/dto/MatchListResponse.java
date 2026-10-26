@@ -18,7 +18,7 @@ import kr.govbenefit.match.domain.UncomparedCondition;
  * 항목에는 판정과 이유만 담고, 비교한 값과 원문은 혜택 하나의 조건 비교({@link MatchResponse})에서 본다.
  * 개인 대상이 아닌 혜택은 목록에 없으므로 안내·비교하지 않은 조건·기준일이 모든 항목에 같아 한 번만 담는다.
  *
- * @param totalCount  지역 범위 안에서 목록에 나오는 전체 혜택 수(부합과 확인 필요)
+ * @param totalCount  지역 범위 안에서 목록에 나오는 전체 혜택 수(해당과 확인 필요)
  * @param regionScope 실제로 적용한 운영 기관 지역 범위
  * @param page       요청한 쪽 번호. 1부터 센다.
  * @param size       요청한 쪽 크기

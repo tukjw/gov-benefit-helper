@@ -375,7 +375,7 @@ class PublicMatchApiTest {
         }
     }
 
-    /** 경상북도 상주시에 사는 축산업인. 본 레코드의 지원조건에 부합한다. */
+    /** 경상북도 상주시에 사는 축산업인. 본 레코드의 지원조건에 해당한다. */
     private static Map<String, Object> profile() {
         Map<String, Object> body = new HashMap<>();
         body.put("birthDate", BIRTH_DATE);

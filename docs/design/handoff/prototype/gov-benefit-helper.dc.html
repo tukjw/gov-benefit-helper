@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-gov-dynamic-subset.min.css">
+<style>*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#1E2124;font-family:'Pretendard GOV Variable','Pretendard Variable',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all}button,input,select{font-family:inherit}a{color:#0B50D0}a:hover{color:#063A74}button:focus-visible,input:focus-visible,select:focus-visible,[role=button]:focus-visible{outline:3px solid #256EF4;outline-offset:2px}</style>
+</helmet>
+<div style="zoom:{{ zoom }};min-height:100vh;display:flex;flex-direction:column">
+
+<div style="background:#F4F5F6;border-bottom:1px solid #E6E8EA">
+  <div style="max-width:1280px;margin:0 auto;padding:8px clamp(16px,4vw,40px);display:flex;align-items:center;gap:8px;font-size:14px;color:#464C53">
+    <span style="width:22px;height:15px;border:1px solid #CDD1D5;background:#fff;flex:none"></span>
+    <span>이 누리집은 대한민국 공식 전자정부 누리집입니다.</span>
+  </div>
+</div>
+
+<header style="border-bottom:1px solid #CDD1D5;background:#fff">
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width:1280px;margin:0 auto;padding:12px clamp(16px,4vw,40px) 0;display:flex;justify-content:flex-end;align-items:center;gap:20px;font-size:14px;color:#464C53">
+      <sc-if value="{{ loggedIn }}"><span><b style="color:#1E2124">{{ userName }}</b>님</span><button onClick="{{ logout }}" style="border:0;background:none;padding:0;font-size:14px;color:#464C53;cursor:pointer">로그아웃</button></sc-if>
+      <sc-if value="{{ notLoggedIn }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goLogin }}" style="border:0;background:none;padding:0;font-size:14px;color:#464C53;cursor:pointer">로그인</button></sc-if>
+      <button onClick="{{ cycleFont }}" style="border:0;background:none;padding:0;font-size:14px;color:#464C53;cursor:pointer;display:flex;align-items:center;gap:6px">글자 크기 <span style="padding:1px 7px;border:1px solid #CDD1D5;border-radius:4px;font-weight:700;color:#1E2124">{{ fontLabel }}</span></button>
+    </div>
+    <div style="max-width:1280px;margin:0 auto;padding:6px clamp(16px,4vw,40px) 0;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <button onClick="{{ goHome }}" style="display:flex;align-items:center;gap:12px;border:0;background:none;padding:0 0 12px;cursor:pointer;color:#1E2124">
+        <span style="width:44px;height:44px;border-radius:6px;background:repeating-linear-gradient(45deg,#F4F5F6 0 6px,#E6E8EA 6px 12px);display:grid;place-items:center;font:600 9px ui-monospace,monospace;color:#6D7882">상징</span>
+        <span style="font-size:24px;font-weight:800;letter-spacing:-0.5px">정부 혜택 도우미</span>
+      </button>
+      <nav style="display:flex;gap:4px">
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+          <button onClick="{{ n.go }}" aria-current="{{ n.current }}" style="height:66px;padding:0 18px;border:0;border-bottom:3px solid {{ n.bar }};background:none;font-size:18px;font-weight:700;color:{{ n.color }};cursor:pointer;display:flex;align-items:center;gap:6px" style-hover="color:#256EF4">{{ n.label }}<sc-if value="{{ n.badge }}"><span style="min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#256EF4;color:#fff;font-size:13px;display:grid;place-items:center">{{ n.badge }}</span></sc-if></button>
+        </sc-for>
+      </nav>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isMobile }}">
+    <div style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <button onClick="{{ goHome }}" style="display:flex;align-items:center;gap:10px;border:0;background:none;padding:0;cursor:pointer;color:#1E2124">
+        <span style="width:36px;height:36px;border-radius:6px;background:repeating-linear-gradient(45deg,#F4F5F6 0 6px,#E6E8EA 6px 12px);display:grid;place-items:center;font:600 8px ui-monospace,monospace;color:#6D7882">상징</span>
+        <span style="font-size:20px;font-weight:800;letter-spacing:-0.5px">정부 혜택 도우미</span>
+      </button>
+      <button onClick="{{ toggleMenu }}" aria-expanded="{{ menuOpen }}" style="height:44px;padding:0 14px;border:1px solid #CDD1D5;border-radius:6px;background:#fff;font-size:16px;font-weight:700;color:#1E2124;cursor:pointer">{{ menuLabel }}</button>
+    </div>
+    <sc-if value="{{ menuOpen }}">
+      <div style="border-top:1px solid #E6E8EA;padding:8px 16px 16px;display:flex;flex-direction:column">
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+          <button onClick="{{ n.go }}" style="height:56px;padding:0 4px;border:0;border-bottom:1px solid #E6E8EA;background:none;text-align:left;font-size:18px;font-weight:700;color:{{ n.color }};cursor:pointer;display:flex;justify-content:space-between;align-items:center">{{ n.label }}<span style="color:#6D7882;font-weight:500;font-size:15px">{{ n.badge }}</span></button>
+        </sc-for>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <sc-if value="{{ notLoggedIn }}"><button onClick="{{ goLogin }}" style="flex:1;height:48px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:16px;font-weight:700;cursor:pointer">간편인증 로그인</button></sc-if>
+          <sc-if value="{{ loggedIn }}"><button onClick="{{ logout }}" style="flex:1;height:48px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:16px;font-weight:600;cursor:pointer">{{ userName }}님 · 로그아웃</button></sc-if>
+          <button onClick="{{ cycleFont }}" style="height:48px;padding:0 14px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:16px;font-weight:600;cursor:pointer">글자 {{ fontLabel }}</button>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+</header>
+
+<main style="flex:1">
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <section style="background:#ECF2FE;padding:clamp(40px,7vw,72px) clamp(16px,4vw,40px) clamp(40px,6vw,64px)">
+    <div style="max-width:800px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center">
+      <h1 style="margin:0;font-size:clamp(28px,4.2vw,40px);font-weight:800;letter-spacing:-1px;line-height:1.35;text-wrap:balance">필요한 정부 혜택, 쉽게 찾고 바로 신청하세요</h1>
+      <p style="margin:0;font-size:clamp(17px,2vw,19px);color:#464C53;line-height:1.6">중앙부처·지자체·공공기관 혜택을 한곳에서 안내합니다.</p>
+      <div style="width:100%;display:flex;margin-top:6px">
+        <input value="{{ searchInput }}" onChange="{{ onSearchInput }}" onKeyDown="{{ onSearchKey }}" aria-label="혜택 검색" placeholder="예: 부모급여, 청년 월세, 기초연금" style="flex:1;min-width:0;height:64px;padding:0 22px;border:2px solid #256EF4;border-right:0;border-radius:8px 0 0 8px;font-size:clamp(17px,2vw,19px);color:#1E2124;outline:none;background:#fff">
+        <button onClick="{{ doSearch }}" style="width:clamp(84px,12vw,120px);height:64px;border:0;border-radius:0 8px 8px 0;background:#256EF4;color:#fff;font-size:19px;font-weight:700;cursor:pointer;flex:none" style-hover="background:#0B50D0">검색</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center">
+        <span style="font-size:16px;font-weight:700;color:#464C53;margin-right:4px">많이 찾는 혜택</span>
+        <sc-for list="{{ popular }}" as="p" hint-placeholder-count="5">
+          <button onClick="{{ p.go }}" style="height:36px;padding:0 14px;border-radius:18px;background:#fff;border:1px solid #B1CEFB;color:#0B50D0;font-size:16px;cursor:pointer" style-hover="background:#D8E5FD">{{ p.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width:1280px;margin:0 auto;padding:56px clamp(16px,4vw,40px) 0">
+    <h2 style="margin:0 0 20px;font-size:clamp(22px,2.6vw,26px);font-weight:700">대상별 혜택 바로가기</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px">
+      <sc-for list="{{ quick }}" as="q" hint-placeholder-count="8">
+        <button onClick="{{ q.go }}" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px 8px;border:1px solid #CDD1D5;border-radius:12px;background:#fff;cursor:pointer;color:#1E2124" style-hover="border-color:#256EF4;background:#F5F8FE">
+          <span style="width:52px;height:52px;border-radius:12px;background:repeating-linear-gradient(45deg,#ECF2FE 0 6px,#D8E5FD 6px 12px);display:grid;place-items:center;font:600 9px ui-monospace,monospace;color:#0B50D0">icon</span>
+          <span style="font-size:17px;font-weight:700">{{ q.label }}</span>
+          <span style="font-size:14px;color:#6D7882">{{ q.count }}건</span>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width:1280px;margin:0 auto;padding:56px clamp(16px,4vw,40px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:32px">
+    <div style="grid-column:span {{ dlSpan }}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-bottom:14px;border-bottom:2px solid #1E2124">
+        <h2 style="margin:0;font-size:clamp(21px,2.4vw,24px);font-weight:700">신청 마감 임박</h2>
+        <button onClick="{{ goAlerts }}" style="border:0;background:none;padding:0;font-size:15px;color:#464C53;cursor:pointer">더보기 ›</button>
+      </div>
+      <sc-for list="{{ homeDeadlines }}" as="d" hint-placeholder-count="5">
+        <div role="button" tabIndex="0" onClick="{{ d.open }}" style="display:grid;grid-template-columns:68px minmax(0,1fr) auto;gap:16px;align-items:center;padding:18px 4px;border-bottom:1px solid #E6E8EA;cursor:pointer" style-hover="background:#F5F8FE">
+          <span style="font-size:14px;font-weight:700;padding:5px 0;text-align:center;border-radius:4px;background:{{ d.ddBg }};color:{{ d.ddFg }}">{{ d.dday }}</span>
+          <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:18px;font-weight:700">{{ d.title }}</span><span style="font-size:15px;color:#6D7882">{{ d.agency }} · {{ d.until }}까지</span></span>
+          <span style="font-size:15px;color:#0B50D0;font-weight:600">{{ d.cat }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="background:#063A74;color:#fff;border-radius:12px;padding:32px;display:flex;flex-direction:column;gap:16px">
+        <span style="font-size:15px;font-weight:700;color:#B1CEFB">맞춤 혜택 찾기</span>
+        <span style="font-size:clamp(20px,2.4vw,24px);font-weight:700;line-height:1.45">나이·지역·소득·가구 상황 4가지만 입력하면 받을 수 있는 혜택을 알려드립니다</span>
+        <button onClick="{{ goFinder }}" style="height:56px;border:0;border-radius:8px;background:#fff;color:#063A74;font-size:18px;font-weight:700;cursor:pointer;margin-top:4px" style-hover="background:#ECF2FE">내 혜택 찾아보기</button>
+      </div>
+      <div style="border:1px solid #CDD1D5;border-radius:12px;padding:24px 28px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:18px;font-weight:700">마감 알림 받기</span>
+        <span style="font-size:16px;color:#464C53;line-height:1.6">간편인증으로 로그인하고 관심 혜택을 저장하면 마감 전에 카카오톡·문자로 알려드립니다.</span>
+        <button onClick="{{ alertCta.go }}" style="height:48px;border:1px solid #256EF4;border-radius:8px;background:#fff;color:#256EF4;font-size:16px;font-weight:700;cursor:pointer" style-hover="background:#ECF2FE">{{ alertCta.label }}</button>
+      </div>
+    </div>
+  </section>
+</sc-if>
+
+<sc-if value="{{ isFinder }}">
+  <div style="max-width:1280px;margin:0 auto;padding:0 clamp(16px,4vw,40px) 80px">
+    <nav style="display:flex;gap:8px;font-size:14px;color:#6D7882;padding:20px 0"><button onClick="{{ goHome }}" style="border:0;background:none;padding:0;color:#464C53;font-size:14px;cursor:pointer">홈</button><span>›</span><span>맞춤 혜택 찾기</span></nav>
+    <h1 style="margin:8px 0 12px;font-size:clamp(28px,3.4vw,34px);font-weight:800">맞춤 혜택 찾기</h1>
+    <p style="margin:0 0 32px;font-size:17px;color:#464C53;line-height:1.6">입력한 조건으로 신청할 수 있는 혜택을 안내합니다. 실제 자격은 소관 기관 심사로 확정됩니다.</p>
+    <ol style="list-style:none;margin:0 0 32px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;max-width:860px">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+        <li style="display:flex;flex-direction:column;gap:8px" aria-current="{{ s.current }}">
+          <span style="height:6px;border-radius:3px;background:{{ s.bar }}"></span>
+          <span style="font-size:14px;color:#6D7882">{{ s.n }}단계</span>
+          <span style="font-size:16px;font-weight:700;color:{{ s.color }}">{{ s.label }}</span>
+        </li>
+      </sc-for>
+    </ol>
+
+    <sc-if value="{{ stepForm }}">
+      <div style="border:1px solid #CDD1D5;border-radius:16px;padding:clamp(24px,4vw,40px);display:flex;flex-direction:column;gap:28px;max-width:860px">
+        <sc-if value="{{ step0 }}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <h2 style="margin:0;font-size:24px;font-weight:700">기본 정보를 알려주세요</h2>
+            <sc-if value="{{ loggedIn }}"><button onClick="{{ prefill }}" style="height:40px;padding:0 14px;border:1px solid #256EF4;border-radius:6px;background:#fff;color:#256EF4;font-size:15px;font-weight:700;cursor:pointer">내 정보 불러오기</button></sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label for="f-age" style="font-size:17px;font-weight:700">만 나이 <span style="color:#BD2C0F">*</span></label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input id="f-age" type="number" inputMode="numeric" value="{{ fAge }}" onChange="{{ setAge }}" placeholder="예: 28" style="width:160px;height:56px;padding:0 16px;border:1px solid {{ ageBd }};border-radius:8px;font-size:18px;color:#1E2124">
+              <span style="font-size:17px">세</span>
+            </div>
+            <sc-if value="{{ errAge }}"><span role="alert" style="font-size:15px;color:#BD2C0F">{{ errAge }}</span></sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label for="f-region" style="font-size:17px;font-weight:700">거주 지역 <span style="color:#BD2C0F">*</span></label>
+            <select id="f-region" value="{{ fRegion }}" onChange="{{ setRegion }}" style="width:100%;max-width:340px;height:56px;padding:0 14px;border:1px solid {{ regionBd }};border-radius:8px;font-size:18px;background:#fff;color:#1E2124">
+              <option value="">시·도 선택</option><option>서울특별시</option><option>부산광역시</option><option>대구광역시</option><option>인천광역시</option><option>광주광역시</option><option>대전광역시</option><option>울산광역시</option><option>세종특별자치시</option><option>경기도</option><option>강원특별자치도</option><option>충청북도</option><option>충청남도</option><option>전북특별자치도</option><option>전라남도</option><option>경상북도</option><option>경상남도</option><option>제주특별자치도</option>
+            </select>
+            <sc-if value="{{ errRegion }}"><span role="alert" style="font-size:15px;color:#BD2C0F">{{ errRegion }}</span></sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ step1 }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h2 style="margin:0;font-size:24px;font-weight:700">가구 상황을 모두 선택해 주세요</h2>
+            <span style="font-size:16px;color:#6D7882">해당 사항이 없으면 다음으로 넘어가세요.</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <sc-for list="{{ householdOpts }}" as="o" hint-placeholder-count="7">
+              <button onClick="{{ o.toggle }}" aria-pressed="{{ o.on }}" style="height:52px;padding:0 22px;border-radius:26px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }};font-size:17px;font-weight:{{ o.fw }};cursor:pointer">{{ o.mark }}{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ step2 }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h2 style="margin:0;font-size:24px;font-weight:700">가구 소득 수준을 선택해 주세요</h2>
+            <span style="font-size:16px;color:#6D7882;line-height:1.6">기준 중위소득은 전체 가구를 소득 순으로 줄 세웠을 때 가운데 값으로, 복지 혜택 선정 기준으로 쓰입니다.</span>
+          </div>
+          <div role="radiogroup" style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ incomeOpts }}" as="o" hint-placeholder-count="6">
+              <button onClick="{{ o.pick }}" role="radio" aria-checked="{{ o.on }}" style="display:flex;align-items:center;gap:16px;text-align:left;padding:16px 20px;border-radius:10px;border:1px solid {{ o.bd }};background:{{ o.bg }};cursor:pointer;color:#1E2124">
+                <span style="width:24px;height:24px;border-radius:50%;border:2px solid {{ o.ring }};display:grid;place-items:center;flex:none;background:#fff"><span style="width:12px;height:12px;border-radius:50%;background:{{ o.dot }}"></span></span>
+                <span style="display:flex;flex-direction:column;gap:3px"><span style="font-size:17px;font-weight:700">{{ o.label }}</span><span style="font-size:15px;color:#6D7882">{{ o.desc }}</span></span>
+              </button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ errIncome }}"><span role="alert" style="font-size:15px;color:#BD2C0F">{{ errIncome }}</span></sc-if>
+        </sc-if>
+        <sc-if value="{{ step3 }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h2 style="margin:0;font-size:24px;font-weight:700">현재 상황을 모두 선택해 주세요</h2>
+            <span style="font-size:16px;color:#6D7882">일자리·주거·장애 관련 혜택을 찾는 데 사용합니다.</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <sc-for list="{{ statusOpts }}" as="o" hint-placeholder-count="6">
+              <button onClick="{{ o.toggle }}" aria-pressed="{{ o.on }}" style="height:52px;padding:0 22px;border-radius:26px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }};font-size:17px;font-weight:{{ o.fw }};cursor:pointer">{{ o.mark }}{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid #E6E8EA;padding-top:24px">
+          <button onClick="{{ prevStep }}" style="height:56px;padding:0 24px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:17px;font-weight:600;cursor:pointer" style-hover="background:#F4F5F6">{{ prevLabel }}</button>
+          <button onClick="{{ nextStep }}" style="height:56px;padding:0 32px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:17px;font-weight:700;cursor:pointer" style-hover="background:#0B50D0">{{ nextLabel }}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ stepResult }}">
+      <div style="background:#F4F5F6;border-radius:12px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:40px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font-size:15px;font-weight:700;color:#464C53">입력한 조건</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <sc-for list="{{ profileTags }}" as="t" hint-placeholder-count="4"><span style="padding:6px 12px;border-radius:16px;background:#fff;border:1px solid #CDD1D5;font-size:15px">{{ t }}</span></sc-for>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onClick="{{ editProfile }}" style="height:44px;padding:0 16px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:15px;font-weight:600;cursor:pointer">조건 수정</button>
+          <button onClick="{{ resetFinder }}" style="height:44px;padding:0 16px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:15px;font-weight:600;cursor:pointer">처음부터 다시</button>
+        </div>
+      </div>
+      <h2 style="margin:0 0 8px;font-size:clamp(24px,3vw,28px);font-weight:700">신청할 수 있는 혜택 <span style="color:#256EF4">{{ resultCount }}</span>건</h2>
+      <p style="margin:0 0 24px;font-size:16px;color:#6D7882">전체 {{ total }}건 중 입력한 조건에 맞는 혜택입니다. 마감이 가까운 순으로 보여드립니다.</p>
+      <sc-if value="{{ noResults }}">
+        <div style="padding:56px 24px;text-align:center;border:1px solid #CDD1D5;border-radius:12px;display:flex;flex-direction:column;gap:14px;align-items:center">
+          <span style="font-size:19px;font-weight:700">조건에 맞는 혜택을 찾지 못했습니다</span>
+          <span style="font-size:16px;color:#6D7882">조건을 바꾸거나 전체 혜택에서 직접 찾아보세요.</span>
+          <button onClick="{{ goList }}" style="height:48px;padding:0 24px;border:1px solid #256EF4;border-radius:8px;background:#fff;color:#256EF4;font-size:16px;font-weight:700;cursor:pointer">전체 혜택 보기</button>
+        </div>
+      </sc-if>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px">
+        <sc-for list="{{ results }}" as="item" hint-placeholder-count="4">
+          <div role="button" tabIndex="0" onClick="{{ item.open }}" style="display:flex;flex-direction:column;gap:12px;padding:24px;background:#fff;border:1px solid #CDD1D5;border-radius:12px;cursor:pointer" style-hover="border-color:#256EF4;box-shadow:0 4px 14px rgba(6,58,116,0.1)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <span style="font-size:14px;font-weight:600;padding:3px 8px;border-radius:4px;background:#ECF2FE;color:#0B50D0">{{ item.cat }}</span>
+                <span style="font-size:14px;font-weight:700;padding:3px 8px;border-radius:4px;background:{{ item.ddBg }};color:{{ item.ddFg }}">{{ item.dday }}</span>
+                <sc-if value="{{ item.check }}"><span style="font-size:14px;font-weight:700;padding:3px 8px;border-radius:4px;background:#FFF3DB;color:#8A5C00">소득 확인 필요</span></sc-if>
+              </div>
+              <button onClick="{{ item.toggleSave }}" aria-pressed="{{ item.saved }}" aria-label="관심 혜택 저장" style="width:40px;height:40px;flex:none;border-radius:6px;border:1px solid {{ item.starBd }};background:{{ item.starBg }};color:{{ item.starFg }};font-size:20px;cursor:pointer">{{ item.star }}</button>
+            </div>
+            <span style="font-size:19px;font-weight:700;line-height:1.4">{{ item.title }}</span>
+            <span style="display:flex;flex-direction:column;gap:4px;flex:1">
+              <sc-for list="{{ item.reasons }}" as="r" hint-placeholder-count="2"><span style="font-size:15px;color:#1B6B2E">✓ {{ r }}</span></sc-for>
+            </span>
+            <span style="border-top:1px solid #E6E8EA;padding-top:12px;display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:15px;color:#6D7882">{{ item.agency }} · {{ item.period }}</span>
+              <span style="font-size:17px;font-weight:700;color:#0B50D0">{{ item.short }}</span>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isList }}">
+  <div style="max-width:1280px;margin:0 auto;padding:0 clamp(16px,4vw,40px) 80px">
+    <nav style="display:flex;gap:8px;font-size:14px;color:#6D7882;padding:20px 0"><button onClick="{{ goHome }}" style="border:0;background:none;padding:0;color:#464C53;font-size:14px;cursor:pointer">홈</button><span>›</span><span>전체 혜택</span></nav>
+    <h1 style="margin:8px 0 24px;font-size:clamp(28px,3.4vw,34px);font-weight:800">전체 혜택</h1>
+    <div style="display:flex;max-width:720px;margin-bottom:28px">
+      <input value="{{ searchInput }}" onChange="{{ onSearchInput }}" onKeyDown="{{ onSearchKey }}" aria-label="혜택 검색" placeholder="혜택 이름, 기관, 키워드로 검색" style="flex:1;min-width:0;height:56px;padding:0 18px;border:1px solid #8A949E;border-right:0;border-radius:8px 0 0 8px;font-size:17px;color:#1E2124">
+      <button onClick="{{ doSearch }}" style="width:96px;height:56px;border:0;border-radius:0 8px 8px 0;background:#256EF4;color:#fff;font-size:17px;font-weight:700;cursor:pointer;flex:none" style-hover="background:#0B50D0">검색</button>
+    </div>
+    <div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap">
+      <sc-if value="{{ isMobile }}">
+        <button onClick="{{ toggleFilters }}" aria-expanded="{{ filtersOpen }}" style="width:100%;height:48px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:16px;font-weight:700;cursor:pointer">{{ filterBtnLabel }}</button>
+      </sc-if>
+      <sc-if value="{{ filtersVisible }}" hint-placeholder-val="{{ true }}">
+        <aside style="flex:1 1 240px;max-width:100%;display:flex;flex-direction:column;gap:24px">
+          <sc-if value="{{ hasProfile }}">
+            <label style="display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;cursor:pointer;padding:14px;border-radius:8px;background:#ECF2FE;color:#063A74">
+              <input type="checkbox" checked="{{ myOnly }}" onChange="{{ toggleMyOnly }}" style="width:22px;height:22px;accent-color:#256EF4;margin:0">
+              내 조건에 맞는 혜택만
+            </label>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:16px;font-weight:700;padding-bottom:10px;border-bottom:2px solid #1E2124;margin-bottom:6px">분야</span>
+            <sc-for list="{{ catFilters }}" as="f" hint-placeholder-count="8">
+              <button onClick="{{ f.pick }}" aria-pressed="{{ f.on }}" style="display:flex;justify-content:space-between;align-items:center;height:44px;padding:0 12px;border:0;border-radius:6px;background:{{ f.bg }};color:{{ f.fg }};font-size:16px;font-weight:{{ f.fw }};cursor:pointer;text-align:left">{{ f.label }}<span style="font-size:14px;color:#6D7882">{{ f.count }}</span></button>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:16px;font-weight:700;padding-bottom:10px;border-bottom:2px solid #1E2124;margin-bottom:6px">생애주기</span>
+            <sc-for list="{{ lifeFilters }}" as="f" hint-placeholder-count="7">
+              <button onClick="{{ f.pick }}" aria-pressed="{{ f.on }}" style="display:flex;justify-content:space-between;align-items:center;height:44px;padding:0 12px;border:0;border-radius:6px;background:{{ f.bg }};color:{{ f.fg }};font-size:16px;font-weight:{{ f.fw }};cursor:pointer;text-align:left">{{ f.label }}<span style="font-size:14px;color:#6D7882">{{ f.count }}</span></button>
+            </sc-for>
+          </div>
+          <label style="display:flex;align-items:center;gap:10px;font-size:16px;cursor:pointer">
+            <input type="checkbox" checked="{{ onlineOnly }}" onChange="{{ toggleOnline }}" style="width:22px;height:22px;accent-color:#256EF4;margin:0">
+            온라인 신청 가능한 혜택만
+          </label>
+          <button onClick="{{ resetFilters }}" style="height:44px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:15px;font-weight:600;cursor:pointer">필터 초기화</button>
+        </aside>
+      </sc-if>
+      <div style="flex:999 1 480px;min-width:0;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <span style="font-size:17px">{{ queryLabel }}총 <b style="color:#256EF4">{{ listCount }}</b>건</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select value="{{ sort }}" onChange="{{ setSort }}" aria-label="정렬" style="height:42px;padding:0 10px;border:1px solid #CDD1D5;border-radius:6px;font-size:15px;background:#fff;color:#1E2124">
+              <option value="deadline">마감 임박순</option><option value="name">가나다순</option><option value="agency">기관순</option>
+            </select>
+            <div style="display:flex;border:1px solid #CDD1D5;border-radius:6px;overflow:hidden">
+              <button onClick="{{ setCard }}" aria-pressed="{{ isCardLayout }}" style="height:40px;padding:0 12px;border:0;background:{{ cardBtnBg }};color:{{ cardBtnFg }};font-size:14px;font-weight:600;cursor:pointer">카드형</button>
+              <button onClick="{{ setRow }}" aria-pressed="{{ isRowLayout }}" style="height:40px;padding:0 12px;border:0;border-left:1px solid #CDD1D5;background:{{ rowBtnBg }};color:{{ rowBtnFg }};font-size:14px;font-weight:600;cursor:pointer">목록형</button>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{ listEmpty }}">
+          <div style="padding:64px 24px;text-align:center;border:1px solid #CDD1D5;border-radius:12px;display:flex;flex-direction:column;gap:12px;align-items:center">
+            <span style="font-size:19px;font-weight:700">검색 결과가 없습니다</span>
+            <span style="font-size:16px;color:#6D7882">검색어를 확인하거나 필터를 초기화해 보세요.</span>
+            <button onClick="{{ resetFilters }}" style="height:44px;padding:0 20px;border:1px solid #256EF4;border-radius:8px;background:#fff;color:#256EF4;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px">필터 초기화</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isCardLayout }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:16px">
+            <sc-for list="{{ listItems }}" as="item" hint-placeholder-count="6">
+              <div role="button" tabIndex="0" onClick="{{ item.open }}" style="display:flex;flex-direction:column;gap:12px;padding:24px;background:#fff;border:1px solid #CDD1D5;border-radius:12px;cursor:pointer" style-hover="border-color:#256EF4;box-shadow:0 4px 14px rgba(6,58,116,0.1)">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                  <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <span style="font-size:14px;font-weight:600;padding:3px 8px;border-radius:4px;background:#ECF2FE;color:#0B50D0">{{ item.cat }}</span>
+                    <span style="font-size:14px;font-weight:700;padding:3px 8px;border-radius:4px;background:{{ item.ddBg }};color:{{ item.ddFg }}">{{ item.dday }}</span>
+                  </div>
+                  <button onClick="{{ item.toggleSave }}" aria-pressed="{{ item.saved }}" aria-label="관심 혜택 저장" style="width:40px;height:40px;flex:none;border-radius:6px;border:1px solid {{ item.starBd }};background:{{ item.starBg }};color:{{ item.starFg }};font-size:20px;cursor:pointer">{{ item.star }}</button>
+                </div>
+                <span style="font-size:19px;font-weight:700;line-height:1.4">{{ item.title }}</span>
+                <span style="font-size:16px;color:#464C53;line-height:1.6;flex:1">{{ item.summary }}</span>
+                <span style="border-top:1px solid #E6E8EA;padding-top:12px;display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:15px;color:#6D7882">{{ item.agency }} · {{ item.period }}</span>
+                  <span style="font-size:17px;font-weight:700;color:#0B50D0">{{ item.short }}</span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isRowLayout }}">
+          <div style="border-top:2px solid #1E2124">
+            <sc-for list="{{ listItems }}" as="item" hint-placeholder-count="6">
+              <div role="button" tabIndex="0" onClick="{{ item.open }}" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:20px 12px;border-bottom:1px solid #E6E8EA;cursor:pointer" style-hover="background:#F5F8FE">
+                <span style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                  <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                    <span style="font-size:14px;font-weight:600;padding:3px 8px;border-radius:4px;background:#ECF2FE;color:#0B50D0">{{ item.cat }}</span>
+                    <span style="font-size:18px;font-weight:700">{{ item.title }}</span>
+                  </span>
+                  <span style="font-size:16px;color:#464C53;line-height:1.5">{{ item.summary }}</span>
+                  <span style="font-size:15px;color:#6D7882">{{ item.agency }} · <b style="color:#0B50D0">{{ item.short }}</b></span>
+                </span>
+                <span style="display:flex;gap:8px;align-items:center">
+                  <span style="font-size:14px;font-weight:700;padding:4px 8px;border-radius:4px;background:{{ item.ddBg }};color:{{ item.ddFg }}">{{ item.dday }}</span>
+                  <button onClick="{{ item.toggleSave }}" aria-pressed="{{ item.saved }}" aria-label="관심 혜택 저장" style="width:40px;height:40px;flex:none;border-radius:6px;border:1px solid {{ item.starBd }};background:{{ item.starBg }};color:{{ item.starFg }};font-size:20px;cursor:pointer">{{ item.star }}</button>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isDetail }}">
+  <div style="max-width:1280px;margin:0 auto;padding:0 clamp(16px,4vw,40px) 80px">
+    <nav style="display:flex;gap:8px;font-size:14px;color:#6D7882;padding:20px 0;flex-wrap:wrap"><button onClick="{{ goHome }}" style="border:0;background:none;padding:0;color:#464C53;font-size:14px;cursor:pointer">홈</button><span>›</span><button onClick="{{ goList }}" style="border:0;background:none;padding:0;color:#464C53;font-size:14px;cursor:pointer">전체 혜택</button><span>›</span><span>{{ d.cat }}</span></nav>
+    <div style="display:flex;flex-direction:column;gap:14px;padding:12px 0 32px;border-bottom:1px solid #CDD1D5">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span style="font-size:14px;font-weight:600;padding:4px 10px;border-radius:4px;background:#ECF2FE;color:#0B50D0">{{ d.cat }}</span>
+        <span style="font-size:14px;font-weight:600;padding:4px 10px;border-radius:4px;background:#F4F5F6;color:#464C53">{{ d.how }} 신청</span>
+        <span style="font-size:14px;font-weight:700;padding:4px 10px;border-radius:4px;background:{{ d.ddBg }};color:{{ d.ddFg }}">{{ d.dday }}</span>
+      </div>
+      <h1 style="margin:0;font-size:clamp(28px,3.6vw,36px);font-weight:800;letter-spacing:-0.5px;line-height:1.3">{{ d.title }}</h1>
+      <span style="font-size:16px;color:#6D7882">{{ d.agency }} {{ d.dept }}</span>
+      <p style="margin:0;font-size:clamp(17px,2vw,19px);line-height:1.6;max-width:760px">{{ d.summary }}</p>
+    </div>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;padding-top:32px">
+      <div style="flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:40px">
+        <sc-if value="{{ dMatchOk }}">
+          <div style="border:1px solid #9FD4AC;background:#EAF6EC;border-radius:12px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:17px;font-weight:700;color:#1B6B2E">입력한 조건으로 신청할 수 있는 혜택입니다</span>
+            <sc-for list="{{ dReasons }}" as="r" hint-placeholder-count="2"><span style="font-size:16px">✓ {{ r }}</span></sc-for>
+            <sc-if value="{{ dCheck }}"><span style="font-size:15px;color:#8A5C00">소득 수준을 '잘 모름'으로 입력해 소득 기준은 신청 시 확인됩니다.</span></sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ dMatchNo }}">
+          <div style="border:1px solid #F5C2B6;background:#FDEFEC;border-radius:12px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:17px;font-weight:700;color:#BD2C0F">입력한 조건과 맞지 않습니다</span>
+            <span style="font-size:16px">{{ dWhy }}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ dNoProfile }}">
+          <div style="border:1px solid #CDD1D5;background:#F4F5F6;border-radius:12px;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <span style="font-size:16px;color:#464C53">내가 받을 수 있는지 궁금하다면 조건을 입력해 보세요.</span>
+            <button onClick="{{ goFinder }}" style="height:44px;padding:0 16px;border:1px solid #256EF4;border-radius:8px;background:#fff;color:#256EF4;font-size:15px;font-weight:700;cursor:pointer">자격 확인하기</button>
+          </div>
+        </sc-if>
+        <section style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="margin:0;font-size:24px;font-weight:700">지원 대상</h2>
+          <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:17px;line-height:1.6">
+            <sc-for list="{{ d.tg }}" as="t" hint-placeholder-count="2"><li>{{ t }}</li></sc-for>
+          </ul>
+        </section>
+        <section style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="margin:0;font-size:24px;font-weight:700">지원 내용</h2>
+          <div style="background:#ECF2FE;border-radius:12px;padding:24px 28px;display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:clamp(21px,2.4vw,24px);font-weight:800;color:#0B50D0">{{ d.amt }}</span>
+            <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:17px;line-height:1.6">
+              <sc-for list="{{ d.det }}" as="t" hint-placeholder-count="2"><li>{{ t }}</li></sc-for>
+            </ul>
+          </div>
+        </section>
+        <section style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="margin:0;font-size:24px;font-weight:700">신청 절차</h2>
+          <ol style="margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
+            <sc-for list="{{ dSteps }}" as="s" hint-placeholder-count="4">
+              <li style="border:1px solid #CDD1D5;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px">
+                <span style="width:28px;height:28px;border-radius:50%;background:#1E2124;color:#fff;font-size:14px;font-weight:700;display:grid;place-items:center">{{ s.n }}</span>
+                <span style="font-size:16px;font-weight:600;line-height:1.5">{{ s.label }}</span>
+              </li>
+            </sc-for>
+          </ol>
+        </section>
+        <section style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="margin:0;font-size:24px;font-weight:700">구비 서류</h2>
+          <div style="border-top:2px solid #1E2124">
+            <sc-for list="{{ d.docs }}" as="t" hint-placeholder-count="3"><div style="padding:14px 4px;border-bottom:1px solid #E6E8EA;font-size:17px">{{ t }}</div></sc-for>
+          </div>
+        </section>
+        <section style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="margin:0;font-size:24px;font-weight:700">문의처</h2>
+          <div style="border-top:2px solid #1E2124;font-size:17px">
+            <div style="display:grid;grid-template-columns:120px minmax(0,1fr);border-bottom:1px solid #E6E8EA"><span style="padding:14px 16px;background:#F4F5F6;font-weight:600">소관 기관</span><span style="padding:14px 16px">{{ d.agency }} {{ d.dept }}</span></div>
+            <div style="display:grid;grid-template-columns:120px minmax(0,1fr);border-bottom:1px solid #E6E8EA"><span style="padding:14px 16px;background:#F4F5F6;font-weight:600">전화</span><span style="padding:14px 16px">{{ d.tel }}</span></div>
+          </div>
+        </section>
+        <sc-if value="{{ hasRelated }}">
+          <section style="display:flex;flex-direction:column;gap:14px">
+            <h2 style="margin:0;font-size:24px;font-weight:700">함께 보면 좋은 혜택</h2>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:12px">
+              <sc-for list="{{ related }}" as="r" hint-placeholder-count="3">
+                <button onClick="{{ r.open }}" style="text-align:left;padding:18px 20px;border:1px solid #CDD1D5;border-radius:10px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:6px;color:#1E2124" style-hover="border-color:#256EF4">
+                  <span style="font-size:17px;font-weight:700">{{ r.title }}</span>
+                  <span style="font-size:15px;color:#0B50D0;font-weight:600">{{ r.short }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </section>
+        </sc-if>
+      </div>
+      <aside style="flex:1 1 300px;max-width:100%;position:sticky;top:24px;border:1px solid #CDD1D5;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:grid;grid-template-columns:80px minmax(0,1fr);gap:10px 12px;font-size:16px">
+          <span style="color:#6D7882">신청 기간</span><span style="font-weight:700">{{ d.periodText }}</span>
+          <span style="color:#6D7882">신청 방법</span><span style="font-weight:700">{{ d.how }}</span>
+          <span style="color:#6D7882">지원 금액</span><span style="font-weight:700;color:#0B50D0">{{ d.short }}</span>
+        </div>
+        <button onClick="{{ apply }}" style="height:56px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:18px;font-weight:700;cursor:pointer" style-hover="background:#0B50D0">{{ applyLabel }}</button>
+        <button onClick="{{ toggleDSave }}" aria-pressed="{{ dSaved }}" style="height:52px;border:1px solid {{ dSaveBd }};border-radius:8px;background:{{ dSaveBg }};color:{{ dSaveFg }};font-size:17px;font-weight:700;cursor:pointer">{{ dSaveLabel }}</button>
+        <span style="font-size:14px;color:#6D7882;line-height:1.6">관심 혜택으로 저장하면 마감 전에 알림을 받을 수 있습니다. 신청은 소관 기관 누리집에서 진행됩니다.</span>
+      </aside>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isMy }}">
+  <div style="max-width:1280px;margin:0 auto;padding:0 clamp(16px,4vw,40px) 80px">
+    <nav style="display:flex;gap:8px;font-size:14px;color:#6D7882;padding:20px 0"><button onClick="{{ goHome }}" style="border:0;background:none;padding:0;color:#464C53;font-size:14px;cursor:pointer">홈</button><span>›</span><span>관심 혜택</span></nav>
+    <h1 style="margin:8px 0 12px;font-size:clamp(28px,3.4vw,34px);font-weight:800">관심 혜택</h1>
+    <p style="margin:0 0 28px;font-size:17px;color:#464C53">저장한 혜택 {{ savedCount }}건 · 마감이 가까운 순</p>
+    <sc-if value="{{ notLoggedIn }}">
+      <div style="border:1px solid #F0D28A;background:#FFF8E6;border-radius:12px;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+        <span style="font-size:16px;color:#1E2124;line-height:1.6">로그인하지 않으면 이 기기에만 저장되고 마감 알림을 받을 수 없습니다.</span>
+        <button onClick="{{ goLogin }}" style="height:44px;padding:0 18px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:15px;font-weight:700;cursor:pointer">간편인증 로그인</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ loggedIn }}">
+      <div style="border:1px solid #CDD1D5;background:#F4F5F6;border-radius:12px;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+        <span style="font-size:16px;line-height:1.6">마감 <b>{{ alertSummary }}</b> 전에 <b>{{ channelSummary }}</b>(으)로 알려드립니다.</span>
+        <button onClick="{{ goAlerts }}" style="height:44px;padding:0 18px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:15px;font-weight:600;cursor:pointer">알림 설정 변경</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ savedEmpty }}">
+      <div style="padding:64px 24px;text-align:center;border:1px solid #CDD1D5;border-radius:12px;display:flex;flex-direction:column;gap:12px;align-items:center">
+        <span style="font-size:19px;font-weight:700">저장한 혜택이 없습니다</span>
+        <span style="font-size:16px;color:#6D7882">혜택 카드의 ☆ 버튼을 눌러 관심 혜택으로 저장하세요.</span>
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;justify-content:center">
+          <button onClick="{{ goFinder }}" style="height:48px;padding:0 20px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:16px;font-weight:700;cursor:pointer">맞춤 혜택 찾기</button>
+          <button onClick="{{ goList }}" style="height:48px;padding:0 20px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:16px;font-weight:600;cursor:pointer">전체 혜택 보기</button>
+        </div>
+      </div>
+    </sc-if>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:16px">
+      <sc-for list="{{ savedItems }}" as="item" hint-placeholder-count="0">
+        <div role="button" tabIndex="0" onClick="{{ item.open }}" style="display:flex;flex-direction:column;gap:12px;padding:24px;background:#fff;border:1px solid #CDD1D5;border-radius:12px;cursor:pointer" style-hover="border-color:#256EF4;box-shadow:0 4px 14px rgba(6,58,116,0.1)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span style="font-size:14px;font-weight:600;padding:3px 8px;border-radius:4px;background:#ECF2FE;color:#0B50D0">{{ item.cat }}</span>
+              <span style="font-size:14px;font-weight:700;padding:3px 8px;border-radius:4px;background:{{ item.ddBg }};color:{{ item.ddFg }}">{{ item.dday }}</span>
+            </div>
+            <button onClick="{{ item.toggleSave }}" aria-pressed="{{ item.saved }}" aria-label="관심 혜택 해제" style="width:40px;height:40px;flex:none;border-radius:6px;border:1px solid {{ item.starBd }};background:{{ item.starBg }};color:{{ item.starFg }};font-size:20px;cursor:pointer">{{ item.star }}</button>
+          </div>
+          <span style="font-size:19px;font-weight:700;line-height:1.4">{{ item.title }}</span>
+          <span style="font-size:16px;color:#464C53;line-height:1.6;flex:1">{{ item.summary }}</span>
+          <span style="border-top:1px solid #E6E8EA;padding-top:12px;display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:15px;color:#6D7882">{{ item.agency }} · {{ item.period }}</span>
+            <span style="font-size:17px;font-weight:700;color:#0B50D0">{{ item.short }}</span>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isAlerts }}">
+  <div style="max-width:1280px;margin:0 auto;padding:0 clamp(16px,4vw,40px) 80px">
+    <nav style="display:flex;gap:8px;font-size:14px;color:#6D7882;padding:20px 0"><button onClick="{{ goHome }}" style="border:0;background:none;padding:0;color:#464C53;font-size:14px;cursor:pointer">홈</button><span>›</span><span>신청 마감 알림</span></nav>
+    <h1 style="margin:8px 0 12px;font-size:clamp(28px,3.4vw,34px);font-weight:800">신청 마감 알림</h1>
+    <p style="margin:0 0 28px;font-size:17px;color:#464C53">신청 기간이 정해진 혜택의 마감 일정입니다. 2026. 10. 23. 기준</p>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:36px">
+        <sc-for list="{{ alertMonths }}" as="m" hint-placeholder-count="2">
+          <section style="display:flex;flex-direction:column">
+            <h2 style="margin:0;padding-bottom:12px;border-bottom:2px solid #1E2124;font-size:22px;font-weight:700">{{ m.label }}</h2>
+            <sc-for list="{{ m.rows }}" as="r" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:16px;align-items:center;padding:18px 4px;border-bottom:1px solid #E6E8EA">
+                <span style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:24px;font-weight:800;line-height:1">{{ r.day }}</span><span style="font-size:14px;color:#6D7882">{{ r.wd }}요일</span></span>
+                <button onClick="{{ r.open }}" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:5px;min-width:0;color:#1E2124">
+                  <span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:18px;font-weight:700">{{ r.title }}</span><span style="font-size:13px;font-weight:700;padding:3px 7px;border-radius:4px;background:{{ r.ddBg }};color:{{ r.ddFg }}">{{ r.dday }}</span></span>
+                  <span style="font-size:15px;color:#6D7882">{{ r.agency }} · {{ r.short }}</span>
+                </button>
+                <button onClick="{{ r.toggle }}" aria-pressed="{{ r.on }}" style="height:44px;padding:0 14px;border:1px solid {{ r.bd }};border-radius:8px;background:{{ r.bg }};color:{{ r.fg }};font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap">{{ r.btn }}</button>
+              </div>
+            </sc-for>
+          </section>
+        </sc-for>
+      </div>
+      <aside style="flex:1 1 300px;max-width:100%;position:sticky;top:24px;border:1px solid #CDD1D5;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:22px">
+        <h2 style="margin:0;font-size:20px;font-weight:700">알림 설정</h2>
+        <sc-if value="{{ notLoggedIn }}">
+          <span style="font-size:16px;color:#464C53;line-height:1.6">알림은 본인 확인 후 받을 수 있습니다. 간편인증으로 로그인해 주세요.</span>
+          <button onClick="{{ goLogin }}" style="height:52px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:17px;font-weight:700;cursor:pointer">간편인증 로그인</button>
+        </sc-if>
+        <sc-if value="{{ loggedIn }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:16px;font-weight:700">알림 시점 <span style="font-weight:400;color:#6D7882;font-size:14px">(여러 개 선택)</span></span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <sc-for list="{{ timingOpts }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.toggle }}" aria-pressed="{{ o.on }}" style="height:44px;padding:0 16px;border-radius:22px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }};font-size:16px;font-weight:{{ o.fw }};cursor:pointer">{{ o.label }}</button></sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:16px;font-weight:700">받는 방법</span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <sc-for list="{{ channelOpts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.toggle }}" aria-pressed="{{ o.on }}" style="height:44px;padding:0 16px;border-radius:22px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }};font-size:16px;font-weight:{{ o.fw }};cursor:pointer">{{ o.label }}</button></sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ errAlert }}"><span role="alert" style="font-size:15px;color:#BD2C0F">{{ errAlert }}</span></sc-if>
+          <button onClick="{{ saveAlert }}" style="height:52px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:17px;font-weight:700;cursor:pointer" style-hover="background:#0B50D0">설정 저장</button>
+          <span style="font-size:14px;color:#6D7882">알림 대상: 관심 혜택 {{ savedCount }}건</span>
+        </sc-if>
+      </aside>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isLogin }}">
+  <div style="max-width:560px;margin:0 auto;padding:clamp(32px,6vw,64px) clamp(16px,4vw,24px) 80px;display:flex;flex-direction:column;gap:28px">
+    <div style="display:flex;flex-direction:column;gap:10px;text-align:center">
+      <h1 style="margin:0;font-size:clamp(26px,3.4vw,32px);font-weight:800">간편인증 로그인</h1>
+      <p style="margin:0;font-size:17px;color:#464C53;line-height:1.6">자주 쓰는 인증 앱으로 본인 확인 후 로그인합니다.</p>
+    </div>
+    <sc-if value="{{ loginForm }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:17px;font-weight:700">인증 방법 선택</span>
+        <div role="radiogroup" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
+          <sc-for list="{{ providers }}" as="p" hint-placeholder-count="6">
+            <button onClick="{{ p.pick }}" role="radio" aria-checked="{{ p.on }}" style="height:64px;padding:0 14px;border:{{ p.bw }} solid {{ p.bd }};border-radius:10px;background:{{ p.bg }};font-size:16px;font-weight:{{ p.fw }};color:#1E2124;cursor:pointer;display:flex;align-items:center;gap:10px">
+              <span style="width:28px;height:28px;border-radius:7px;background:repeating-linear-gradient(45deg,#F4F5F6 0 4px,#E6E8EA 4px 8px);flex:none"></span>{{ p.label }}
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label for="lg-name" style="font-size:17px;font-weight:700">이름</label>
+          <input id="lg-name" value="{{ lgName }}" onChange="{{ onLgName }}" autoComplete="name" placeholder="홍길동" style="height:56px;padding:0 16px;border:1px solid {{ lgNameBd }};border-radius:8px;font-size:18px;color:#1E2124">
+          <sc-if value="{{ lgErr.name }}"><span role="alert" style="font-size:15px;color:#BD2C0F">{{ lgErr.name }}</span></sc-if>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label for="lg-birth" style="font-size:17px;font-weight:700">생년월일</label>
+          <input id="lg-birth" value="{{ lgBirth }}" onChange="{{ onLgBirth }}" inputMode="numeric" maxLength="8" placeholder="8자리 예: 19950315" style="height:56px;padding:0 16px;border:1px solid {{ lgBirthBd }};border-radius:8px;font-size:18px;color:#1E2124">
+          <sc-if value="{{ lgErr.birth }}"><span role="alert" style="font-size:15px;color:#BD2C0F">{{ lgErr.birth }}</span></sc-if>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label for="lg-phone" style="font-size:17px;font-weight:700">휴대폰 번호</label>
+          <input id="lg-phone" value="{{ lgPhone }}" onChange="{{ onLgPhone }}" inputMode="tel" placeholder="숫자만 입력 예: 01012345678" style="height:56px;padding:0 16px;border:1px solid {{ lgPhoneBd }};border-radius:8px;font-size:18px;color:#1E2124">
+          <sc-if value="{{ lgErr.phone }}"><span role="alert" style="font-size:15px;color:#BD2C0F">{{ lgErr.phone }}</span></sc-if>
+        </div>
+        <label style="display:flex;align-items:flex-start;gap:10px;font-size:16px;line-height:1.5;cursor:pointer">
+          <input type="checkbox" checked="{{ lgAgree }}" onChange="{{ toggleAgree }}" style="width:22px;height:22px;accent-color:#256EF4;margin:0;flex:none">
+          <span>[필수] 본인 확인을 위한 개인정보 수집·이용에 동의합니다.</span>
+        </label>
+        <sc-if value="{{ lgErr.agree }}"><span role="alert" style="font-size:15px;color:#BD2C0F;margin-top:-12px">{{ lgErr.agree }}</span></sc-if>
+      </div>
+      <button onClick="{{ submitLogin }}" style="height:60px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:18px;font-weight:700;cursor:pointer" style-hover="background:#0B50D0">인증 요청</button>
+    </sc-if>
+    <sc-if value="{{ loginWaiting }}">
+      <div style="border:1px solid #CDD1D5;border-radius:16px;padding:36px 28px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
+        <span style="width:64px;height:64px;border-radius:16px;background:repeating-linear-gradient(45deg,#ECF2FE 0 6px,#D8E5FD 6px 12px);display:grid;place-items:center;font:600 9px ui-monospace,monospace;color:#0B50D0">app</span>
+        <span style="font-size:21px;font-weight:700">{{ providerLabel }} 앱에서 인증을 완료해 주세요</span>
+        <span style="font-size:16px;color:#464C53;line-height:1.6">{{ lgPhoneMasked }}(으)로 인증 요청을 보냈습니다.<br>앱에서 인증한 뒤 아래 버튼을 눌러주세요.</span>
+        <span style="font-size:16px;font-weight:700;color:#BD2C0F">남은 시간 {{ timer }}</span>
+        <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:8px">
+          <button onClick="{{ completeLogin }}" style="height:56px;border:0;border-radius:8px;background:#256EF4;color:#fff;font-size:18px;font-weight:700;cursor:pointer" style-hover="background:#0B50D0">인증 완료</button>
+          <button onClick="{{ cancelLogin }}" style="height:52px;border:1px solid #CDD1D5;border-radius:8px;background:#fff;color:#1E2124;font-size:16px;font-weight:600;cursor:pointer">다른 방법으로 인증</button>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</sc-if>
+
+</main>
+
+<footer style="background:#F4F5F6;border-top:1px solid #CDD1D5">
+  <div style="max-width:1280px;margin:0 auto;padding:32px clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:14px;font-size:15px;color:#464C53;line-height:1.6">
+    <div style="display:flex;gap:8px 20px;flex-wrap:wrap"><b style="color:#0B50D0">개인정보처리방침</b><span>이용약관</span><span>저작권정책</span><span>웹 접근성 품질인증</span></div>
+    <span>(30128) 세종특별자치시 도움로 00 · 정부민원안내콜센터 국번 없이 110</span>
+    <span style="font-size:14px;color:#6D7882">시안용 예시 데이터입니다. 지원 금액·신청 기간은 각 기관 공고를 확인하세요. © 정부 혜택 도우미</span>
+  </div>
+</footer>
+
+<sc-if value="{{ hasToast }}">
+  <div role="status" style="position:fixed;left:50%;bottom:32px;transform:translateX(-50%);max-width:calc(100vw - 32px);background:#1E2124;color:#fff;padding:16px 24px;border-radius:10px;font-size:16px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:50">{{ toast }}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;finder&quot;,&quot;list&quot;,&quot;detail&quot;,&quot;my&quot;,&quot;alerts&quot;,&quot;login&quot;],&quot;default&quot;:&quot;login&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;데모&quot;},&quot;demoLoggedIn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;데모&quot;},&quot;listLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;card&quot;,&quot;row&quot;],&quot;default&quot;:&quot;card&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;목록&quot;}}">
+const TODAY = new Date(2026, 9, 23);
+const WD = ['일','월','화','수','목','금','토'];
+const B = [
+  {id:'parent',t:'부모급여',cat:'보육',life:['영유아'],ag:'보건복지부',dept:'출산정책과',tel:'129 (보건복지상담센터)',sum:'0~23개월 아동을 키우는 가정에 매달 현금을 지급합니다.',sh:'월 최대 100만원',amt:'0세 월 100만원 · 1세 월 50만원',det:['어린이집 이용 시 보육료 바우처를 뺀 차액을 현금으로 지급','출생일 포함 60일 이내 신청하면 출생월부터 소급 지급'],tg:['0~23개월 아동을 키우는 부모','주민등록번호가 있는 대한민국 국적 아동'],docs:['신분증','통장 사본'],steps:['복지로·정부24 신청','주민센터 자격 확인','지급 결정 통보','매월 25일 지급'],how:'온라인·방문',end:null,need:['0~1세 자녀']},
+  {id:'firstmeet',t:'첫만남이용권',cat:'임신·출산',life:['임신·출산'],ag:'보건복지부',dept:'출산정책과',tel:'129 (보건복지상담센터)',sum:'출생 아동 1명당 국민행복카드 바우처를 지급합니다.',sh:'최대 300만원',amt:'첫째 200만원 · 둘째 이상 300만원',det:['국민행복카드 포인트로 지급','출생일로부터 1년 이내 사용'],tg:['2024년 1월 1일 이후 출생한 아동의 보호자'],docs:['신분증','국민행복카드 발급 신청서'],steps:['출생신고','복지로·정부24 신청','포인트 지급','1년 이내 사용'],how:'온라인·방문',end:null,need:['임신 중','0~1세 자녀']},
+  {id:'child',t:'아동수당',cat:'보육',life:['영유아','아동·청소년'],ag:'보건복지부',dept:'아동복지정책과',tel:'129 (보건복지상담센터)',sum:'만 8세 미만 모든 아동에게 매달 수당을 지급합니다.',sh:'월 10만원',amt:'아동 1명당 월 10만원',det:['소득·재산과 관계없이 지급','매월 25일 보호자 계좌로 입금'],tg:['만 8세 미만(0~95개월) 아동'],docs:['신분증','통장 사본'],steps:['복지로·정부24 신청','자격 확인','지급 결정','매월 25일 지급'],how:'온라인·방문',end:null,need:['0~1세 자녀','2~7세 자녀']},
+  {id:'didim',t:'신생아 특례 디딤돌대출',cat:'주거',life:['임신·출산'],ag:'국토교통부',dept:'주택기금과',tel:'1566-9009 (주택도시기금)',sum:'출산 가구가 집을 살 때 낮은 금리로 대출해 줍니다.',sh:'최대 4억원 저금리 대출',amt:'최대 4억원 · 연 1%대부터',det:['대출 신청일 기준 2년 이내 출생 아동이 있는 가구','추가 출산 시 금리 추가 인하'],tg:['무주택 세대주','대출 신청일 기준 2년 내 출산한 가구'],docs:['주민등록등본','가족관계증명서','소득 증빙 서류','매매계약서'],steps:['주택도시기금 누리집 조회','수탁은행 상담','심사','대출 실행'],how:'온라인·방문',end:null,need:['임신 중','0~1세 자녀'],req:['무주택']},
+  {id:'leap',t:'청년도약계좌',cat:'금융',life:['청년'],ag:'금융위원회',dept:'서민금융진흥원',tel:'1397 (서민금융콜센터)',sum:'청년이 5년간 적금을 부으면 정부기여금과 비과세 혜택을 줍니다.',sh:'정부기여금 + 비과세',amt:'월 70만원 한도 · 5년 만기',det:['소득 구간에 따라 매월 정부기여금 적립','이자소득 비과세'],tg:['만 19~34세 청년','개인소득 7,500만원 이하, 가구소득 중위 250% 이하'],docs:['신분증','소득 증빙(은행에서 자동 조회)'],steps:['은행 앱 가입 신청','소득·가구 요건 심사','심사 결과 안내','계좌 개설'],how:'온라인',end:'2026-11-07',age:[19,34],inc:250},
+  {id:'rent',t:'청년월세 지원',cat:'주거',life:['청년'],ag:'국토교통부',dept:'주거복지정책과',tel:'1600-0777 (마이홈)',sum:'부모와 따로 사는 무주택 청년에게 월세를 지원합니다.',sh:'월 최대 20만원',amt:'월 최대 20만원 · 최대 24개월',det:['실제 내는 월세 범위 안에서 지원','지자체별 추가 모집 일정 다름'],tg:['부모와 따로 사는 만 19~34세 무주택 청년','청년가구 중위 60%, 원가구 중위 100% 이하'],docs:['임대차계약서','월세 이체 증빙','가족관계증명서'],steps:['복지로 온라인 신청','소득·재산 조사','지급 결정','매월 지급'],how:'온라인·방문',end:'2026-11-14',age:[19,34],req:['무주택'],inc:100},
+  {id:'scholar',t:'국가장학금',cat:'교육',life:['청년','아동·청소년'],ag:'교육부',dept:'한국장학재단',tel:'1599-2000 (한국장학재단)',sum:'대학생 등록금 부담을 소득 구간에 따라 덜어 줍니다.',sh:'연 최대 등록금 전액',amt:'소득 구간별 연 최대 등록금 전액',det:['기초·차상위 가구는 등록금 전액','다자녀 가구 추가 지원'],tg:['국내 대학 재학생·신입생','학자금 지원 9구간 이하'],docs:['가구원 정보 제공 동의','성적 정보(대학 자동 연계)'],steps:['한국장학재단 신청','가구원 동의','소득 구간 산정','등록금 감면'],how:'온라인',end:'2026-12-10',stat:['대학(원)생'],inc:200},
+  {id:'card',t:'국민내일배움카드',cat:'일자리',life:['청년','중장년'],ag:'고용노동부',dept:'직업능력정책과',tel:'1350 (고용노동부 고객상담센터)',sum:'직업훈련비를 카드로 지원해 원하는 과정을 들을 수 있습니다.',sh:'최대 500만원',amt:'5년간 300만~500만원 훈련비',det:['훈련비의 45~85% 지원','조건에 따라 훈련장려금 별도 지급'],tg:['구직자, 재직자, 자영업자 등','공무원·재학생 일부 제외'],docs:['신분증'],steps:['고용24 신청','고용센터 심사','카드 발급','훈련 과정 수강'],how:'온라인',end:null,age:[15,75],stat:['구직 중','재직 중','자영업·소상공인']},
+  {id:'jeonse',t:'신혼부부 버팀목 전세자금대출',cat:'주거',life:['청년','중장년'],ag:'국토교통부',dept:'주택기금과',tel:'1566-9009 (주택도시기금)',sum:'무주택 신혼부부에게 전세보증금을 낮은 금리로 빌려 줍니다.',sh:'최대 3억원 저금리 대출',amt:'수도권 최대 3억원 · 연 1%대부터',det:['혼인 7년 이내 또는 3개월 내 결혼 예정','부부 합산 연소득 7,500만원 이하'],tg:['무주택 세대주 신혼부부'],docs:['혼인관계증명서','임대차계약서','소득 증빙 서류'],steps:['기금e든든 조회','수탁은행 방문','심사','대출 실행'],how:'방문',end:null,need:['신혼(결혼 7년 이내)'],req:['무주택']},
+  {id:'eitc',t:'근로장려금',cat:'생활안정',life:['청년','중장년','어르신'],ag:'국세청',dept:'소득지원국',tel:'1544-9944 (장려금 상담센터)',sum:'일은 하지만 소득이 적은 가구에 장려금을 줍니다.',sh:'연 최대 330만원',amt:'가구 유형별 연 최대 165만~330만원',det:['단독·홑벌이·맞벌이 가구별 소득 기준 다름','재산 합계 2억 4천만원 미만'],tg:['근로·사업 소득이 있는 가구','가구 소득·재산 요건 충족'],docs:['홈택스 간편 신청','통장 사본'],steps:['홈택스·손택스 신청','소득·재산 심사','지급 결정','계좌 입금'],how:'온라인',end:'2026-11-30',age:[19,120],stat:['재직 중','자영업·소상공인'],inc:100},
+  {id:'kpass',t:'K-패스',cat:'생활안정',life:['청년','중장년','어르신'],ag:'국토교통부',dept:'대도시권광역교통위원회',tel:'1855-2580 (K-패스 콜센터)',sum:'대중교통을 월 15회 넘게 타면 요금 일부를 돌려줍니다.',sh:'교통비 20~53% 환급',amt:'일반 20% · 청년 30% · 저소득 53% 환급',det:['월 최대 60회까지 적립','다자녀 가구 추가 환급'],tg:['대중교통을 이용하는 국민 누구나'],docs:['K-패스 카드'],steps:['K-패스 카드 발급','누리집 회원가입','대중교통 이용','다음 달 환급'],how:'온라인',end:null},
+  {id:'energy',t:'에너지바우처',cat:'생활안정',life:['어르신','영유아'],ag:'산업통상자원부',dept:'에너지복지과',tel:'1600-3190 (에너지바우처)',sum:'취약계층의 여름·겨울 냉난방비를 바우처로 지원합니다.',sh:'연 최대 70만원대',amt:'세대원 수에 따라 연 29만~70만원대',det:['전기·도시가스·지역난방 요금 차감 또는 실물카드','하절기·동절기 통합 사용'],tg:['생계·의료·주거·교육급여 수급 가구','노인·영유아·장애인·임산부 등이 있는 가구'],docs:['신분증','신청서'],steps:['주민센터·복지로 신청','자격 확인','바우처 발급','요금 차감'],how:'온라인·방문',end:'2026-12-31',inc:50},
+  {id:'pension',t:'기초연금',cat:'생활안정',life:['어르신'],ag:'보건복지부',dept:'기초연금과',tel:'129 (보건복지상담센터)',sum:'만 65세 이상 소득 하위 70% 어르신에게 매달 연금을 드립니다.',sh:'월 최대 34만원대',amt:'단독가구 월 최대 34만원대',det:['부부 모두 받으면 각각 20% 감액','만 65세 생일 한 달 전부터 신청 가능'],tg:['만 65세 이상','소득인정액이 선정기준액 이하(하위 70%)'],docs:['신분증','통장 사본','금융정보 제공 동의서'],steps:['주민센터·국민연금공단 신청','소득·재산 조사','선정 결과 통보','매월 25일 지급'],how:'온라인·방문',end:null,age:[65,120],inc:100},
+  {id:'seniorjob',t:'노인일자리 및 사회활동 지원',cat:'일자리',life:['어르신'],ag:'보건복지부',dept:'노인지원과',tel:'1544-3388 (노인일자리 상담)',sum:'어르신에게 공익활동과 일자리를 연결하고 활동비를 드립니다.',sh:'월 29만원부터',amt:'공익활동형 월 29만원 · 사회서비스형 월 76만원대',det:['2027년 참여자 연말 모집','유형별 활동 시간과 활동비 다름'],tg:['만 65세 이상 기초연금 수급자(공익활동형)','만 60세 이상(사회서비스형 등)'],docs:['신분증','참여 신청서'],steps:['노인일자리 여기 또는 수행기관 신청','선발 심사','결과 안내','활동 시작'],how:'온라인·방문',end:'2026-12-05',age:[60,120]},
+  {id:'nes',t:'국민취업지원제도',cat:'일자리',life:['청년','중장년'],ag:'고용노동부',dept:'국민취업지원기획팀',tel:'1350 (고용노동부 고객상담센터)',sum:'취업 상담·훈련과 함께 구직촉진수당을 지원합니다.',sh:'월 50만원 × 6개월',amt:'구직촉진수당 월 50만원 · 최대 6개월',det:['Ⅰ유형: 구직촉진수당 + 취업지원서비스','Ⅱ유형: 취업지원서비스 + 참여수당'],tg:['만 15~69세 구직자','가구 중위소득 60~100% 이하(유형별 상이)'],docs:['신분증','구직 신청서'],steps:['고용24 신청','수급 자격 결정','취업활동계획 수립','수당 지급'],how:'온라인',end:null,age:[15,69],stat:['구직 중'],inc:100},
+  {id:'leave',t:'육아휴직급여',cat:'보육',life:['영유아','청년','중장년'],ag:'고용노동부',dept:'여성고용정책과',tel:'1350 (고용노동부 고객상담센터)',sum:'만 8세 이하 자녀를 위해 휴직한 근로자에게 급여를 지급합니다.',sh:'월 최대 250만원',amt:'첫 3개월 월 최대 250만원 · 이후 단계별 지급',det:['부모 모두 육아휴직 시 특례 적용','휴직 기간 중 전액 지급'],tg:['고용보험 가입 기간 180일 이상 근로자','만 8세 이하 자녀 양육'],docs:['육아휴직 확인서(사업주)','통장 사본'],steps:['회사에 육아휴직 신청','고용24 급여 신청','고용센터 심사','매월 지급'],how:'온라인',end:null,stat:['재직 중'],need:['임신 중','0~1세 자녀','2~7세 자녀']},
+  {id:'disab',t:'장애인연금',cat:'생활안정',life:['청년','중장년','어르신'],ag:'보건복지부',dept:'장애인자립기반과',tel:'129 (보건복지상담센터)',sum:'중증장애인의 생활 안정을 위해 매달 연금을 지급합니다.',sh:'월 최대 43만원대',amt:'기초급여 + 부가급여 월 최대 43만원대',det:['소득 하위 70% 중증장애인','수급자·차상위는 부가급여 추가'],tg:['만 18세 이상 중증장애인','소득인정액이 선정기준액 이하'],docs:['신분증','통장 사본','금융정보 제공 동의서'],steps:['주민센터 신청','소득·재산 조사','선정 통보','매월 20일 지급'],how:'방문',end:null,age:[18,120],stat:['장애인'],inc:100}
+];
+const CATS = ['임신·출산','보육','교육','일자리','주거','생활안정','금융'];
+const LIFE = ['임신·출산','영유아','아동·청소년','청년','중장년','어르신'];
+const HOUSE = ['임신 중','0~1세 자녀','2~7세 자녀','8세 이상 자녀','신혼(결혼 7년 이내)','1인 가구','부모님 부양'];
+const INCOME = [{l:'중위소득 50% 이하',d:'4인 가구 월 약 325만원 이하',v:50},{l:'중위소득 50~100%',d:'4인 가구 월 약 325만~650만원',v:100},{l:'중위소득 100~150%',d:'4인 가구 월 약 650만~975만원',v:150},{l:'중위소득 150~250%',d:'4인 가구 월 약 975만~1,625만원',v:250},{l:'중위소득 250% 초과',d:'4인 가구 월 약 1,625만원 초과',v:999},{l:'잘 모름',d:'소득 조건이 있는 혜택은 \'확인 필요\'로 표시합니다',v:null}];
+const STATUS = ['재직 중','구직 중','대학(원)생','자영업·소상공인','무주택','장애인'];
+const PROVIDERS = ['카카오톡','네이버','PASS','토스','KB국민인증서','공동인증서'];
+const TIMINGS = [14,7,3,1];
+const CHANNELS = ['카카오톡','문자','이메일'];
+const POPULAR = ['부모급여','청년도약계좌','기초연금','청년월세','K-패스'];
+const STEPS = ['기본 정보','가구 상황','소득 수준','현재 상황'];
+
+const days = e => { if (!e) return null; const [y,m,d] = e.split('-').map(Number); return Math.round((new Date(y,m-1,d) - TODAY) / 864e5); };
+const fmt = e => { const [y,m,d] = e.split('-'); return `${y}. ${m}. ${d}.`; };
+const ageTxt = a => a[1] >= 100 ? `만 ${a[0]}세 이상` : `만 ${a[0]}~${a[1]}세`;
+function match(b, p) {
+  const r = []; let check = false;
+  if (b.age) { if (p.age < b.age[0] || p.age > b.age[1]) return { ok:false, why:`${ageTxt(b.age)} 대상입니다. (입력: 만 ${p.age}세)` }; r.push(`${ageTxt(b.age)} 해당`); }
+  if (b.need) { const hit = b.need.filter(h => p.household.includes(h)); if (!hit.length) return { ok:false, why:`${b.need.join(' 또는 ')} 가구가 대상입니다.` }; r.push(`${hit[0]} 가구`); }
+  if (b.req) { const miss = b.req.filter(x => !p.status.includes(x)); if (miss.length) return { ok:false, why:`${miss.join('·')} 요건이 필요합니다.` }; r.push(...b.req); }
+  if (b.stat) { const hit = b.stat.filter(x => p.status.includes(x)); if (!hit.length) return { ok:false, why:`${b.stat.join(' 또는 ')} 대상입니다.` }; r.push(hit[0]); }
+  if (b.inc) { if (p.income == null) check = true; else if (p.income > b.inc) return { ok:false, why:`가구 소득 기준(중위소득 ${b.inc}% 이하)을 넘습니다.` }; else r.push(`소득 기준(중위 ${b.inc}% 이하) 충족`); }
+  if (!r.length) r.push('조건 없이 누구나 신청 가능');
+  return { ok:true, reasons:r.slice(0,3), check };
+}
+const EMPTY_DRAFT = { age:'', region:'', household:[], income:undefined, status:[] };
+const chip = on => ({ on, mark: on ? '✓ ' : '', bd: on ? '#256EF4' : '#8A949E', bg: on ? '#ECF2FE' : '#fff', fg: on ? '#0B50D0' : '#1E2124', fw: on ? 700 : 500 });
+
+class Component extends DCLogic {
+  state = { page:'home', detailId:'parent', saved:[], loggedIn:false, userName:'', fontStep:0, isMobile:false, menuOpen:false, toast:'',
+    searchInput:'', q:'', cat:'', life:'', onlineOnly:false, myOnly:false, sort:'deadline', layout:'card', filtersOpen:false,
+    step:0, draft:EMPTY_DRAFT, profile:null, errors:{},
+    lg:{ provider:'카카오톡', name:'', birth:'', phone:'', agree:false, phase:'form', err:{} }, returnTo:'home', secs:300,
+    alertDays:[7,1], channels:['카카오톡'], errAlert:'' };
+
+  componentDidMount() {
+    try { const s = JSON.parse(localStorage.getItem('gbh_state') || '{}'); if (s.saved) this.setState({ saved:s.saved, loggedIn:!!s.loggedIn, userName:s.userName || '', alertDays:s.alertDays || [7,1], channels:s.channels || ['카카오톡'] }); } catch (e) {}
+    this.onResize = () => this.setState({ isMobile: window.innerWidth < 900 });
+    this.onResize(); window.addEventListener('resize', this.onResize);
+    this.applyProps({});
+  }
+  componentDidUpdate(prev, prevState) {
+    this.applyProps(prev);
+    const s = this.state, p = prevState;
+    if (s.saved !== p.saved || s.loggedIn !== p.loggedIn || s.alertDays !== p.alertDays || s.channels !== p.channels)
+      try { localStorage.setItem('gbh_state', JSON.stringify({ saved:s.saved, loggedIn:s.loggedIn, userName:s.userName, alertDays:s.alertDays, channels:s.channels })); } catch (e) {}
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); clearTimeout(this.tt); clearInterval(this.ti); }
+  applyProps(prev) {
+    const p = this.props;
+    if (p.startPage && p.startPage !== prev.startPage) this.go(p.startPage);
+    if (p.demoLoggedIn !== undefined && p.demoLoggedIn !== prev.demoLoggedIn) this.setState({ loggedIn:!!p.demoLoggedIn, userName: p.demoLoggedIn ? '홍길동' : '' });
+    if (p.listLayout && p.listLayout !== prev.listLayout) this.setState({ layout:p.listLayout });
+  }
+  go(page, extra) { this.setState({ page, menuOpen:false, ...(extra || {}) }); try { window.scrollTo(0, 0); } catch (e) {} }
+  say(msg) { clearTimeout(this.tt); this.setState({ toast:msg }); this.tt = setTimeout(() => this.setState({ toast:'' }), 2800); }
+  toggleSave(id) {
+    const has = this.state.saved.includes(id);
+    this.setState(s => ({ saved: has ? s.saved.filter(x => x !== id) : [...s.saved, id] }));
+    this.say(has ? '관심 혜택에서 삭제했습니다.' : (this.state.loggedIn ? '관심 혜택에 저장했습니다. 마감 전에 알려드릴게요.' : '관심 혜택에 저장했습니다. 로그인하면 마감 알림을 받을 수 있습니다.'));
+  }
+  item(b) {
+    const n = days(b.end), saved = this.state.saved.includes(b.id), urgent = n != null && n <= 14;
+    return { id:b.id, title:b.t, cat:b.cat, agency:b.ag, summary:b.sum, short:b.sh,
+      dday: n == null ? '상시' : `D-${n}`, ddBg: urgent ? '#FDEFEC' : (n == null ? '#F4F5F6' : '#ECF2FE'), ddFg: urgent ? '#BD2C0F' : (n == null ? '#464C53' : '#0B50D0'),
+      period: n == null ? '상시 신청' : `${fmt(b.end)}까지`, until: b.end ? fmt(b.end) : '',
+      saved, star: saved ? '★' : '☆', starBd: saved ? '#256EF4' : '#CDD1D5', starBg: saved ? '#ECF2FE' : '#fff', starFg: saved ? '#256EF4' : '#6D7882',
+      open: () => this.go('detail', { detailId:b.id }),
+      toggleSave: e => { e && e.stopPropagation(); this.toggleSave(b.id); } };
+  }
+  byDeadline(a, b) { const x = days(a.end), y = days(b.end); return (x == null ? 9999 : x) - (y == null ? 9999 : y); }
+  validateStep() {
+    const { step, draft } = this.state, e = {};
+    if (step === 0) { const a = Number(draft.age); if (draft.age === '' || isNaN(a)) e.age = '만 나이를 입력해 주세요.'; else if (a < 0 || a > 120) e.age = '0~120 사이 숫자로 입력해 주세요.'; if (!draft.region) e.region = '거주 지역을 선택해 주세요.'; }
+    if (step === 2 && draft.income === undefined) e.income = '소득 수준을 선택해 주세요. 모르면 \'잘 모름\'을 고르세요.';
+    this.setState({ errors:e }); return !Object.keys(e).length;
+  }
+  submitLogin() {
+    const lg = this.state.lg, err = {};
+    if (!lg.name.trim()) err.name = '이름을 입력해 주세요.';
+    if (!/^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$/.test(lg.birth)) err.birth = '생년월일 8자리를 정확히 입력해 주세요.';
+    if (!/^01[016789]\d{7,8}$/.test(lg.phone.replace(/-/g, ''))) err.phone = '휴대폰 번호를 정확히 입력해 주세요.';
+    if (!lg.agree) err.agree = '개인정보 수집·이용에 동의해야 인증할 수 있습니다.';
+    if (Object.keys(err).length) return this.setState({ lg:{ ...lg, err } });
+    this.setState({ lg:{ ...lg, err:{}, phase:'wait' }, secs:300 });
+    clearInterval(this.ti); this.ti = setInterval(() => this.setState(s => { if (s.secs <= 1) { clearInterval(this.ti); return { secs:0 }; } return { secs:s.secs - 1 }; }), 1000);
+  }
+
+  renderVals() {
+    const s = this.state, p = s.page;
+    const zooms = [1, 1.15, 1.3];
+    const nav = [['맞춤 혜택 찾기','finder'],['전체 혜택','list'],['신청 마감 알림','alerts'],['관심 혜택','my']].map(([label, pg]) => {
+      const on = p === pg || (pg === 'list' && p === 'detail');
+      return { label, current: on ? 'page' : undefined, color: on ? '#256EF4' : '#1E2124', bar: on ? '#256EF4' : 'transparent', badge: pg === 'my' && s.saved.length ? String(s.saved.length) : '', go: () => this.go(pg, pg === 'finder' && !s.profile ? { step:0 } : null) };
+    });
+    const goList = () => this.go('list');
+    const doSearch = () => this.go('list', { q:s.searchInput.trim(), cat:'', life:'' });
+    const goLogin = () => this.go('login', { returnTo: p === 'login' ? 'home' : p, lg:{ ...s.lg, phase:'form', err:{} } });
+
+    // list
+    const q = s.q.toLowerCase();
+    const base = B.filter(b => (!q || [b.t, b.ag, b.sum, b.cat, b.dept].join(' ').toLowerCase().includes(q)) && (!s.onlineOnly || b.how.includes('온라인')) && (!s.myOnly || !s.profile || match(b, s.profile).ok));
+    let list = base.filter(b => (!s.cat || b.cat === s.cat) && (!s.life || b.life.includes(s.life)));
+    list = [...list].sort(s.sort === 'name' ? (a, b) => a.t.localeCompare(b.t, 'ko') : s.sort === 'agency' ? (a, b) => a.ag.localeCompare(b.ag, 'ko') || a.t.localeCompare(b.t, 'ko') : (a, b) => this.byDeadline(a, b));
+    const filt = (arr, key, field) => [{ label:'전체', v:'' }, ...arr.map(v => ({ label:v, v }))].map(o => {
+      const on = s[key] === o.v;
+      const count = base.filter(b => (key === 'cat' ? (!s.life || b.life.includes(s.life)) : (!s.cat || b.cat === s.cat)) && (!o.v || (field === 'cat' ? b.cat === o.v : b.life.includes(o.v)))).length;
+      return { label:o.label, on, count, bg: on ? '#ECF2FE' : 'transparent', fg: on ? '#0B50D0' : '#1E2124', fw: on ? 700 : 500, pick: () => this.setState({ [key]: o.v }) };
+    });
+
+    // finder
+    const d0 = s.draft;
+    const resultsRaw = s.profile ? B.map(b => ({ b, m: match(b, s.profile) })).filter(x => x.m.ok).sort((x, y) => this.byDeadline(x.b, y.b)) : [];
+    const pr = s.profile;
+    const profileTags = pr ? [`만 ${pr.age}세`, pr.region, ...pr.household, pr.income == null ? '소득 잘 모름' : INCOME.find(i => i.v === pr.income).l, ...pr.status] : [];
+
+    // detail
+    const db = B.find(b => b.id === s.detailId) || B[0];
+    const di = this.item(db), dn = days(db.end);
+    const dm = s.profile ? match(db, s.profile) : null;
+
+    // alerts
+    const months = {};
+    B.filter(b => b.end).sort((a, b) => this.byDeadline(a, b)).forEach(b => {
+      const [y, m, d] = b.end.split('-').map(Number); const key = `${y}년 ${m}월`;
+      const it = this.item(b), on = it.saved;
+      (months[key] = months[key] || []).push({ ...it, day: String(d), wd: WD[new Date(y, m - 1, d).getDay()], on, btn: on ? '알림 받는 중' : '알림 받기', bd: on ? '#256EF4' : '#CDD1D5', bg: on ? '#256EF4' : '#fff', fg: on ? '#fff' : '#1E2124', toggle: it.toggleSave });
+    });
+    const savedItems = B.filter(b => s.saved.includes(b.id)).sort((a, b) => this.byDeadline(a, b)).map(b => this.item(b));
+    const lg = s.lg, bd = e => e ? '#BD2C0F' : '#8A949E';
+
+    return {
+      zoom: zooms[s.fontStep], fontLabel: ['보통', '크게', '아주 크게'][s.fontStep], cycleFont: () => this.setState({ fontStep: (s.fontStep + 1) % 3 }),
+      isMobile: s.isMobile, isDesktop: !s.isMobile, menuOpen: s.menuOpen, menuLabel: s.menuOpen ? '닫기' : '메뉴', toggleMenu: () => this.setState({ menuOpen: !s.menuOpen }),
+      loggedIn: s.loggedIn, notLoggedIn: !s.loggedIn, userName: s.userName, goLogin,
+      logout: () => { this.setState({ loggedIn:false, userName:'' }); this.say('로그아웃되었습니다.'); },
+      nav, isHome: p === 'home', isFinder: p === 'finder', isList: p === 'list', isDetail: p === 'detail', isMy: p === 'my', isAlerts: p === 'alerts', isLogin: p === 'login',
+      goHome: () => this.go('home'), goFinder: () => this.go('finder', s.profile ? null : { step:0 }), goList, goMy: () => this.go('my'), goAlerts: () => this.go('alerts'),
+      searchInput: s.searchInput, onSearchInput: e => this.setState({ searchInput: e.target.value }), onSearchKey: e => { if (e.key === 'Enter') doSearch(); }, doSearch,
+      popular: POPULAR.map(label => ({ label, go: () => this.go('list', { q:label, searchInput:label, cat:'', life:'' }) })),
+      quick: [...LIFE.map(l => ({ label:l, count: B.filter(b => b.life.includes(l)).length, go: () => this.go('list', { life:l, cat:'', q:'', searchInput:'' }) })), ...['일자리', '주거'].map(c => ({ label:c, count: B.filter(b => b.cat === c).length, go: () => this.go('list', { cat:c, life:'', q:'', searchInput:'' }) }))],
+      homeDeadlines: B.filter(b => b.end).sort((a, b) => this.byDeadline(a, b)).slice(0, 5).map(b => this.item(b)),
+      dlSpan: s.isMobile ? 1 : 1,
+      alertCta: s.loggedIn ? { label:'관심 혜택 관리', go: () => this.go('my') } : { label:'간편인증 로그인', go: goLogin },
+      savedCount: s.saved.length,
+
+      steps: STEPS.map((label, i) => ({ n: i + 1, label, current: s.profile && s.step === 4 ? undefined : (i === s.step ? 'step' : undefined), bar: i <= s.step ? '#256EF4' : '#E6E8EA', color: i <= s.step ? '#1E2124' : '#8A949E' })),
+      stepForm: s.step < 4, stepResult: s.step === 4 && !!s.profile, step0: s.step === 0, step1: s.step === 1, step2: s.step === 2, step3: s.step === 3,
+      fAge: d0.age, fRegion: d0.region, errAge: s.errors.age, errRegion: s.errors.region, errIncome: s.errors.income, ageBd: bd(s.errors.age), regionBd: bd(s.errors.region),
+      setAge: e => this.setState({ draft: { ...d0, age: e.target.value } }), setRegion: e => this.setState({ draft: { ...d0, region: e.target.value } }),
+      prefill: () => { this.setState({ draft: { ...d0, age:'31', region:'서울특별시' }, errors:{} }); this.say('간편인증 정보로 나이와 지역을 채웠습니다.'); },
+      householdOpts: HOUSE.map(h => ({ label:h, ...chip(d0.household.includes(h)), toggle: () => this.setState({ draft: { ...d0, household: d0.household.includes(h) ? d0.household.filter(x => x !== h) : [...d0.household, h] } }) })),
+      statusOpts: STATUS.map(h => ({ label:h, ...chip(d0.status.includes(h)), toggle: () => this.setState({ draft: { ...d0, status: d0.status.includes(h) ? d0.status.filter(x => x !== h) : [...d0.status, h] } }) })),
+      incomeOpts: INCOME.map(o => { const on = d0.income === o.v; return { label:o.l, desc:o.d, on, bd: on ? '#256EF4' : '#CDD1D5', bg: on ? '#ECF2FE' : '#fff', ring: on ? '#256EF4' : '#8A949E', dot: on ? '#256EF4' : 'transparent', pick: () => this.setState({ draft: { ...d0, income:o.v }, errors:{} }) }; }),
+      prevLabel: s.step === 0 ? '취소' : '이전', nextLabel: s.step === 3 ? '결과 보기' : '다음',
+      prevStep: () => s.step === 0 ? this.go('home') : this.setState({ step: s.step - 1, errors:{} }),
+      nextStep: () => { if (!this.validateStep()) return; if (s.step < 3) this.setState({ step: s.step + 1 }); else { this.setState({ step:4, profile: { ...d0, age: Number(d0.age) } }); try { window.scrollTo(0, 0); } catch (e) {} } },
+      results: resultsRaw.map(({ b, m }) => ({ ...this.item(b), reasons: m.reasons, check: m.check })),
+      resultCount: resultsRaw.length, noResults: !!s.profile && !resultsRaw.length, total: B.length, profileTags,
+      editProfile: () => this.setState({ step:0 }), resetFinder: () => this.setState({ step:0, draft:EMPTY_DRAFT, profile:null, myOnly:false, errors:{} }),
+
+      catFilters: filt(CATS, 'cat', 'cat'), lifeFilters: filt(LIFE, 'life', 'life'),
+      onlineOnly: s.onlineOnly, toggleOnline: () => this.setState({ onlineOnly: !s.onlineOnly }),
+      hasProfile: !!s.profile, myOnly: s.myOnly, toggleMyOnly: () => this.setState({ myOnly: !s.myOnly }),
+      resetFilters: () => this.setState({ cat:'', life:'', onlineOnly:false, myOnly:false, q:'', searchInput:'' }),
+      sort: s.sort, setSort: e => this.setState({ sort: e.target.value }),
+      isCardLayout: s.layout === 'card', isRowLayout: s.layout === 'row', setCard: () => this.setState({ layout:'card' }), setRow: () => this.setState({ layout:'row' }),
+      cardBtnBg: s.layout === 'card' ? '#1E2124' : '#fff', cardBtnFg: s.layout === 'card' ? '#fff' : '#464C53', rowBtnBg: s.layout === 'row' ? '#1E2124' : '#fff', rowBtnFg: s.layout === 'row' ? '#fff' : '#464C53',
+      listItems: list.map(b => this.item(b)), listCount: list.length, listEmpty: !list.length, queryLabel: s.q ? `'${s.q}' 검색 결과 ` : '',
+      filtersOpen: s.filtersOpen, filtersVisible: !s.isMobile || s.filtersOpen, toggleFilters: () => this.setState({ filtersOpen: !s.filtersOpen }), filterBtnLabel: s.filtersOpen ? '필터 닫기' : `필터${s.cat || s.life || s.onlineOnly || s.myOnly ? ' (적용 중)' : ''}`,
+
+      d: { ...db, title: db.t, agency: db.ag, summary: db.sum, short: db.sh, dday: di.dday, ddBg: di.ddBg, ddFg: di.ddFg, periodText: dn == null ? '상시' : `${fmt(db.end)}까지` },
+      dSteps: db.steps.map((label, i) => ({ n: i + 1, label })),
+      dMatchOk: !!dm && dm.ok, dMatchNo: !!dm && !dm.ok, dNoProfile: !dm, dReasons: dm && dm.ok ? dm.reasons : [], dCheck: !!dm && !!dm.check, dWhy: dm && !dm.ok ? dm.why : '',
+      dSaved: di.saved, dSaveLabel: di.saved ? '★ 관심 혜택 저장됨' : '☆ 관심 혜택 저장', dSaveBd: di.saved ? '#256EF4' : '#CDD1D5', dSaveBg: di.saved ? '#ECF2FE' : '#fff', dSaveFg: di.saved ? '#0B50D0' : '#1E2124',
+      toggleDSave: () => this.toggleSave(db.id),
+      applyLabel: db.how === '방문' ? '방문 신청 안내' : '온라인 신청하기',
+      apply: () => this.say(db.how === '방문' ? `가까운 접수처에 방문해 신청하세요. 문의: ${db.tel}` : `${db.ag} 신청 누리집으로 이동합니다. (시안에서는 이동하지 않습니다)`),
+      related: B.filter(b => b.id !== db.id && (b.cat === db.cat || b.life.some(l => db.life.includes(l)))).slice(0, 3).map(b => this.item(b)),
+      hasRelated: true,
+
+      savedItems, savedEmpty: !savedItems.length,
+      alertSummary: [...s.alertDays].sort((a, b) => b - a).map(d => `${d}일`).join('·') || '-', channelSummary: s.channels.join('·') || '-',
+      alertMonths: Object.keys(months).map(label => ({ label, rows: months[label] })),
+      timingOpts: TIMINGS.map(t => ({ label: `${t}일 전`, ...chip(s.alertDays.includes(t)), toggle: () => this.setState({ alertDays: s.alertDays.includes(t) ? s.alertDays.filter(x => x !== t) : [...s.alertDays, t], errAlert:'' }) })),
+      channelOpts: CHANNELS.map(c => ({ label:c, ...chip(s.channels.includes(c)), toggle: () => this.setState({ channels: s.channels.includes(c) ? s.channels.filter(x => x !== c) : [...s.channels, c], errAlert:'' }) })),
+      errAlert: s.errAlert,
+      saveAlert: () => { if (!s.alertDays.length || !s.channels.length) return this.setState({ errAlert:'알림 시점과 받는 방법을 하나 이상 선택해 주세요.' }); this.say('알림 설정을 저장했습니다.'); },
+
+      loginForm: lg.phase === 'form', loginWaiting: lg.phase === 'wait',
+      providers: PROVIDERS.map(label => { const on = lg.provider === label; return { label, on, bw: on ? '2px' : '1px', bd: on ? '#256EF4' : '#CDD1D5', bg: on ? '#ECF2FE' : '#fff', fw: on ? 700 : 500, pick: () => this.setState({ lg: { ...lg, provider: label } }) }; }),
+      lgName: lg.name, lgBirth: lg.birth, lgPhone: lg.phone, lgAgree: lg.agree, lgErr: lg.err,
+      lgNameBd: bd(lg.err.name), lgBirthBd: bd(lg.err.birth), lgPhoneBd: bd(lg.err.phone),
+      onLgName: e => this.setState({ lg: { ...lg, name: e.target.value } }),
+      onLgBirth: e => this.setState({ lg: { ...lg, birth: e.target.value.replace(/\D/g, '').slice(0, 8) } }),
+      onLgPhone: e => this.setState({ lg: { ...lg, phone: e.target.value.replace(/[^\d-]/g, '').slice(0, 13) } }),
+      toggleAgree: () => this.setState({ lg: { ...lg, agree: !lg.agree } }),
+      submitLogin: () => this.submitLogin(),
+      providerLabel: lg.provider, lgPhoneMasked: lg.phone.replace(/-/g, '').replace(/^(\d{3})\d+(\d{4})$/, '$1-****-$2'),
+      timer: `${Math.floor(s.secs / 60)}:${String(s.secs % 60).padStart(2, '0')}`,
+      completeLogin: () => { clearInterval(this.ti); const name = lg.name.trim(); this.setState({ loggedIn:true, userName:name, lg: { ...lg, phase:'form' } }); this.go(s.returnTo || 'home'); this.say(`${name}님, 로그인되었습니다.`); },
+      cancelLogin: () => { clearInterval(this.ti); this.setState({ lg: { ...lg, phase:'form' } }); },
+
+      hasToast: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
