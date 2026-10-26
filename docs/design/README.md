@@ -19,7 +19,7 @@
 - **공통 레이아웃**: 페이지 컨테이너(최대 1280px), 데스크톱·모바일 헤더 구조(900px 기준), 푸터 구조, 브레드크럼, 토스트.
 - **공통 컴포넌트**: 혜택 카드(카드 전체를 상세 링크로, 저장 버튼은 형제 요소로), 칩 버튼(`aria-pressed`), 라디오 카드(`role="radiogroup"`), 단계 표시, 입력과 에러 표시(`aria-invalid`, `aria-describedby`, `role="alert"`), 빈 상태, 사이드 박스, 안내 박스(성공·경고·위험 색).
 - **접근성**: 시안 README '접근성 체크'(KWCAG 2.2)를 따르고, 시안에 없는 본문 바로가기를 더한다. 전환 애니메이션 없이 hover 색 변화만 둔다.
-- KRDS 공식 컴포넌트는 쓰지 않고 위 토큰과 수치를 따른다([결정 0026](../decisions/0026-frontend-styling-and-preferences.md), #72).
+- KRDS 공식 컴포넌트는 쓰지 않고 위 토큰과 수치를 따른다([결정 0028](../decisions/0028-frontend-styling-and-preferences-spa.md), #72).
 
 ## 공식 정부 사이트 요소
 

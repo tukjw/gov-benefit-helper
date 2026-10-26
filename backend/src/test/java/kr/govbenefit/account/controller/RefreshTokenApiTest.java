@@ -176,11 +176,11 @@ class RefreshTokenApiTest {
         String refreshToken = cookieValue(login().andReturn().getResponse());
 
         assertCsrfRejected(mockMvc.perform(post("/api/auth/refresh").cookie(new Cookie(COOKIE, refreshToken))));
-        assertCsrfRejected(mockMvc.perform(
-                refreshRequest(refreshToken).header(HttpHeaders.ORIGIN, "https://evil.example")));
-        // 같은 사이트의 다른 서브도메인은 SameSite로 막히지 않으므로 출처로 막는다.
-        assertCsrfRejected(mockMvc.perform(
-                refreshRequest(refreshToken).header(HttpHeaders.ORIGIN, "https://other.govbenefit.kr")));
+        // 허용 목록에 없는 출처는 CORS가 먼저 403으로 거절한다(결정 0027). 같은 사이트의 다른 서브도메인은 SameSite로 막히지 않으므로 출처로 막는다.
+        mockMvc.perform(refreshRequest(refreshToken).header(HttpHeaders.ORIGIN, "https://evil.example"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(refreshRequest(refreshToken).header(HttpHeaders.ORIGIN, "https://other.govbenefit.kr"))
+                .andExpect(status().isForbidden());
         assertCsrfRejected(mockMvc.perform(post("/api/auth/refresh").cookie(new Cookie(COOKIE, refreshToken))
                 .header("X-Requested-With", " ")));
         assertThat(jdbcTemplate.queryForObject(
