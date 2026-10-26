@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #79 상세 API 응답에서 오래된 정보 판정(freshness)을 제거
 
