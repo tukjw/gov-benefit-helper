@@ -92,7 +92,7 @@ public class MatchService {
     }
 
     /**
-     * 비교 결과 순(부합 → 확인 필요) 혜택 한 쪽. 개인 대상이 아닌 혜택(불일치)은 뺀다.
+     * 비교 결과 순(해당 → 확인 필요) 혜택 한 쪽. 개인 대상이 아닌 혜택(미해당)은 뺀다.
      * 운영 기관 지역 범위는 판정과 같은 운영 기관 지역으로 메모리에서 거른다. 범위 규칙을 SQL에 따로 두지 않는다.
      * 순서가 프로필에 따라 달라 DB에서 자를 수 없으므로 요청마다 전체 혜택을 판정한다. 같은 결과 안에서는 검색과 같은 순서가
      * 되도록 DB가 정렬한 순서를 그대로 두고 결과별로 나눈다. DB 콜레이션은 Java 문자열 비교와 순서가 달라 다시 정렬하지 않는다.
@@ -126,7 +126,7 @@ public class MatchService {
         Map<String, SupportConditions> conditions = sourceRecordRepository
                 .findAllByEndpoint(SourceEndpoint.SUPPORT_CONDITIONS).stream()
                 .collect(Collectors.toMap(SourceRecord::getServiceId, this::parse));
-        // 부합을 담고, 다 판정한 뒤 확인 필요를 이어 붙인다.
+        // 해당을 담고, 다 판정한 뒤 확인 필요를 이어 붙인다.
         List<MatchListItem> listed = new ArrayList<>();
         List<MatchListItem> needsCheck = new ArrayList<>();
         for (Benefit benefit : benefitRepository.findAll(BenefitQueryService.SEARCH_ORDER)) {

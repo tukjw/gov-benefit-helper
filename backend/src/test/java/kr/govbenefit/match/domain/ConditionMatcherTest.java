@@ -46,7 +46,7 @@ class ConditionMatcherTest {
     private static final MatchSubject EMPTY = new MatchSubject(null, null, null, null, null, null);
 
     @Test
-    void 비교_항목을_코드상_모두_충족하면_부합이다() {
+    void 비교_항목을_코드상_모두_충족하면_해당이다() {
         SupportConditions conditions = conditions(19, 39, "JA0102", "JA0326", "JA0404");
 
         MatchOutcome outcome = ConditionMatcher.match(FULL, conditions, PERSONAL, NO_REGION);
@@ -58,7 +58,7 @@ class ConditionMatcherTest {
     }
 
     @Test
-    void 제한이_없는_혜택은_프로필을_모두_입력하면_부합이다() {
+    void 제한이_없는_혜택은_프로필을_모두_입력하면_해당이다() {
         MatchOutcome outcome = ConditionMatcher.match(FULL, unrestricted(), PERSONAL, NO_REGION);
 
         assertThat(outcome.result()).isEqualTo(MatchResult.MATCH);
@@ -167,7 +167,7 @@ class ConditionMatcherTest {
     }
 
     @Test
-    void 그룹_하나라도_충족하지_않으면_부합이_아니다() {
+    void 그룹_하나라도_충족하지_않으면_해당이_아니다() {
         Set<String> codes = new HashSet<>(unrestricted().yesCodes());
         codes.remove("JA0404");
         codes.remove("JA0410");
@@ -181,7 +181,7 @@ class ConditionMatcherTest {
     }
 
     @Test
-    void 지원조건을_수집하지_못했으면_확인_필요이고_불일치가_아니다() {
+    void 지원조건을_수집하지_못했으면_확인_필요이고_미해당이_아니다() {
         MatchOutcome outcome = ConditionMatcher.match(FULL, null, PERSONAL, NO_REGION);
 
         assertThat(outcome.result()).isEqualTo(MatchResult.NEEDS_CHECK);
@@ -200,7 +200,7 @@ class ConditionMatcherTest {
     }
 
     @Test
-    void 개인_대상이_아니면_불일치이고_나머지_항목은_판정하지_않는다() {
+    void 개인_대상이_아니면_미해당이고_나머지_항목은_판정하지_않는다() {
         for (SupportConditions conditions : Arrays.asList(unrestricted(), null)) {
             MatchOutcome outcome = ConditionMatcher.match(FULL, conditions, "법인/시설/단체", NO_REGION);
 
@@ -213,7 +213,7 @@ class ConditionMatcherTest {
     }
 
     @Test
-    void 개인_대상_혜택은_어떤_코드와_프로필에도_불일치가_아니다() {
+    void 개인_대상_혜택은_어떤_코드와_프로필에도_미해당이_아니다() {
         List<SupportConditions> conditionsCases = Arrays.asList(null, unrestricted(),
                 new SupportConditions(null, null, Set.of()), new SupportConditions(65, 120, Set.of("JA0101", "JA0328")),
                 new SupportConditions(40, 39, Set.of("JA0402")));
