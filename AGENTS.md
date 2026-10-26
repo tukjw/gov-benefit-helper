@@ -5,7 +5,7 @@
 ## 저장소 구성
 
 - `backend/`: Spring Boot API. 도메인별 레이어드 패키지 구조 (`kr.govbenefit.<도메인>.{controller,service,repository,domain,dto}`). Gradle 명령은 `backend/`에서 실행합니다.
-- `frontend/`: Next.js 웹(App Router, TypeScript). npm 명령은 `frontend/`에서 실행하고, Node 버전은 `frontend/.nvmrc`를 따릅니다.
+- `frontend/`: React + Vite 웹(TypeScript, React Router). 빌드 결과는 정적 파일입니다. npm 명령은 `frontend/`에서 실행하고, Node 버전은 `frontend/.nvmrc`를 따릅니다.
 - `docs/product/`: 서비스 기획, 요구사항(`REQ-*`), 외부 데이터, 개발 순서와 미정 사항(`DEC-*`). 문서 안내는 `docs/README.md`에 있습니다. 기능 범위나 동작을 판단할 때 먼저 확인합니다.
 - `docs/plans/`: 이슈별 구현 플랜. 파일명은 `<이슈번호>-<브랜치 슬러그>.md`.
 - `scripts/`: 저장소 보조 스크립트.
@@ -17,7 +17,7 @@
 - `docker compose -f docker-compose.local.yml up -d`로 MySQL을 띄우고, `backend/`에서 `SPRING_PROFILES_ACTIVE=local ./gradlew bootRun`으로 실행합니다.
 - API 문서 화면은 `local` 프로필로 실행했을 때만 `http://localhost:8080/swagger-ui.html`에서 열립니다.
 - `local` 프로필의 DB 계정 기본값은 로컬 compose가 만드는 계정과 같으므로 `.env` 없이 실행됩니다. 값을 바꿀 때만 루트 `.env`(compose)와 `backend/.env`(앱)를 `.env.example`에서 복사해 씁니다.
-- 프론트는 `frontend/`에서 `npm ci` 후 `npm run dev`로 실행하면 `http://localhost:3000`에서 열립니다. API 주소(`NEXT_PUBLIC_API_BASE_URL`)는 `.env.development`의 로컬 기본값을 쓰고, 바꿀 때만 `frontend/.env.example`을 `frontend/.env.local`로 복사해 씁니다.
+- 프론트는 `frontend/`에서 `npm ci` 후 `npm run dev`로 실행하면 `http://localhost:3000`에서 열립니다. API 주소(`VITE_API_BASE_URL`)는 `.env.development`의 로컬 기본값을 쓰고, 바꿀 때만 `frontend/.env.example`을 `frontend/.env.local`로 복사해 씁니다.
 
 ## 플랜 기반 작업 규칙
 

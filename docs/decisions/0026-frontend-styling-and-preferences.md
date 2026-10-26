@@ -1,6 +1,6 @@
 # 0026. 웹 화면 스타일과 화면 설정 저장
 
-- 상태: 채택
+- 상태: 대체됨 → [0028](0028-frontend-styling-and-preferences-spa.md)
 - 날짜: 2026-10-26
 - 출처: #72, [플랜](../plans/72-public-search-detail-pages.md)
 

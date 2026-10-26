@@ -107,7 +107,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+          VITE_API_BASE_URL: http://localhost:8080
 
   # `if:`로 건너뛴 job은 필수 체크에서 통과로 보이므로, 감지 실패로 검사가 빠진 경우를 여기서 실패로 만든다.
   frontend:
