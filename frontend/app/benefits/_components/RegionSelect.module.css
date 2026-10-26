@@ -1,0 +1,26 @@
+.selects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.select {
+  width: 100%;
+  min-height: var(--control-lg);
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-text-disabled);
+  border-radius: var(--radius-control);
+  background: #fff;
+  font-size: var(--text-sub);
+}

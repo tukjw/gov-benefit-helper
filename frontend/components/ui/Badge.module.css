@@ -1,0 +1,25 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.5rem;
+  border-radius: var(--radius-badge);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.primary {
+  background: var(--color-primary-bg);
+  color: var(--color-primary-strong);
+}
+
+.neutral {
+  background: var(--color-gray-bg);
+  color: var(--color-text-sub);
+}
+
+.warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}

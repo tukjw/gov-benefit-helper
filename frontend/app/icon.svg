@@ -1,0 +1,9 @@
+<!-- 브라우저 탭 아이콘. 그림은 Lucide의 search-check(ISC License, https://lucide.dev/license)다. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#256ef4"/>
+  <g transform="translate(5 5) scale(0.9167)" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m8 11 2 2 4-4"/>
+    <circle cx="11" cy="11" r="8"/>
+    <path d="m21 21-4.3-4.3"/>
+  </g>
+</svg>

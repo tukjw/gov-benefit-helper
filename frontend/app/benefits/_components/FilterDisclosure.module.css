@@ -1,0 +1,37 @@
+.sidebar {
+  flex: 1 1 15rem;
+  max-width: 20rem;
+}
+
+.toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: var(--control-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: #fff;
+  font-size: var(--text-sub);
+  font-weight: 700;
+}
+
+@media (max-width: 899.98px) {
+  .sidebar {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .toggle {
+    display: flex;
+  }
+
+  .panel {
+    margin-top: 1rem;
+  }
+
+  .panel[data-open="false"] {
+    display: none;
+  }
+}
