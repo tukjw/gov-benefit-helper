@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import kr.govbenefit.TestcontainersConfiguration;
@@ -40,8 +39,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 혜택 상세 API를 Testcontainers MySQL로 검증한다. 오래된 정보 판정은 실제 시각 기준으로 넣은 실행 기록으로 확인하고,
- * 정확한 48시간 경계는 {@code FreshnessTest}에서 확인한다. 모든 시나리오가 끝날 때 공공 API stub에 요청이 없었는지 확인한다.
+ * 혜택 상세 API를 Testcontainers MySQL로 검증한다. 모든 시나리오가 끝날 때 공공 API stub에 요청이 없었는지 확인한다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc
@@ -114,8 +112,6 @@ class BenefitDetailApiTest {
 
     @Test
     void 로그인_없이_목록과_상세_항목을_조회한다() throws Exception {
-        run(CollectionStatus.SUCCEEDED, now().minusHours(1));
-
         JsonNode body = detail("FULL");
 
         assertThat(body.get("serviceId").asString()).isEqualTo("FULL");
@@ -138,6 +134,7 @@ class BenefitDetailApiTest {
         assertThat(body.get("guideUrl").asString()).isEqualTo(GUIDE_URL + "FULL");
         assertThat(body.get("sourceModifiedAt").asString()).isEqualTo("2026-09-27T14:11:21+09:00");
         assertThat(body.get("lastSeenAt").asString()).isEqualTo("2026-10-04T04:00:12.345+09:00");
+        assertThat(body.has("freshness")).isFalse();
 
         JsonNode detail = body.get("detail");
         assertThat(detail.get("purpose").asString()).isEqualTo("목적 FULL");
@@ -225,65 +222,14 @@ class BenefitDetailApiTest {
     }
 
     @Test
-    void 목록을_갱신한_실행_종료_후_48시간_직전이면_오래되지_않았다() throws Exception {
-        LocalDateTime finishedAt = run(CollectionStatus.SUCCEEDED, now().minusHours(48).plusMinutes(1));
+    void 수집_실행이_없거나_FAILED만_있어도_저장된_상세를_준다() throws Exception {
+        String applyMethod = "주민센터 방문 또는 온라인 신청";
+        assertThat(detail("FULL").get("detail").get("applyMethod").asString()).isEqualTo(applyMethod);
 
-        assertFreshness(detail("FULL"), false, finishedAt);
-    }
-
-    @Test
-    void 목록을_갱신한_실행_종료_후_48시간이_지나면_오래된_정보다() throws Exception {
-        LocalDateTime finishedAt = run(CollectionStatus.SUCCEEDED, now().minusHours(48).minusMinutes(1));
-
-        assertFreshness(detail("FULL"), true, finishedAt);
-    }
-
-    @Test
-    void PARTIAL_실행도_목록을_갱신한_실행이다() throws Exception {
-        run(CollectionStatus.SUCCEEDED, now().minusHours(50));
-        LocalDateTime finishedAt = run(CollectionStatus.PARTIAL, now().minusHours(2));
-
-        assertFreshness(detail("FULL"), false, finishedAt);
-    }
-
-    @Test
-    void FAILED_실행만_이어지면_마지막_성공_실행이_기준이고_저장된_상세를_준다() throws Exception {
-        LocalDateTime succeededAt = run(CollectionStatus.SUCCEEDED, now().minusHours(72));
-        run(CollectionStatus.FAILED, now().minusHours(48));
-        run(CollectionStatus.FAILED, now().minusHours(24));
+        run(CollectionStatus.FAILED, now().minusHours(72));
         run(CollectionStatus.FAILED, now().minusMinutes(5));
 
-        JsonNode body = detail("FULL");
-
-        assertFreshness(body, true, succeededAt);
-        assertThat(body.get("detail").get("applyMethod").asString()).isEqualTo("주민센터 방문 또는 온라인 신청");
-    }
-
-    @Test
-    void 성공_실행_뒤의_FAILED_실행은_기준_시각을_바꾸지_않는다() throws Exception {
-        LocalDateTime succeededAt = run(CollectionStatus.SUCCEEDED, now().minusHours(30));
-        run(CollectionStatus.FAILED, now().minusHours(6));
-
-        assertFreshness(detail("FULL"), false, succeededAt);
-    }
-
-    @Test
-    void 진행_중인_실행은_기준이_아니다() throws Exception {
-        LocalDateTime succeededAt = run(CollectionStatus.SUCCEEDED, now().minusHours(49));
-        collectionRunRepository.save(CollectionRun.start(now().minusMinutes(10)));
-
-        assertFreshness(detail("FULL"), true, succeededAt);
-    }
-
-    @Test
-    void 목록을_갱신한_실행이_없으면_오래된_정보이고_기준_시각이_없다() throws Exception {
-        assertFreshness(detail("FULL"), true, null);
-
-        run(CollectionStatus.FAILED, now().minusHours(1));
-        JsonNode body = detail("FULL");
-
-        assertFreshness(body, true, null);
-        assertThat(body.get("detail").isNull()).isFalse();
+        assertThat(detail("FULL").get("detail").get("applyMethod").asString()).isEqualTo(applyMethod);
     }
 
     private Benefit benefit(String serviceId) {
@@ -300,13 +246,12 @@ class BenefitDetailApiTest {
                 null, null, null, "접수 " + id, null), SEEN_AT));
     }
 
-    /** 실행 기록을 남기고 저장된 종료 시각을 돌려준다. DB 정밀도(마이크로초)에 맞춰 자른다. */
-    private LocalDateTime run(CollectionStatus status, LocalDateTime finishedAt) {
+    /** 실행 기록을 남긴다. DB 정밀도(마이크로초)에 맞춰 자른다. */
+    private void run(CollectionStatus status, LocalDateTime finishedAt) {
         LocalDateTime truncated = finishedAt.truncatedTo(ChronoUnit.MICROS);
         CollectionRun run = CollectionRun.start(truncated.minusMinutes(1));
         run.finish(status, null, null, truncated);
         collectionRunRepository.save(run);
-        return truncated;
     }
 
     private static LocalDateTime now() {
@@ -317,17 +262,6 @@ class BenefitDetailApiTest {
         JsonNode detail = detail(serviceId).get("detail");
         assertText(detail.get("onlineApplyUrl"), link);
         assertText(detail.get("onlineApplyUrlText"), text);
-    }
-
-    private static void assertFreshness(JsonNode body, boolean stale, LocalDateTime referenceAt) {
-        JsonNode freshness = body.get("freshness");
-        assertThat(freshness.get("stale").asBoolean()).isEqualTo(stale);
-        if (referenceAt == null) {
-            assertThat(freshness.get("referenceAt").isNull()).isTrue();
-        } else {
-            assertThat(OffsetDateTime.parse(freshness.get("referenceAt").asString()))
-                    .isEqualTo(ApiTimes.toOffset(referenceAt));
-        }
     }
 
     private static void assertText(JsonNode node, String expected) {

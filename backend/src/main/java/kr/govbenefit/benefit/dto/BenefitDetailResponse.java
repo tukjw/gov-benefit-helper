@@ -55,10 +55,9 @@ public record BenefitDetailResponse(
         @Schema(description = """
                 상세에서 받은 항목. `null`이면 상세를 아직 수집하지 못한 것이다. \
                 객체 안의 필드가 `null`인 것(원문에 값이 없음)과 구분한다.""")
-        Detail detail,
-        @Schema(description = "저장된 정보가 오래됐는지(DEC-FRESHNESS)") Freshness freshness) {
+        Detail detail) {
 
-    public static BenefitDetailResponse of(Benefit benefit, BenefitDetail detail, Freshness freshness) {
+    public static BenefitDetailResponse of(Benefit benefit, BenefitDetail detail) {
         return new BenefitDetailResponse(benefit.getServiceId(), benefit.getName(), benefit.getPurposeSummary(),
                 benefit.getServiceField(), benefit.getAgencyName(), benefit.getAgencyType(),
                 benefit.getDepartmentName(), benefit.getSupportType(), benefit.getSupportContent(),
@@ -67,7 +66,7 @@ public record BenefitDetailResponse(
                         benefit.getApplyPeriodNeedsReview()),
                 benefit.getApplyMethodType(), benefit.getReceptionAgency(), benefit.getPhoneInquiry(),
                 OnlineApplyUrl.toLink(benefit.getDetailUrl()), ApiTimes.toOffset(benefit.getSourceModifiedAt()),
-                ApiTimes.toOffset(benefit.getLastSeenAt()), detail == null ? null : Detail.from(detail), freshness);
+                ApiTimes.toOffset(benefit.getLastSeenAt()), detail == null ? null : Detail.from(detail));
     }
 
     /**

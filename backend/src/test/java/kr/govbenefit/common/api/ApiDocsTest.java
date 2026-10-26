@@ -168,13 +168,12 @@ class ApiDocsTest {
                 new String[] {"BenefitDetailResponse", "sourceModifiedAt"},
                 new String[] {"BenefitDetailResponse", "lastSeenAt"},
                 new String[] {"ApplyPeriod", "needsReview"},
-                new String[] {"Detail", "onlineApplyUrl"},
-                new String[] {"Freshness", "stale"},
-                new String[] {"Freshness", "referenceAt"});
+                new String[] {"Detail", "onlineApplyUrl"});
         described.forEach(target -> assertThat(property(target[0], target[1]).path("description").asString())
                 .as("%s.%s", target[0], target[1])
                 .isNotBlank());
         assertThat(schema("BenefitDetailResponse").path("description").asString()).isNotBlank();
+        assertThat(spec.path("components").path("schemas").has("Freshness")).isFalse();
     }
 
     @Test
@@ -528,7 +527,6 @@ class ApiDocsTest {
                 new String[] {"BenefitSummary", "lastSeenAt"},
                 new String[] {"BenefitDetailResponse", "sourceModifiedAt"},
                 new String[] {"BenefitDetailResponse", "lastSeenAt"},
-                new String[] {"Freshness", "referenceAt"},
                 new String[] {"AccountResponse", "createdAt"},
                 new String[] {"LoginResponse", "expiresAt"},
                 new String[] {"EmailVerificationConfirmResponse", "expiresAt"},
