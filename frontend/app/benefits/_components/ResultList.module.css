@@ -1,0 +1,43 @@
+.results {
+  flex: 999 1 30rem;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.count {
+  font-size: var(--text-sub);
+}
+
+.count strong {
+  color: var(--color-primary-strong);
+}
+
+/* 카드형과 목록형은 같은 마크업을 CSS로 바꿔 보여준다(#72 설계 8). */
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+}
+
+:global(html[data-view="list"]) .list {
+  display: block;
+  border-top: 2px solid var(--color-text);
+}
+
+.reasons {
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.invalidActions {
+  margin-top: 0.75rem;
+}
