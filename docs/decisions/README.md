@@ -62,7 +62,7 @@
 | [0017](0017-refresh-token.md) | 리프레시 토큰 저장·교체와 CSRF 방어 | 채택 | #45 |
 | [0018](0018-api-auth-boundary.md) | API 인증 경계 | 채택 | #45 |
 | [0019](0019-email-verification-password-reset.md) | 가입 전 이메일 인증과 비밀번호 재설정 | 채택 | #47 |
-| [0020](0020-account-mail-sender.md) | 계정 메일 발송 구현 경계 | 채택 | #47 |
+| [0020](0020-account-mail-sender.md) | 계정 메일 발송 구현 경계 | 대체됨 → [0032](0032-account-mail-resend.md) | #47 |
 | [0021](0021-residence-region-code.md) | 거주 지역 코드 | 채택 | #49 |
 | [0022](0022-profile-attributes.md) | 프로필 속성 값과 미입력 표현 | 채택 | #49 |
 | [0023](0023-bookmark-benefit-reference.md) | 북마크의 혜택 참조 | 채택 | #56 |
@@ -74,4 +74,5 @@
 | [0029](0029-frontend-static-spa-credentials.md) | 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용) | 채택 | #76, #73 |
 | [0030](0030-frontend-auth-session.md) | 웹 프론트 로그인 상태와 인증 요청 | 채택 | #73 |
 | [0031](0031-guest-profile-storage.md) | 비회원 프로필 값의 브라우저 보관 | 채택 | #74 |
-| [0032](0032-test-shared-mysql.md) | 테스트 MySQL 컨테이너 공유와 테이블 정리 | 채택 | #85 |
+| [0032](0032-account-mail-resend.md) | 계정 메일 Resend 비동기 발송 | 채택 | #78 |
+| [0033](0033-test-shared-mysql.md) | 테스트 MySQL 컨테이너 공유와 테이블 정리 | 채택 | #85 |

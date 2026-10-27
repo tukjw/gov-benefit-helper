@@ -10,7 +10,7 @@ import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 
 /**
- * 테스트 메서드마다 시드를 뺀 모든 테이블을 비운다(결정 0032). 모든 테스트가 DB 하나를 함께 쓰므로 다른 테스트가 남긴 행을 지운다.
+ * 테스트 메서드마다 시드를 뺀 모든 테이블을 비운다(결정 0033). 모든 테스트가 DB 하나를 함께 쓰므로 다른 테스트가 남긴 행을 지운다.
  * META-INF/spring.factories로 모든 Spring 테스트에 등록되고, 테스트 클래스의 {@code @BeforeEach}보다 먼저 돈다.
  */
 public class DatabaseCleanupListener extends AbstractTestExecutionListener {

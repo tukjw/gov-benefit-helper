@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.lifecycle.Startable;
 
 /**
- * 모든 테스트가 함께 쓰는 MySQL 컨테이너와 테이블 정리(결정 0032).
+ * 모든 테스트가 함께 쓰는 MySQL 컨테이너와 테이블 정리(결정 0033).
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @Import(TestcontainersConfiguration.class)

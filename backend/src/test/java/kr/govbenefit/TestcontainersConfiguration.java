@@ -7,7 +7,7 @@ import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * 모든 테스트 컨텍스트가 MySQL 컨테이너 하나를 함께 쓴다(결정 0032).
+ * 모든 테스트 컨텍스트가 MySQL 컨테이너 하나를 함께 쓴다(결정 0033).
  * 컨테이너를 bean으로 두면 컨텍스트가 닫힐 때 함께 닫히므로, static으로 한 번 띄우고 접속 정보만 bean으로 넘긴다.
  * 컨테이너는 테스트 JVM이 끝날 때 Testcontainers가 지운다.
  */
