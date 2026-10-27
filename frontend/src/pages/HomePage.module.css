@@ -98,3 +98,41 @@
   background: var(--color-primary-bg);
   color: var(--color-primary-strong);
 }
+
+/* 조건 비교 카드(시안 '맞춤 찾기 카드'를 바꾼 것) */
+.matchCard {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-card);
+  background: var(--color-primary-bg-weak);
+}
+
+.matchCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.matchText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.matchTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.matchCard:hover .matchTitle {
+  color: var(--color-primary-strong);
+  text-decoration: underline;
+}
+
+.matchDescription {
+  color: var(--color-text-sub);
+  font-size: var(--text-sub);
+}

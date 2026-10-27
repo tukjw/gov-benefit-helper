@@ -3,6 +3,7 @@ import { confirmSignupCode, login, requestSignupCode, signUp } from "@/lib/api/a
 import { loginPath, safeReturnTo } from "@/lib/auth/guard";
 import { checkPassword } from "@/lib/auth/password";
 import { signIn } from "@/lib/auth/session";
+import { clearGuestProfile } from "@/lib/profile/guestProfile";
 import { showToast } from "@/lib/toast";
 import { codeOf, fieldErrorsOf, formText, GENERIC_ERROR, retryAtOf, type FieldErrors } from "../formErrors";
 
@@ -115,6 +116,8 @@ async function signup(email: string, form: FormData): Promise<SignupState | Resp
     showToast("가입되었습니다. 로그인해 주세요.");
     return redirect(loginPath(returnTo));
   }
+  // 로그인하면 저장된 프로필을 쓰므로 비회원으로 입력한 값은 지운다(결정 0031).
+  clearGuestProfile();
   showToast("가입되었습니다.");
   return redirect(returnTo);
 }

@@ -1,0 +1,94 @@
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-box);
+  background: #fff;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--color-text-weak);
+  font-size: var(--text-sub);
+}
+
+.result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid;
+  border-radius: var(--radius-control);
+  font-size: var(--text-sub);
+  font-weight: 600;
+}
+
+.MATCH {
+  border-color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.NEEDS_CHECK {
+  border-color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.MISMATCH {
+  border-color: var(--color-text-weak);
+  background: var(--color-gray-bg);
+}
+
+.prompt {
+  font-size: var(--text-sub);
+}
+
+.items {
+  border-top: 2px solid var(--color-text);
+}
+
+.item {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.875rem 0.25rem;
+  border-bottom: 1px solid var(--color-divider);
+  font-size: var(--text-sub);
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.values {
+  color: var(--color-text-weak);
+  font-size: var(--text-meta);
+}
+
+.notices {
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 1.125rem;
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+  list-style: disc;
+}
+
+.uncompared {
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

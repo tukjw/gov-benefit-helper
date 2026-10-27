@@ -19,6 +19,8 @@ import kr.govbenefit.match.domain.UncomparedCondition;
  * 개인 대상이 아닌 혜택은 목록에 없으므로 안내·비교하지 않은 조건·기준일이 모든 항목에 같아 한 번만 담는다.
  *
  * @param totalCount  지역 범위 안에서 목록에 나오는 전체 혜택 수(해당과 확인 필요)
+ * @param matchCount      그중 해당 수
+ * @param needsCheckCount 그중 확인 필요 수
  * @param regionScope 실제로 적용한 운영 기관 지역 범위
  * @param page       요청한 쪽 번호. 1부터 센다.
  * @param size       요청한 쪽 크기
@@ -33,6 +35,9 @@ import kr.govbenefit.match.domain.UncomparedCondition;
 public record MatchListResponse(
         @Schema(description = "지역 범위 안에서 목록에 나오는 전체 혜택 수(`MATCH`와 `NEEDS_CHECK`). "
                 + "규모가 커지면 빠지거나 다음 쪽 여부로 바뀔 수 있으므로 의존하지 않는다(DEC-SEARCH).") long totalCount,
+        @Schema(description = "지역 범위 안의 해당(`MATCH`) 수. 목록에서 해당이 이만큼 먼저 나온다.") long matchCount,
+        @Schema(description = "지역 범위 안의 확인 필요(`NEEDS_CHECK`) 수. `totalCount`에서 `matchCount`를 뺀 값이다.")
+        long needsCheckCount,
         @Schema(description = "실제로 적용한 운영 기관 지역 범위. 거주지가 없으면 요청과 관계없이 `ALL`이다.")
         RegionScope regionScope,
         @Schema(description = "요청한 쪽 번호. 1부터 센다.") int page,
@@ -50,9 +55,10 @@ public record MatchListResponse(
     private static final List<MatchNotice> NOTICES = List.of(MatchNotice.values());
     private static final List<UncomparedCondition> UNCOMPARED = List.of(UncomparedCondition.values());
 
-    public static MatchListResponse of(long totalCount, RegionScope regionScope, int page, int size,
-                                       LocalDate judgedOn, List<MatchListItem> items) {
-        return new MatchListResponse(totalCount, regionScope, page, size, judgedOn, NOTICES, UNCOMPARED, items);
+    public static MatchListResponse of(long matchCount, long needsCheckCount, RegionScope regionScope, int page,
+                                       int size, LocalDate judgedOn, List<MatchListItem> items) {
+        return new MatchListResponse(matchCount + needsCheckCount, matchCount, needsCheckCount, regionScope, page,
+                size, judgedOn, NOTICES, UNCOMPARED, items);
     }
 
     @Schema(description = "조건 비교 목록 항목. 판정은 같은 혜택의 조건 비교(`GET /api/me/matches/{serviceId}`)와 같다.")

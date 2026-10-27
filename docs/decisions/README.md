@@ -73,3 +73,4 @@
 | [0028](0028-frontend-styling-and-preferences-spa.md) | 웹 화면 스타일과 화면 설정 저장(정적 SPA) | 채택 | #76 |
 | [0029](0029-frontend-static-spa-credentials.md) | 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용) | 채택 | #76, #73 |
 | [0030](0030-frontend-auth-session.md) | 웹 프론트 로그인 상태와 인증 요청 | 채택 | #73 |
+| [0031](0031-guest-profile-storage.md) | 비회원 프로필 값의 브라우저 보관 | 채택 | #74 |

@@ -96,7 +96,7 @@ function Results({ params, outcome, conditioned }: Parameters<typeof ResultList>
           </li>
         ))}
       </ul>
-      <Pagination params={params} totalPages={totalPages} />
+      <Pagination page={params.page} totalPages={totalPages} hrefFor={(page) => benefitsHref(params, { page })} />
     </>
   );
 }

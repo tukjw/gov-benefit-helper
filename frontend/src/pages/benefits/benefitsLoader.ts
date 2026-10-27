@@ -3,6 +3,7 @@ import { getRegions, searchBenefits, type BenefitSearchParams } from "@/lib/api/
 import { ApiError } from "@/lib/api/client";
 import type { BenefitSearchResponse } from "@/lib/api/types";
 import { parseSearchParams } from "@/lib/benefits/searchParams";
+import { loadBookmarks } from "@/lib/bookmarks/bookmarkStore";
 
 export type SearchOutcome =
   | { kind: "ok"; response: BenefitSearchResponse }
@@ -12,6 +13,7 @@ export type SearchOutcome =
 export async function benefitsLoader({ request }: LoaderFunctionArgs) {
   const params = parseSearchParams(new URL(request.url).searchParams);
   const [regions, outcome] = await Promise.all([getRegions(request.signal), search(params, request.signal)]);
+  if (outcome.kind === "ok") loadBookmarks(outcome.response.items.map((item) => item.serviceId));
   return { params, sidos: regions.sidos, outcome };
 }
 

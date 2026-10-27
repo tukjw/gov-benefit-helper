@@ -1,15 +1,18 @@
+import { BookmarkButton } from "@/components/BookmarkButton";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { Badge } from "@/components/ui/Badge";
 import { InfoBox } from "@/components/ui/InfoBox";
 import type { BenefitDetailResponse } from "@/lib/api/types";
+import type { DetailMatch } from "../benefitDetailLoader";
 import { NO_INFO, applyPeriodLabel, formatDateTime, hasText, orNoInfo } from "@/lib/benefits/display";
 import { agencyTypeLabel } from "@/lib/benefits/options";
 import { ApplyBox } from "./ApplyBox";
 import styles from "./BenefitDetailView.module.css";
 import { ExternalLink } from "./ExternalLink";
+import { MatchResultBox } from "./MatchResultBox";
 import { TextSection } from "./TextSection";
 
-export function BenefitDetailView({ benefit }: { benefit: BenefitDetailResponse }) {
+export function BenefitDetailView({ benefit, match }: { benefit: BenefitDetailResponse; match: Promise<DetailMatch> }) {
   const { detail } = benefit;
   const periodLabel = applyPeriodLabel(benefit.applyPeriod.type);
   const agency = [benefit.agencyName, benefit.departmentName].filter(hasText).join(" ");
@@ -31,7 +34,10 @@ export function BenefitDetailView({ benefit }: { benefit: BenefitDetailResponse 
           {benefit.field && <Badge>{benefit.field}</Badge>}
           {periodLabel && <Badge tone="neutral">{periodLabel}</Badge>}
         </div>
-        <h1 className={styles.title}>{benefit.name}</h1>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>{benefit.name}</h1>
+          <BookmarkButton serviceId={benefit.serviceId} name={benefit.name} size="lg" />
+        </div>
         {agency && (
           <p className={styles.agency}>
             {agency}
@@ -43,6 +49,7 @@ export function BenefitDetailView({ benefit }: { benefit: BenefitDetailResponse 
 
       <div className={styles.columns}>
         <div className={styles.body}>
+          <MatchResultBox match={match} />
           <TextSection title="지원 내용" text={benefit.supportContent}>
             {hasText(benefit.supportType) && <p className={styles.supportType}>지원 유형: {benefit.supportType}</p>}
           </TextSection>

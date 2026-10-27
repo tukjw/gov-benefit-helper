@@ -1,6 +1,8 @@
 package kr.govbenefit.bookmark.repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import kr.govbenefit.bookmark.domain.Bookmark;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,4 +31,10 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Bookmark.Key
     Page<Bookmark> findByUserId(Long userId, Pageable pageable);
 
     long countByUserId(Long userId);
+
+    @Query("""
+            select b.serviceId from Bookmark k join Benefit b on b.id = k.benefitId
+            where k.userId = :userId and b.serviceId in :serviceIds""")
+    List<String> findSavedServiceIds(@Param("userId") Long userId,
+                                     @Param("serviceIds") Collection<String> serviceIds);
 }

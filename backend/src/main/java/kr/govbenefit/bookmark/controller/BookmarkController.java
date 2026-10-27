@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.govbenefit.bookmark.dto.BookmarkListRequest;
 import kr.govbenefit.bookmark.dto.BookmarkListResponse;
+import kr.govbenefit.bookmark.dto.BookmarkSavedRequest;
+import kr.govbenefit.bookmark.dto.BookmarkSavedResponse;
 import kr.govbenefit.bookmark.service.BookmarkService;
 import kr.govbenefit.common.api.ApiErrorResponse;
 import kr.govbenefit.common.api.OpenApiConfig;
@@ -104,5 +106,26 @@ public class BookmarkController {
     public ResponseEntity<BookmarkListResponse> list(@CurrentUserId Long userId,
                                                      @ParameterObject @Valid BookmarkListRequest request) {
         return ResponseEntity.ok(bookmarkService.list(userId, request.page(), request.size()));
+    }
+
+    @Operation(summary = "북마크 저장 여부", description = """
+            받은 서비스 ID 중 북마크에 있는 것을 요청 순서로 돌려준다. 검색·조건 비교 목록처럼 한 화면에 보인 혜택의 \
+            저장 여부를 한 번에 확인할 때 쓴다. 수집되지 않은 서비스 ID는 오류가 아니라 결과에서 빠진다.""",
+            security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    @ApiResponse(responseCode = "200", description = "북마크에 있는 서비스 ID")
+    @ApiResponse(responseCode = "400", description = "서비스 ID가 없거나 100개를 넘는다. `code`는 `INVALID_INPUT`이다.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ApiErrorResponse.class),
+                    examples = @ExampleObject(value = """
+                            {"code": "INVALID_INPUT", "message": "요청 값이 올바르지 않습니다.",
+                             "errors": [{"field": "serviceIds", "value": null, "reason": "1개 이상 100개 이하여야 합니다."}]}""")))
+    @ApiResponse(responseCode = "401", description = UNAUTHENTICATED,
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ApiErrorResponse.class),
+                    examples = @ExampleObject(value = UNAUTHENTICATED_EXAMPLE)))
+    @GetMapping("/saved")
+    public ResponseEntity<BookmarkSavedResponse> saved(@CurrentUserId Long userId,
+                                                       @ParameterObject @Valid BookmarkSavedRequest request) {
+        return ResponseEntity.ok(bookmarkService.savedServiceIds(userId, request.serviceIds()));
     }
 }

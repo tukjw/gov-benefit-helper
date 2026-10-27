@@ -307,6 +307,60 @@ class BookmarkApiTest {
     }
 
     @Test
+    void 저장_여부는_저장한_혜택만_요청_순서로_돌려준다() throws Exception {
+        for (String serviceId : List.of("S1", "S2", "S3")) {
+            benefit(serviceId);
+        }
+        save(alice, "S1").andExpect(status().isNoContent());
+        save(alice, "S3").andExpect(status().isNoContent());
+
+        assertThat(saved(alice, "S3", "S2", "S1", "S3")).containsExactly("S3", "S1");
+        assertThat(saved(alice, "S2")).isEmpty();
+    }
+
+    @Test
+    void 저장_여부는_다른_사용자의_북마크를_보지_않는다() throws Exception {
+        String bob = signUp(BOB);
+        benefit("S1");
+        benefit("S2");
+        save(bob, "S1").andExpect(status().isNoContent());
+        save(alice, "S2").andExpect(status().isNoContent());
+
+        assertThat(saved(alice, "S1", "S2")).containsExactly("S2");
+        assertThat(saved(bob, "S1", "S2")).containsExactly("S1");
+    }
+
+    @Test
+    void 저장_여부는_수집되지_않은_서비스_ID를_무시한다() throws Exception {
+        benefit("S1");
+        save(alice, "S1").andExpect(status().isNoContent());
+
+        assertThat(saved(alice, "NOPE", "S1")).containsExactly("S1");
+    }
+
+    @Test
+    void 저장_여부의_서비스_ID가_없거나_100개를_넘으면_400이다() throws Exception {
+        assertInvalidServiceIds(perform(get(PATH + "/saved"), alice, Map.of()));
+
+        MockHttpServletRequestBuilder tooMany = get(PATH + "/saved");
+        for (int i = 0; i < 101; i++) {
+            tooMany.param("serviceId", "S" + i);
+        }
+        assertInvalidServiceIds(perform(tooMany, alice, Map.of()));
+
+        MockHttpServletRequestBuilder max = get(PATH + "/saved");
+        for (int i = 0; i < 100; i++) {
+            max.param("serviceId", "S" + i);
+        }
+        perform(max, alice, Map.of()).andExpect(status().isOk());
+    }
+
+    @Test
+    void 저장_여부는_토큰이_없으면_401이다() throws Exception {
+        assertUnauthenticated(mockMvc.perform(get(PATH + "/saved").param("serviceId", "S1")));
+    }
+
+    @Test
     void 탈퇴하면_북마크가_지워지고_다시_가입한_사용자의_목록은_비어_있다() throws Exception {
         benefit("S1");
         benefit("S2");
@@ -370,6 +424,21 @@ class BookmarkApiTest {
 
     private JsonNode list(String token, Map<String, String> params) throws Exception {
         return json(perform(get(PATH), token, params).andExpect(status().isOk()));
+    }
+
+    private List<String> saved(String token, String... serviceIds) throws Exception {
+        MockHttpServletRequestBuilder request = get(PATH + "/saved").param("serviceId", serviceIds);
+        List<String> ids = new ArrayList<>();
+        json(perform(request, token, Map.of()).andExpect(status().isOk()))
+                .get("serviceIds").forEach(id -> ids.add(id.asString()));
+        return ids;
+    }
+
+    private void assertInvalidServiceIds(ResultActions result) throws Exception {
+        JsonNode body = json(result.andExpect(status().isBadRequest()));
+        assertThat(body.get("code").asString()).isEqualTo("INVALID_INPUT");
+        assertThat(body.get("errors").get(0).get("field").asString()).isEqualTo("serviceIds");
+        assertThat(body.get("errors").get(0).get("reason").asString()).isEqualTo("1개 이상 100개 이하여야 합니다.");
     }
 
     private ResultActions perform(MockHttpServletRequestBuilder request, String token, Map<String, String> params)

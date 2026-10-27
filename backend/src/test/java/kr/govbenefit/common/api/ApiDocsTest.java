@@ -468,7 +468,8 @@ class ApiDocsTest {
         assertThat(schemaRef(list.path("responses"), "400")).isEqualTo(ERROR_REF);
         assertThat(schemaRef(list.path("responses"), "401")).isEqualTo(ERROR_REF);
         assertThat(names(schema("MatchListResponse").path("properties"))).containsExactlyInAnyOrder("totalCount",
-                "regionScope", "page", "size", "judgedOn", "notices", "uncomparedConditions", "items");
+                "matchCount", "needsCheckCount", "regionScope", "page", "size", "judgedOn", "notices",
+                "uncomparedConditions", "items");
         assertThat(names(schema("MatchListItem").path("properties")))
                 .containsExactlyInAnyOrder("benefit", "result", "items");
         assertThat(names(schema("MatchItemResults").path("properties"))).containsExactlyInAnyOrder("personalTarget",
