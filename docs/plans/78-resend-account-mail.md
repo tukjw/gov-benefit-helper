@@ -147,6 +147,7 @@ status: done
      - `Resend와_연결이_끊겨도_응답은_같고_로그에_민감한_값이_없다`: `stub.disconnect()` 뒤 같은 검증.
    - `AccountMailAsyncTest`(`@SpringBootTest`, `auth.mail.sender=resend`, `auth.mail.async=true`, stub 주소)
      - `재설정_요청의_응답이_메일_발송을_기다리지_않는다`: `stub.hold()` 뒤 가입한 이메일로 재설정을 요청해 204를 받는다. 응답을 받은 시점에 stub이 요청을 받았고(`awaitRequest`) 아직 응답하지 않았음(`held()`가 1)을 확인한 뒤 `release()`한다. 동기였다면 stub이 붙잡은 10초 뒤에야 요청이 끝나 이 확인이 실패한다.
+   - (CI 실패 후 추가) `ResendMailDeliveryTest`·`AccountMailAsyncTest`는 이 클래스만 쓰는 설정이라 `@DirtiesContext`로 끝나면 바로 닫는다. 컨텍스트마다 MySQL 컨테이너가 뜨고 캐시에 남아, 두 컨텍스트가 더해지자 CI 러너의 메모리를 넘겨 job이 취소됐다(로컬 측정: 컨테이너 합계 정점 약 7.2GiB, develop도 비슷함).
    - `AccountMailRollbackTest`(`@SpringBootTest`, 가짜 발송)
      - `롤백된_요청의_인증번호는_발송되지_않는다`: `TransactionTemplate` 안에서 `EmailVerificationService.request`를 부르고 `setRollbackOnly()` → 기록이 없다. 같은 호출을 커밋하면 한 건이 기록된다.
      - `롤백된_요청의_재설정_링크는_발송되지_않는다`: `PasswordResetService.request`로 같은 검증.

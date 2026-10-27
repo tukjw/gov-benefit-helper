@@ -22,6 +22,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,6 +32,9 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * {@code auth.mail.sender=resend}로 띄우면 계정 메일이 Resend API로 요청된다(결정 0032). 실제 Resend 대신 로컬 stub
  * 서버가 받는다. 발송 실패는 응답을 바꾸지 않고, 로그에는 행 ID만 남는다. 실행기는 테스트 공통 설정의 동기다.
+ *
+ * <p>이 클래스만 쓰는 설정이라 컨텍스트를 다른 테스트와 공유하지 않는다. 끝나면 바로 닫아({@link DirtiesContext}) 컨텍스트마다
+ * 뜨는 MySQL 컨테이너가 CI 러너의 메모리에 쌓이지 않게 한다.
  */
 @SpringBootTest(properties = {"gov24.schedule.enabled=false", "auth.mail.sender=resend",
         "auth.mail.resend.api-key=" + ResendMailDeliveryTest.API_KEY,
@@ -38,6 +42,7 @@ import tools.jackson.databind.json.JsonMapper;
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 @ExtendWith(OutputCaptureExtension.class)
+@DirtiesContext
 class ResendMailDeliveryTest {
 
     static final String API_KEY = "re_test_3a9d2f";
