@@ -3,3 +3,6 @@
 auth:
   jwt:
     generate-secret-if-missing: true
+  mail:
+    # 실제 발송 없이 RecordingAccountMailSender에 기록만 한다(결정 0032). Resend를 검증하는 테스트만 resend로 덮는다.
+    sender: test

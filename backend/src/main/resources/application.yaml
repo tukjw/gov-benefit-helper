@@ -75,8 +75,19 @@ auth:
     token-ttl: 30m
     url: https://govbenefit.kr/reset-password
   # 인증·재설정 메일 발송 제한(결정 0019). 같은 이메일에 cooldown 간격, 최근 window 안에 max-per-window번까지 보낸다.
-  # sender는 발송 구현이다(결정 0020). 지정하지 않으면 구현이 없어 기동에 실패한다. local만 logging을 쓴다.
   mail:
     cooldown: 60s
     window: 24h
     max-per-window: 10
+    # 발송 구현(결정 0032). resend: Resend로 보낸다. logging: 보내지 않고 로그로 남긴다(local 전용).
+    # 비워 두면 구현이 없어 기동에 실패한다. 배포 환경은 MAIL_SENDER=resend로 고른다.
+    sender: ${MAIL_SENDER:}
+    # sender=resend일 때 쓴다. API 키와 발신 주소가 없으면 기동에 실패한다. 발신 도메인 인증은 docs/ops/mail-domain.md.
+    resend:
+      base-url: https://api.resend.com
+      api-key: ${RESEND_API_KEY:}
+      # 인증한 도메인의 주소. 예: 정부 혜택 도우미 <no-reply@govbenefit.kr>
+      from: ${RESEND_FROM:}
+      connect-timeout: 5s
+      # 응답 헤더를 받을 때까지의 시간 제한
+      read-timeout: 10s
