@@ -17,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -56,14 +55,10 @@ class AccountMailAsyncTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private JdbcTemplate jdbcTemplate;
-    @Autowired
     private JsonMapper jsonMapper;
 
     @BeforeEach
     void setUp() throws Exception {
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
         stub.reset();
         signUp();
         stub.reset();

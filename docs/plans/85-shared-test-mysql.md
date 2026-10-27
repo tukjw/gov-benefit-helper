@@ -50,11 +50,11 @@ status: done
 
 ## 설계 결정
 
-1. **컨테이너는 static 싱글턴으로 띄우고 bean으로 등록하지 않는다.** 접속 정보는 `DynamicPropertyRegistrar` bean으로 `spring.datasource.url`·`username`·`password`에 넣는다. bean으로 등록되는 것은 registrar뿐이라 컨텍스트가 닫혀도 컨테이너는 닫히지 않는다. 컨테이너는 JVM이 끝날 때 Testcontainers의 Ryuk가 지운다. 결정 문서 [0032](../decisions/0032-test-shared-mysql.md)로 올린다.
+1. **컨테이너는 static 싱글턴으로 띄우고 bean으로 등록하지 않는다.** 접속 정보는 `DynamicPropertyRegistrar` bean으로 `spring.datasource.url`·`username`·`password`에 넣는다. bean으로 등록되는 것은 registrar뿐이라 컨텍스트가 닫혀도 컨테이너는 닫히지 않는다. 컨테이너는 JVM이 끝날 때 Testcontainers의 Ryuk가 지운다. 결정 문서 [0033](../decisions/0033-test-shared-mysql.md)로 올린다.
    - 제외한 대안 1, `@Bean @ServiceConnection`이 static 인스턴스를 돌려주는 방식: 컨텍스트가 닫히면 공유 컨테이너가 닫힌다(사실 참고).
    - 제외한 대안 2, reuse 컨테이너: 실행 환경 설정에 기대므로 CI와 로컬에서 동작이 달라진다.
    - 제외한 대안 3, `jdbc:tc:` URL: 시작 명령과 `TZ` 환경 변수를 지금처럼 코드로 둘 수 없다.
-2. **DB 정리는 Spring `TestExecutionListener` 하나로 모든 Spring 테스트에 자동 적용한다.** 각 테스트 메서드 전(`beforeTestMethod`)에 `flyway_schema_history`와 시드 테이블 `region`을 뺀 모든 테이블을 비운다. 결정 문서 0032에 함께 적는다.
+2. **DB 정리는 Spring `TestExecutionListener` 하나로 모든 Spring 테스트에 자동 적용한다.** 각 테스트 메서드 전(`beforeTestMethod`)에 `flyway_schema_history`와 시드 테이블 `region`을 뺀 모든 테이블을 비운다. 결정 문서 0033에 함께 적는다.
    - 등록은 `src/test/resources/META-INF/spring.factories`로 한다. 테스트 클래스에 어노테이션을 더하지 않아도 되고, 새 테스트도 따로 신경 쓰지 않아도 적용된다.
    - `SpringExtension`의 `beforeEach`가 클래스의 `@BeforeEach`보다 먼저 돌므로, 정리한 뒤에 각 클래스가 데이터를 넣는다.
    - 비울 테이블은 `information_schema.tables`에서 현재 스키마의 테이블을 읽고 제외 목록을 뺀다. 새 테이블은 자동으로 포함되고, 새 시드 테이블만 제외 목록에 더한다. 모든 컨텍스트가 같은 DB를 쓰므로 목록은 한 번 읽어 static 필드에 둔다.
@@ -63,7 +63,7 @@ status: done
    - 메서드마다 지우는 이유: 같은 클래스 안에서도 지금 모든 클래스가 메서드마다 지우고 있다. 클래스 단위로 지우면 지금 동작보다 약해진다.
    - 제외한 대안: 클래스별 `@BeforeEach` 정리를 보강하는 방식. 변경은 작지만, 정리 범위를 빠뜨리는 같은 문제가 테스트를 더할 때마다 다시 생긴다.
 3. **클래스별 `@BeforeEach`의 전체 테이블 정리는 지운다.** 공통 정리와 겹치고, 남겨 두면 정리가 필요한 것처럼 읽혀 범위가 다시 갈린다. 테스트 본문 안의 부분 삭제는 시나리오이므로 남긴다. `@BeforeEach`의 특정 행 삭제(`WithdrawalApiTest`, `BookmarkConcurrencyTest`의 `DELETE FROM benefit WHERE service_id = ?`)는 공통 정리 뒤라 효과가 없으므로 지운다.
-4. **고정 시계는 공통 `FixedClockConfiguration` 하나로 둔다.** `@Primary MutableClock` bean 하나를 만들고, 기본 시각은 `2026-10-16T01:00:00Z`(`Asia/Seoul`)로 둔다. 각 테스트는 지금처럼 `@BeforeEach`에서 `clock.set(START)`로 자기 기준 시각을 맞춘다. 이 클래스를 `@Import`하는 테스트끼리 다른 설정이 같으면 컨텍스트를 함께 쓴다. 결정 문서 0032에 함께 적는다.
+4. **고정 시계는 공통 `FixedClockConfiguration` 하나로 둔다.** `@Primary MutableClock` bean 하나를 만들고, 기본 시각은 `2026-10-16T01:00:00Z`(`Asia/Seoul`)로 둔다. 각 테스트는 지금처럼 `@BeforeEach`에서 `clock.set(START)`로 자기 기준 시각을 맞춘다. 이 클래스를 `@Import`하는 테스트끼리 다른 설정이 같으면 컨텍스트를 함께 쓴다. 결정 문서 0033에 함께 적는다.
 
 ## 단계별 구현 계획
 
@@ -91,6 +91,7 @@ status: done
    - 쓰이지 않게 된 import(`TestConfiguration`, `Bean`, `Primary`, `ZoneId` 등)를 정리한다. `START`와 `clock.set(START)`는 남긴다.
 6. **클래스별 정리 제거**(설계 3)
    - `@BeforeEach`의 `DELETE FROM <table>`과 테이블 목록 반복문을 지운다. 대상: `account/controller`의 `SignUp`·`EmailVerification`·`PasswordReset`·`RefreshToken`·`Withdrawal`·`Login` ApiTest, `account/service`의 `SignUp`·`EmailVerification`·`RefreshToken`·`Withdrawal` ConcurrencyTest, `AccessTokenAuthTest`, `BenefitDetailApiTest`, `BenefitSearchApiTest`, `BookmarkApiTest`, `BookmarkConcurrencyTest`, `BenefitNormalizationTest`, `CollectionServiceTest`, `CollectionFaultToleranceTest`, `MatchApiTest`, `MatchListApiTest`, `PublicMatchApiTest`, `ProfileApiTest`, `ProfileConcurrencyTest`.
+   - #84(#78) 머지로 들어온 `account/mail`의 `AccountMailAsyncTest`, `AccountMailRollbackTest`, `ResendMailDeliveryTest`도 같은 방식으로 지운다. #84가 결정 0032를 먼저 써서 이 이슈의 결정 문서는 0033이 됐다.
    - `CollectionSchedulerTest.정기_수집은_전체_수집을_한_번_실행한다` 첫머리의 정리 반복문을 지운다.
    - `@BeforeEach`의 `DELETE FROM benefit WHERE service_id = ?`(`WithdrawalApiTest`, `BookmarkConcurrencyTest`)를 지운다.
    - stub 초기화(`stub.reset()`, `removeService`), `mailSender.clear()`, 테스트 본문 안의 부분 삭제는 남긴다.
@@ -99,10 +100,10 @@ status: done
    - `@SpringBootTest(properties = "gov24.schedule.enabled=false")`, `@Import(TestcontainersConfiguration.class)`.
    - `컨테이너는_bean이_아니라_컨텍스트를_닫아도_닫히지_않는다`: `applicationContext.getBeansOfType(Startable.class)`가 비어 있는지 본다. 설계 1이 깨지면 바로 실패한다.
    - `테스트마다_시드를_뺀_테이블이_비어_있다`: `information_schema`의 테이블 중 `flyway_schema_history`·`region`을 뺀 모든 테이블의 행 수가 0이고, `region`은 비어 있지 않은지 본다. 앞선 테스트가 무엇을 남겼든 공통 정리가 돌았는지 확인한다.
-8. **결정 문서** `docs/decisions/0032-test-shared-mysql.md`(템플릿 사용)
+8. **결정 문서** `docs/decisions/0033-test-shared-mysql.md`(템플릿 사용)
    - 결정: 테스트 JVM 하나에 MySQL 컨테이너 하나, 컨테이너는 bean으로 두지 않는다. 모든 Spring 테스트는 메서드 전에 시드를 뺀 테이블을 공통으로 비운다. 고정 시계가 필요한 테스트는 `FixedClockConfiguration`을 `@Import`하고 `@BeforeEach`에서 시각을 맞춘다.
    - 영향: 새 테스트는 자체 전체 정리를 두지 않는다. 마이그레이션으로 시드를 넣는 테이블을 더하면 `DatabaseCleanupListener.KEEP_TABLES`에 더한다. 테스트 메서드 사이에 데이터를 이어 쓰지 않는다.
-   - `docs/decisions/README.md` 결정 목록 표에 0032를 더한다.
+   - `docs/decisions/README.md` 결정 목록 표에 0033을 더한다.
 9. **마무리**: 검증 명령을 통과시키고 PR 설명에 2단계 기준값과 바꾼 뒤 값을 함께 적는다. PR 직전 마지막 커밋에서 `status`를 `done`으로 바꾼다.
 
 ## 완료 조건 매핑
