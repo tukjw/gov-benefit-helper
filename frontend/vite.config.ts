@@ -12,7 +12,7 @@ function preferencesScript(): Plugin {
 }
 
 export default defineConfig(({ command, mode }) => {
-  // API 주소는 번들에 고정되므로, 값 없이 만든 빌드가 배포되지 않게 빌드를 멈춘다(결정 0027).
+  // API 주소는 번들에 고정되므로, 값 없이 만든 빌드가 배포되지 않게 빌드를 멈춘다(결정 0029).
   if (command === "build" && !loadEnv(mode, process.cwd(), "VITE_").VITE_API_BASE_URL) {
     throw new Error("VITE_API_BASE_URL이 설정되지 않았습니다.");
   }

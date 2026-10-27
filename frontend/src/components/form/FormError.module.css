@@ -1,0 +1,15 @@
+.box {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-control);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: var(--text-sub);
+  font-weight: 700;
+}
+
+.box a {
+  color: var(--color-primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

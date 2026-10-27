@@ -1,6 +1,6 @@
 # 0027. 웹 프론트 정적 SPA 구조와 API 호출
 
-- 상태: 채택
+- 상태: 대체됨 → [0029](0029-frontend-static-spa-credentials.md)
 - 날짜: 2026-10-26
 - 출처: #76, [플랜](../plans/76-vite-static-frontend.md)
 

@@ -1,4 +1,5 @@
 import { Outlet, ScrollRestoration, useNavigation } from "react-router";
+import { ToastRegion } from "@/components/ui/Toast";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 import { SkipLink } from "./SkipLink";
@@ -14,6 +15,7 @@ export function RootLayout() {
         <Outlet />
       </main>
       <SiteFooter />
+      <ToastRegion />
       <ScrollRestoration />
     </>
   );

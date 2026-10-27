@@ -1,4 +1,4 @@
-// 백엔드 응답 DTO(kr.govbenefit.benefit.dto, region.dto, common.api)를 그대로 옮긴다.
+// 백엔드 응답 DTO(kr.govbenefit.benefit.dto, region.dto, account.dto, common.api)를 그대로 옮긴다.
 // 값이 없는 필드는 null이며 서버는 기본 문구로 채우지 않는다. 시각은 +09:00 오프셋 ISO-8601 문자열이다(결정 0010).
 
 export type ApplyPeriodType = "FIXED_DATE" | "ALWAYS" | "CONDITIONAL" | "NOT_REQUIRED" | "UNKNOWN";
@@ -70,4 +70,20 @@ export type ApiErrorResponse = {
   code: string;
   message: string;
   errors: { field: string; value: string | null; reason: string }[];
+};
+
+export type LoginResponse = {
+  accessToken: string;
+  tokenType: "Bearer";
+  expiresAt: string;
+};
+
+export type EmailVerificationConfirmResponse = {
+  verificationToken: string;
+  expiresAt: string;
+};
+
+export type AccountResponse = {
+  email: string;
+  createdAt: string;
 };

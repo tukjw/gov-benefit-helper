@@ -1,0 +1,150 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-width: 35rem;
+  margin: 0 auto;
+  padding-bottom: 4rem;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: clamp(1.625rem, 3.4vw, 2rem);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.description {
+  color: var(--color-text-sub);
+  font-size: var(--text-lead);
+}
+
+.loading {
+  color: var(--color-text-weak);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.submit {
+  min-height: 3.75rem;
+  font-size: 1.125rem;
+}
+
+.submit:disabled,
+.secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.danger {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.danger:hover {
+  border-color: #8f1f09;
+  background: #8f1f09;
+  color: #fff;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
+  font-size: var(--text-sub);
+}
+
+.links a {
+  color: var(--color-primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary-strong);
+  font-size: var(--text-sub);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.textButton:disabled {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.note {
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.summary dt {
+  color: var(--color-text-sub);
+}
+
+.summary dd {
+  font-weight: 700;
+}
+
+.list {
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+/* 단계 표시(시안 '단계 표시'). 가입은 3단계다. */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 6px solid var(--color-divider);
+  color: var(--color-text-disabled);
+  font-weight: 700;
+}
+
+.step span {
+  color: var(--color-text-weak);
+  font-size: var(--text-meta);
+  font-weight: 400;
+}
+
+.stepDone,
+.step[aria-current="step"] {
+  border-top-color: var(--color-primary);
+  color: var(--color-text);
+}
