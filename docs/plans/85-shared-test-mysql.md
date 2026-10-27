@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #85 모든 테스트 컨텍스트가 MySQL 컨테이너 하나를 공유하도록 변경
 
