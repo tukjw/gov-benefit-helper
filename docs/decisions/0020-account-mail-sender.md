@@ -1,6 +1,6 @@
 # 0020. 계정 메일 발송 구현 경계
 
-- 상태: 채택
+- 상태: 대체됨 → [0032](0032-account-mail-resend.md)
 - 날짜: 2026-10-16
 - 출처: #47, [플랜](../plans/47-email-verification-password-reset.md)
 

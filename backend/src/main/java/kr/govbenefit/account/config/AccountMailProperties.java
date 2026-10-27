@@ -5,7 +5,8 @@ import kr.govbenefit.account.domain.SendRateLimit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 인증·재설정 메일 발송 제한(결정 0019). 발송 구현을 고르는 {@code auth.mail.sender}는 {@link AccountMailConfig}가 읽는다.
+ * 인증·재설정 메일 발송 제한(결정 0019). 발송 구현을 고르는 {@code auth.mail.sender}와 {@code auth.mail.async}는
+ * {@link AccountMailConfig}가, {@code auth.mail.resend}는 {@link ResendProperties}가 읽는다.
  *
  * @param cooldown     같은 이메일에 다시 보내기까지의 간격
  * @param window       발송 횟수를 세는 기간
