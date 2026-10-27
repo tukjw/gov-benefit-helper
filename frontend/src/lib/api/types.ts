@@ -23,11 +23,6 @@ export type BenefitSearchResponse = {
   items: BenefitSummary[];
 };
 
-export type Freshness = {
-  stale: boolean;
-  referenceAt: string | null;
-};
-
 export type BenefitDetailResponse = {
   serviceId: string;
   name: string;
@@ -63,7 +58,6 @@ export type BenefitDetailResponse = {
     onlineApplyUrl: string | null;
     onlineApplyUrlText: string | null;
   } | null;
-  freshness: Freshness;
 };
 
 export type Region = { code: string; name: string };

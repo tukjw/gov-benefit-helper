@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 비회원 혜택 검색(REQ-SEARCH-01, DEC-SEARCH)과 상세(REQ-DETAIL-01, DEC-FRESHNESS). 저장된 데이터만 읽고 공공 API를 호출하지 않는다.
+ * 비회원 혜택 검색(REQ-SEARCH-01, DEC-SEARCH)과 상세(REQ-DETAIL-01). 저장된 데이터만 읽고 공공 API를 호출하지 않는다.
  */
 @Tag(name = "혜택", description = "로그인 없이 쓰는 혜택 검색과 상세. 저장된 데이터만 읽으므로 공공 API 장애 중에도 응답한다.")
 @RestController

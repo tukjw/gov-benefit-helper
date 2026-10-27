@@ -1,7 +1,5 @@
 package kr.govbenefit.benefit.service;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -12,13 +10,9 @@ import kr.govbenefit.benefit.dto.BenefitSearchCondition;
 import kr.govbenefit.benefit.dto.BenefitSearchResponse;
 import kr.govbenefit.benefit.dto.BenefitSummary;
 import kr.govbenefit.benefit.dto.BenefitView;
-import kr.govbenefit.benefit.dto.Freshness;
 import kr.govbenefit.benefit.repository.BenefitDetailRepository;
 import kr.govbenefit.benefit.repository.BenefitRepository;
 import kr.govbenefit.benefit.repository.BenefitSpecifications;
-import kr.govbenefit.collection.domain.CollectionRun;
-import kr.govbenefit.collection.domain.CollectionStatus;
-import kr.govbenefit.collection.repository.CollectionRunRepository;
 import kr.govbenefit.common.api.ApiErrorResponse.InputError;
 import kr.govbenefit.common.api.BusinessException;
 import kr.govbenefit.common.api.ErrorCode;
@@ -46,16 +40,10 @@ public class BenefitQueryService {
      */
     public static final Sort SEARCH_ORDER = Sort.by(Sort.Order.asc("name"), Sort.Order.asc("serviceId"));
 
-    /** 목록을 갱신한 실행의 상태(결정 0007). FAILED는 갱신이 없는 실행이다. */
-    private static final List<CollectionStatus> LIST_UPDATED = List.of(CollectionStatus.SUCCEEDED,
-            CollectionStatus.PARTIAL);
-
     private final BenefitRepository benefitRepository;
     private final BenefitDetailRepository benefitDetailRepository;
-    private final CollectionRunRepository collectionRunRepository;
     private final RegionCodeValidator regionCodeValidator;
     private final RegionService regionService;
-    private final Clock clock;
 
     public Optional<BenefitView> findByServiceId(String serviceId) {
         return benefitRepository.findByServiceId(serviceId)
@@ -93,11 +81,7 @@ public class BenefitQueryService {
     public BenefitDetailResponse getDetail(String serviceId) {
         Benefit benefit = benefitRepository.findByServiceId(serviceId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "혜택이 없습니다. serviceId=" + serviceId));
-        LocalDateTime referenceAt = collectionRunRepository.findFirstByStatusInOrderByFinishedAtDesc(LIST_UPDATED)
-                .map(CollectionRun::getFinishedAt)
-                .orElse(null);
-        return BenefitDetailResponse.of(benefit, benefitDetailRepository.findById(benefit.getId()).orElse(null),
-                Freshness.judge(referenceAt, LocalDateTime.now(clock)));
+        return BenefitDetailResponse.of(benefit, benefitDetailRepository.findById(benefit.getId()).orElse(null));
     }
 
     /**
