@@ -45,8 +45,6 @@ class WithdrawalConcurrencyTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
         mailSender.clear();
         String ticket = SignUpSteps.verify(emailVerificationService, mailSender, "race@example.com");
         accountService.signUp(new SignUpRequest("race@example.com", "correct-horse", ticket));

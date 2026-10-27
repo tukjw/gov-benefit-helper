@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -72,17 +71,11 @@ class BenefitDetailApiTest {
     @Autowired
     private CollectionRunRepository collectionRunRepository;
     @Autowired
-    private JdbcTemplate jdbcTemplate;
-    @Autowired
     private JsonMapper jsonMapper;
 
     @BeforeEach
     void setUp() {
         stub.reset();
-        for (String table : List.of("bookmark", "benefit_detail", "benefit", "source_record_history", "source_record",
-                "collection_quarantine", "collection_failure", "collection_run_step", "collection_run")) {
-            jdbcTemplate.update("DELETE FROM " + table);
-        }
         Benefit full = benefitRepository.save(Benefit.create("FULL", new BenefitContent("청년 월세 지원",
                 "청년 주거비 부담 완화", "주거·자립", "개인", "현금", "만 19~34세 무주택 청년", "중위소득 60% 이하",
                 "월 최대 20만원, 최대 12개월", "2026.3.1.~2026.12.31.", "방문, 온라인", "02-120",

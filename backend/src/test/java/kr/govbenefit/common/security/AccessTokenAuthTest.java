@@ -23,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -57,8 +56,6 @@ class AccessTokenAuthTest {
     @Autowired
     private UserAccountRepository userAccountRepository;
     @Autowired
-    private JdbcTemplate jdbcTemplate;
-    @Autowired
     private JsonMapper jsonMapper;
 
     private Long aliceId;
@@ -66,7 +63,6 @@ class AccessTokenAuthTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.update("DELETE FROM user_account");
         aliceId = userAccountRepository.save(UserAccount.create("alice@example.com", "{noop}x", LocalDateTime.now())).getId();
         bobId = userAccountRepository.save(UserAccount.create("bob@example.com", "{noop}x", LocalDateTime.now())).getId();
     }

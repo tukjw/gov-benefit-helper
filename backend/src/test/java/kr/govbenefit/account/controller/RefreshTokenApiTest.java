@@ -9,9 +9,9 @@ import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
@@ -22,11 +22,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -42,23 +39,13 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, RefreshTokenApiTest.FixedClockConfig.class})
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
 class RefreshTokenApiTest {
 
     private static final Instant START = Instant.parse("2026-10-14T01:00:00Z");
     private static final Duration TTL = Duration.ofDays(14);
     private static final Duration GRACE = Duration.ofSeconds(10);
     private static final String COOKIE = "refresh_token";
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FixedClockConfig {
-
-        @Bean
-        @Primary
-        MutableClock testClock() {
-            return new MutableClock(START, ZoneId.of("Asia/Seoul"));
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -77,8 +64,6 @@ class RefreshTokenApiTest {
     void setUp() throws Exception {
         clock.set(START);
         // 리프레시 토큰은 계정을 지우면 함께 지워진다(ON DELETE CASCADE).
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
         mailSender.clear();
         new SignUpSteps(mockMvc, jsonMapper, mailSender).signUp("alice@example.com", "alice-password");
     }

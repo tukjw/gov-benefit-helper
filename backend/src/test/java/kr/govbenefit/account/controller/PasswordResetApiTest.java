@@ -8,9 +8,9 @@ import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
+import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
@@ -21,11 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,7 +38,7 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, PasswordResetApiTest.FixedClockConfig.class})
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
 class PasswordResetApiTest {
 
     private static final Instant START = Instant.parse("2026-10-16T01:00:00Z");
@@ -52,16 +49,6 @@ class PasswordResetApiTest {
     private static final String OLD_PASSWORD = "alice-password";
     private static final String NEW_PASSWORD = "new-alice-password";
     private static final String RESET_URL = "https://govbenefit.kr/reset-password#token=";
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FixedClockConfig {
-
-        @Bean
-        @Primary
-        MutableClock testClock() {
-            return new MutableClock(START, ZoneId.of("Asia/Seoul"));
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -78,8 +65,6 @@ class PasswordResetApiTest {
     void setUp() throws Exception {
         clock.set(START);
         // 재설정 토큰과 리프레시 토큰은 계정을 지우면 함께 지워진다(ON DELETE CASCADE).
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
         mailSender.clear();
         new SignUpSteps(mockMvc, jsonMapper, mailSender).signUp(EMAIL, OLD_PASSWORD);
     }

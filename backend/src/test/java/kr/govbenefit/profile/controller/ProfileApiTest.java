@@ -9,12 +9,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.domain.UserAccount;
@@ -29,11 +29,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -49,7 +46,7 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, ProfileApiTest.FixedClockConfig.class})
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
 class ProfileApiTest {
 
     /** 한국 시간 2026-10-17 10:00 */
@@ -60,16 +57,6 @@ class ProfileApiTest {
     private static final String DONG_GU = "5805000";
     private static final String SEJONG = "5690000";
     private static final String BENEFIT_ID = "PROFILE-TEST";
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FixedClockConfig {
-
-        @Bean
-        @Primary
-        MutableClock testClock() {
-            return new MutableClock(START, ZoneId.of("Asia/Seoul"));
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -93,7 +80,6 @@ class ProfileApiTest {
     void setUp() {
         clock.set(START);
         // 프로필과 속성은 계정을 지우면 함께 지워진다(ON DELETE CASCADE).
-        jdbcTemplate.update("DELETE FROM user_account");
         LocalDateTime now = LocalDateTime.now(clock);
         aliceId = userAccountRepository.save(UserAccount.create("alice@example.com", "{noop}x", now)).getId();
         bobId = userAccountRepository.save(UserAccount.create("bob@example.com", "{noop}x", now)).getId();

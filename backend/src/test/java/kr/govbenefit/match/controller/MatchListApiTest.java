@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
@@ -32,11 +32,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -56,7 +53,7 @@ import tools.jackson.databind.node.ObjectNode;
  */
 @SpringBootTest(properties = {"gov24.schedule.enabled=false", "gov24.retry-delay=10ms"})
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, MatchListApiTest.FixedClockConfig.class})
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
 class MatchListApiTest {
 
     /** 서울 날짜 2026-10-20 */
@@ -99,16 +96,6 @@ class MatchListApiTest {
         stub.close();
     }
 
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FixedClockConfig {
-
-        @Bean
-        @Primary
-        MutableClock testClock() {
-            return new MutableClock(START, ZoneId.of("Asia/Seoul"));
-        }
-    }
-
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -135,11 +122,6 @@ class MatchListApiTest {
             templates.put(endpoint, stub.record(endpoint, HANWOO).deepCopy());
         }
         FIXTURE_IDS.forEach(stub::removeService);
-        for (String table : List.of("bookmark", "benefit_detail", "benefit", "source_record_history",
-                "source_record", "collection_quarantine", "collection_failure", "collection_run_step",
-                "collection_run", "user_account", "email_verification")) {
-            jdbcTemplate.update("DELETE FROM " + table);
-        }
         mailSender.clear();
         signUpSteps = new SignUpSteps(mockMvc, jsonMapper, mailSender);
         signUpSteps.signUp(ALICE, PASSWORD);

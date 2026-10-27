@@ -42,7 +42,6 @@ class ProfileConcurrencyTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.update("DELETE FROM user_account");
         userId = userAccountRepository.save(UserAccount.create("alice@example.com", "{noop}x", LocalDateTime.now()))
                 .getId();
     }

@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
@@ -33,11 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -56,7 +54,7 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @SpringBootTest(properties = {"gov24.schedule.enabled=false", "gov24.retry-delay=10ms"})
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, BookmarkApiTest.FixedClockConfig.class})
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
 class BookmarkApiTest {
 
     private static final Instant START = Instant.parse("2026-10-20T01:00:00Z");
@@ -83,16 +81,6 @@ class BookmarkApiTest {
         stub.close();
     }
 
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FixedClockConfig {
-
-        @Bean
-        @Primary
-        MutableClock testClock() {
-            return new MutableClock(START, ZoneId.of("Asia/Seoul"));
-        }
-    }
-
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -117,11 +105,6 @@ class BookmarkApiTest {
     void setUp() throws Exception {
         clock.set(START);
         stub.reset();
-        for (String table : List.of("bookmark", "benefit_detail", "benefit", "source_record_history",
-                "source_record", "collection_quarantine", "collection_failure", "collection_run_step",
-                "collection_run", "user_account", "email_verification")) {
-            jdbcTemplate.update("DELETE FROM " + table);
-        }
         mailSender.clear();
         signUpSteps = new SignUpSteps(mockMvc, jsonMapper, mailSender);
         alice = signUp(ALICE);

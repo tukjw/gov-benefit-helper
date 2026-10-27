@@ -7,9 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
@@ -22,11 +22,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -40,7 +37,7 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, EmailVerificationApiTest.FixedClockConfig.class})
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
 class EmailVerificationApiTest {
 
     private static final Instant START = Instant.parse("2026-10-16T01:00:00Z");
@@ -51,16 +48,6 @@ class EmailVerificationApiTest {
     private static final int MAX_ATTEMPTS = 5;
     private static final int MAX_PER_WINDOW = 10;
     private static final String EMAIL = "me@example.com";
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FixedClockConfig {
-
-        @Bean
-        @Primary
-        MutableClock testClock() {
-            return new MutableClock(START, ZoneId.of("Asia/Seoul"));
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -78,8 +65,6 @@ class EmailVerificationApiTest {
     @BeforeEach
     void setUp() {
         clock.set(START);
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
         mailSender.clear();
         steps = new SignUpSteps(mockMvc, jsonMapper, mailSender);
     }

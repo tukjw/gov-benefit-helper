@@ -21,7 +21,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -41,8 +40,6 @@ class LoginApiTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private JdbcTemplate jdbcTemplate;
-    @Autowired
     private JsonMapper jsonMapper;
     @Autowired
     private JwtDecoder jwtDecoder;
@@ -51,8 +48,6 @@ class LoginApiTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
         mailSender.clear();
         signUp("alice@example.com", "alice-password");
         signUp("bob@example.com", "bob-password");
