@@ -7,6 +7,9 @@ import kr.govbenefit.account.mail.LoggingAccountMailSender;
 import kr.govbenefit.account.mail.ResendAccountMailSender;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.core.task.SyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
 
 /**
  * 발송 구현은 설정으로만 고른다(결정 0032). 기본 설정에는 구현이 없어 기동에 실패하고, Resend를 고르면 API 키와
@@ -59,5 +62,24 @@ class AccountMailConfigTest {
                 .withPropertyValues("auth.mail.resend.api-key=re_test_0b5c2a")
                 .run(context -> assertThat(context).hasFailed().getFailure()
                         .rootCause().hasMessageContaining("RESEND_FROM"));
+    }
+
+    @Test
+    void 기본_실행기는_가상_스레드에서_비동기로_보낸다() {
+        runner.run(context -> {
+            TaskExecutor executor = context.getBean(AccountMailConfig.EXECUTOR, TaskExecutor.class);
+            assertThat(executor).isInstanceOf(SimpleAsyncTaskExecutor.class);
+            Thread[] thread = new Thread[1];
+            ((SimpleAsyncTaskExecutor) executor).submit(() -> thread[0] = Thread.currentThread()).get();
+            assertThat(thread[0].isVirtual()).isTrue();
+            assertThat(thread[0].getName()).startsWith("account-mail-");
+        });
+    }
+
+    @Test
+    void async가_false면_호출한_스레드에서_보낸다() {
+        runner.withPropertyValues("auth.mail.async=false")
+                .run(context -> assertThat(context.getBean(AccountMailConfig.EXECUTOR, TaskExecutor.class))
+                        .isInstanceOf(SyncTaskExecutor.class));
     }
 }

@@ -30,7 +30,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * {@code auth.mail.sender=resend}로 띄우면 계정 메일이 Resend API로 요청된다(결정 0032). 실제 Resend 대신 로컬 stub
- * 서버가 받는다. 발송 실패는 응답을 바꾸지 않고, 로그에는 행 ID만 남는다.
+ * 서버가 받는다. 발송 실패는 응답을 바꾸지 않고, 로그에는 행 ID만 남는다. 실행기는 테스트 공통 설정의 동기다.
  */
 @SpringBootTest(properties = {"gov24.schedule.enabled=false", "auth.mail.sender=resend",
         "auth.mail.resend.api-key=" + ResendMailDeliveryTest.API_KEY,
