@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -14,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
@@ -27,34 +27,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * 같은 이메일의 동시 가입은 실제 MySQL unique 제약으로 하나만 성공한다(#38 설계 3). 스레드마다 같은 이메일로 따로 확인한
  * 가입 티켓을 쓴다. 인증번호를 다시 받으려면 발송 간격이 지나야 하므로 고정한 시계를 옮긴다(결정 0019).
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
-@Import({TestcontainersConfiguration.class, SignUpConcurrencyTest.FixedClockConfig.class})
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
 class SignUpConcurrencyTest {
 
     private static final int THREADS = 8;
     private static final Instant START = Instant.parse("2026-10-16T01:00:00Z");
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FixedClockConfig {
-
-        @Bean
-        @Primary
-        MutableClock testClock() {
-            return new MutableClock(START, ZoneId.of("Asia/Seoul"));
-        }
-    }
 
     @Autowired
     private AccountService accountService;
@@ -66,14 +52,10 @@ class SignUpConcurrencyTest {
     private RecordingAccountMailSender mailSender;
     @Autowired
     private MutableClock clock;
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
         clock.set(START);
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
         mailSender.clear();
     }
 

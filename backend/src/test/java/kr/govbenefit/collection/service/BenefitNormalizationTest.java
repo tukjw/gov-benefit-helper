@@ -73,10 +73,6 @@ class BenefitNormalizationTest {
     @BeforeEach
     void setUp() {
         stub.reset();
-        for (String table : List.of("bookmark", "benefit_detail", "benefit", "source_record_history", "source_record",
-                "collection_quarantine", "collection_failure", "collection_run_step", "collection_run")) {
-            jdbcTemplate.update("DELETE FROM " + table);
-        }
     }
 
     @Test

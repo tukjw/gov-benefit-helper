@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.config.CronTask;
 import org.springframework.scheduling.config.ScheduledTaskHolder;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -47,8 +46,6 @@ class CollectionSchedulerTest {
     private CollectionScheduler collectionScheduler;
     @Autowired
     private CollectionRunRepository runRepository;
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @Test
     void 매일_04시_수집이_등록된다() {
@@ -66,11 +63,6 @@ class CollectionSchedulerTest {
 
     @Test
     void 정기_수집은_전체_수집을_한_번_실행한다() {
-        for (String table : List.of("bookmark", "benefit_detail", "benefit", "source_record_history", "source_record",
-                "collection_quarantine", "collection_failure", "collection_run_step", "collection_run")) {
-            jdbcTemplate.update("DELETE FROM " + table);
-        }
-
         collectionScheduler.collectDaily();
 
         assertThat(runRepository.findAll()).singleElement()

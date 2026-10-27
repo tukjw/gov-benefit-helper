@@ -72,9 +72,6 @@ class BenefitSearchApiTest {
     @BeforeEach
     void setUp() {
         stub.reset();
-        jdbcTemplate.update("DELETE FROM bookmark");
-        jdbcTemplate.update("DELETE FROM benefit_detail");
-        jdbcTemplate.update("DELETE FROM benefit");
         // 같은 이름 5건. 서비스 ID를 저장 순서와 다르게 섞는다.
         benefit("SAME-3", "같은 이름 지원", "생활안정", "시군구");
         benefit("SAME-1", "같은 이름 지원", "보육·교육", "시군구");

@@ -55,10 +55,6 @@ class BookmarkConcurrencyTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
-        jdbcTemplate.update("DELETE FROM bookmark");
-        jdbcTemplate.update("DELETE FROM benefit WHERE service_id = ?", SERVICE_ID);
         mailSender.clear();
         String ticket = SignUpSteps.verify(emailVerificationService, mailSender, "race@example.com");
         accountService.signUp(new SignUpRequest("race@example.com", "correct-horse", ticket));

@@ -1,0 +1,2 @@
+# 모든 테스트가 함께 쓰는 DB를 테스트 메서드마다 비운다(결정 0032).
+org.springframework.test.context.TestExecutionListener=kr.govbenefit.DatabaseCleanupListener

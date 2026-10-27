@@ -48,8 +48,6 @@ class EmailVerificationConcurrencyTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.update("DELETE FROM user_account");
-        jdbcTemplate.update("DELETE FROM email_verification");
         mailSender.clear();
     }
 
