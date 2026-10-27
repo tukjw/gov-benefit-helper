@@ -2,8 +2,11 @@ package kr.govbenefit.bookmark.service;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import kr.govbenefit.account.repository.UserAccountRepository;
@@ -13,6 +16,7 @@ import kr.govbenefit.benefit.repository.BenefitRepository;
 import kr.govbenefit.bookmark.domain.Bookmark;
 import kr.govbenefit.bookmark.dto.BookmarkItem;
 import kr.govbenefit.bookmark.dto.BookmarkListResponse;
+import kr.govbenefit.bookmark.dto.BookmarkSavedResponse;
 import kr.govbenefit.bookmark.repository.BookmarkRepository;
 import kr.govbenefit.common.api.ApiTimes;
 import kr.govbenefit.common.api.BusinessException;
@@ -86,6 +90,19 @@ public class BookmarkService {
                         BenefitSummary.from(benefits.get(bookmark.getBenefitId()))))
                 .toList();
         return new BookmarkListResponse(bookmarks.getTotalElements(), page, size, items);
+    }
+
+    /**
+     * 받은 서비스 ID 중 북마크에 있는 것. 수집되지 않은 서비스 ID는 북마크에 있을 수 없으므로 빠진다.
+     *
+     * @return 요청 순서이며 중복이 없다.
+     */
+    @Transactional(readOnly = true)
+    public BookmarkSavedResponse savedServiceIds(Long userId, List<String> serviceIds) {
+        requireAccount(userId);
+        Set<String> requested = new LinkedHashSet<>(serviceIds);
+        Set<String> saved = new HashSet<>(bookmarkRepository.findSavedServiceIds(userId, requested));
+        return new BookmarkSavedResponse(requested.stream().filter(saved::contains).toList());
     }
 
     private void requireAccount(Long userId) {

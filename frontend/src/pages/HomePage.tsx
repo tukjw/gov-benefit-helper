@@ -1,10 +1,11 @@
+import { ListChecks } from "lucide-react";
 import { Link } from "react-router";
 import { SearchBox } from "@/components/SearchBox";
 import { usePageTitle } from "@/components/usePageTitle";
 import { FIELDS, RECOMMENDED_KEYWORDS } from "@/lib/benefits/options";
 import styles from "./HomePage.module.css";
 
-// API를 부르지 않는다. 조건 비교 카드는 #74에서 붙인다.
+// API를 부르지 않는다.
 export function HomePage() {
   usePageTitle();
   return (
@@ -31,6 +32,22 @@ export function HomePage() {
             </ul>
           </div>
         </div>
+      </section>
+
+      <section className="container" aria-labelledby="match-card-title">
+        <Link to="/match" className={styles.matchCard}>
+          <span className={styles.fieldIcon}>
+            <ListChecks size={28} aria-hidden="true" />
+          </span>
+          <span className={styles.matchText}>
+            <strong id="match-card-title" className={styles.matchTitle}>
+              로그인 없이 내 조건과 비교해 보기
+            </strong>
+            <span className={styles.matchDescription}>
+              생년월일·거주지·가구 상황을 입력하면 공개된 대상 조건과 비교한 결과를 보여드려요.
+            </span>
+          </span>
+        </Link>
       </section>
 
       <section className="container" aria-labelledby="fields-title">

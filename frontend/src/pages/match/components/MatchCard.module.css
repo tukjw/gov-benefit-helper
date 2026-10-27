@@ -1,0 +1,16 @@
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  color: var(--color-text-sub);
+  font-size: var(--text-meta);
+}
+
+.checksTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--color-warning);
+  font-weight: 700;
+}

@@ -144,11 +144,12 @@ public class MatchService {
                 }
             }
         }
+        int matchCount = listed.size();
         listed.addAll(needsCheck);
         long from = (long) (page - 1) * size;
         List<MatchListItem> items = from >= listed.size() ? List.of()
                 : List.copyOf(listed.subList((int) from, (int) Math.min(from + size, listed.size())));
-        return MatchListResponse.of(listed.size(), scope, page, size, today, items);
+        return MatchListResponse.of(matchCount, needsCheck.size(), scope, page, size, today, items);
     }
 
     /**

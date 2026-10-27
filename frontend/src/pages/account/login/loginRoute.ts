@@ -2,6 +2,7 @@ import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from "reac
 import { login } from "@/lib/api/auth";
 import { safeReturnTo } from "@/lib/auth/guard";
 import { ensureSession, getSession, signIn } from "@/lib/auth/session";
+import { clearGuestProfile } from "@/lib/profile/guestProfile";
 import { showToast } from "@/lib/toast";
 import { codeOf, fieldErrorsOf, formText, GENERIC_ERROR, type FieldErrors } from "../formErrors";
 
@@ -35,6 +36,8 @@ export async function loginAction({ request }: ActionFunctionArgs): Promise<Logi
     const invalid = fieldErrorsOf(error);
     return invalid ? { fieldErrors: invalid } : { formError: GENERIC_ERROR };
   }
+  // 로그인하면 저장된 프로필을 쓰므로 비회원으로 입력한 값은 지운다(결정 0031).
+  clearGuestProfile();
   showToast("로그인되었습니다.");
   return redirect(safeReturnTo(form.get("returnTo")));
 }

@@ -172,6 +172,8 @@ class MatchListApiTest {
                 .filter(List.of("T04", "T05", "T07")::contains).toList());
 
         assertThat(body.get("totalCount").asLong()).isEqualTo(6);
+        assertThat(body.get("matchCount").asLong()).isEqualTo(3);
+        assertThat(body.get("needsCheckCount").asLong()).isEqualTo(3);
         assertThat(body.get("page").asInt()).isEqualTo(1);
         assertThat(body.get("size").asInt()).isEqualTo(20);
         assertThat(body.get("judgedOn").asString()).isEqualTo("2026-10-20");
@@ -403,12 +405,17 @@ class MatchListApiTest {
         assertThat(ids(mine)).containsExactly("R01", "R02", "R03", "R04", "R06");
         assertThat(results(mine)).containsOnly("MATCH");
         assertThat(mine.get("totalCount").asLong()).isEqualTo(5);
+        assertThat(mine.get("matchCount").asLong()).isEqualTo(5);
+        assertThat(mine.get("needsCheckCount").asLong()).isEqualTo(0);
 
         JsonNode all = list(ALICE, "regionScope", "ALL");
         assertThat(all.get("regionScope").asString()).isEqualTo("ALL");
         // 다른 지역과 지역 모름은 확인 필요라 해당 뒤에 온다. 개인 대상이 아닌 혜택은 어느 범위에도 없다.
         assertThat(ids(all)).containsExactly("R01", "R02", "R03", "R04", "R06", "R05", "R07", "R08");
         assertThat(all.get("totalCount").asLong()).isEqualTo(8);
+        // 건수는 쪽과 관계없이 지역 범위 전체의 결과별 수다.
+        assertThat(all.get("matchCount").asLong()).isEqualTo(5);
+        assertThat(all.get("needsCheckCount").asLong()).isEqualTo(3);
         assertItem(item(all, "R01").get("agencyRegion"), "MET", "REGION_INCLUDES");
         assertItem(item(all, "R03").get("agencyRegion"), "MET", "REGION_INCLUDES");
         assertItem(item(all, "R06").get("agencyRegion"), "MET", "NO_RESTRICTION");

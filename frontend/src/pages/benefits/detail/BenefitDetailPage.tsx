@@ -1,15 +1,15 @@
 import { useLoaderData } from "react-router";
 import { usePageTitle } from "@/components/usePageTitle";
-import type { benefitDetailLoader } from "./benefitDetailLoader";
+import type { BenefitDetailData } from "./benefitDetailLoader";
 import styles from "./BenefitDetailPage.module.css";
 import { BenefitDetailView } from "./components/BenefitDetailView";
 
 export function BenefitDetailPage() {
-  const benefit = useLoaderData<typeof benefitDetailLoader>();
+  const { benefit, match } = useLoaderData() as BenefitDetailData;
   usePageTitle(benefit.name);
   return (
     <div className="container">
-      <BenefitDetailView benefit={benefit} />
+      <BenefitDetailView benefit={benefit} match={match} />
     </div>
   );
 }
