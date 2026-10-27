@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #78 Resend로 가입 인증번호와 비밀번호 재설정 메일을 실제로 발송
 
