@@ -28,6 +28,21 @@ spring:
       # API 전용 서버라 정적 파일이 없다. 기본 매핑을 두면 springdoc을 꺼도 Swagger UI webjar가 /webjars/**로 열린다(결정 0012).
       add-mappings: false
 
+# 운영에서는 Cloudflare Tunnel(cloudflared)만 앱에 요청을 보낸다(결정 0034). Cloudflare가 넣는 CF-Connecting-IP를
+# 요청자 주소(getRemoteAddr)로 쓴다. 신뢰하는 프록시는 기본값(사설 대역)이며 cloudflared 컨테이너 주소가 여기에 든다.
+server:
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      remote-ip-header: CF-Connecting-IP
+
+# 배포 스크립트가 기동 완료를 확인하는 상태 확인만 연다(결정 0034). 세부 정보는 보이지 않는다.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
 # API 명세(/v3/api-docs)와 문서 화면(/swagger-ui.html)은 local 프로필에서만 연다(결정 0012).
 springdoc:
   # 지정하지 않으면 성공 응답의 미디어 타입이 */*로 나온다.
