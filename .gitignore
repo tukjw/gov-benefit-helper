@@ -10,3 +10,5 @@
 .env
 .env.*
 !.env.example
+# VM의 비밀값 파일(deploy/app/app.env 등). 예시는 *.env.example로 둔다.
+deploy/**/*.env

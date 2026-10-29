@@ -32,7 +32,7 @@
 
 ## 4. 실행 환경 설정
 
-API 서버의 실행 환경(환경 변수 또는 `backend/.env`)에 넣는다. 형식은 `backend/.env.example`에 있다.
+API 서버의 실행 환경에 넣는다. 운영은 app VM의 `app.env`(형식은 `deploy/app/app.env.example`, 절차는 [운영 배포](deploy.md)), 로컬은 `backend/.env`(형식은 `backend/.env.example`)다.
 
 | 변수 | 값 |
 | --- | --- |

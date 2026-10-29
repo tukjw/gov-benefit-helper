@@ -1,0 +1,65 @@
+name: Image
+
+# 앱 이미지를 GHCR에 올린다(결정 0034).
+# - 릴리스 태그 vX.Y.Z를 push하면 같은 이름의 이미지 태그를 만든다. 운영 배포는 이 태그로만 한다.
+# - 수동 실행은 릴리스 전에 VM 구성을 확인할 이미지를 sha-<커밋 7자리> 태그로 만든다.
+# 테스트는 돌리지 않는다. 릴리스 태그는 test 체크를 통과한 PR의 머지 커밋에 붙는다.
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/tukjw/gov-benefit-helper
+
+jobs:
+  image:
+    name: image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            version=$(sed -n "s/^version = '\(.*\)'$/\1/p" backend/build.gradle)
+            # 버전 반영 PR을 빠뜨린 릴리스를 막는다.
+            if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+              echo "::error::태그 $GITHUB_REF_NAME 와 backend/build.gradle의 version '$version'이 다릅니다."
+              exit 1
+            fi
+            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build jar
+        working-directory: backend
+        run: ./gradlew bootJar
+
+      - name: Build and push image
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker build \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.version=$TAG" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            -t "$IMAGE:$TAG" backend
+          docker push "$IMAGE:$TAG"
+          echo "이미지: $IMAGE:$TAG" >> "$GITHUB_STEP_SUMMARY"

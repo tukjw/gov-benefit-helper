@@ -34,6 +34,8 @@ public class SecurityConfig {
             "/api/matches/**",
             // 비회원 조건 비교의 입력 선택지
             "/api/profile/options",
+            // 배포 스크립트가 기동 완료를 확인한다(결정 0034).
+            "/actuator/health",
             "/error",
             // 문서는 local 프로필에서만 열린다. 그 밖에서는 처리할 API가 없어 404다(결정 0012).
             "/v3/api-docs/**",

@@ -76,3 +76,4 @@
 | [0031](0031-guest-profile-storage.md) | 비회원 프로필 값의 브라우저 보관 | 채택 | #74 |
 | [0032](0032-account-mail-resend.md) | 계정 메일 Resend 비동기 발송 | 채택 | #78 |
 | [0033](0033-test-shared-mysql.md) | 테스트 MySQL 컨테이너 공유와 테이블 정리 | 채택 | #85 |
+| [0034](0034-proxmox-deploy.md) | Proxmox 단일 호스트 배포 구조 | 채택 | #87 |
