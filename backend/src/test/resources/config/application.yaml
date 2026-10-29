@@ -1,0 +1,10 @@
+# 테스트 공통 설정. classpath:/config/는 main의 application.yaml을 가리지 않고 그 위에 덮어쓴다.
+# 서명 키는 저장소에 두지 않고 테스트 컨텍스트마다 임의로 만든다(결정 0014).
+auth:
+  jwt:
+    generate-secret-if-missing: true
+  mail:
+    # 실제 발송 없이 RecordingAccountMailSender에 기록만 한다(결정 0032). Resend를 검증하는 테스트만 resend로 덮는다.
+    sender: test
+    # 메일을 요청 스레드에서 바로 보내 요청이 끝난 직후 가짜 발송의 기록을 읽는다. 비동기는 AccountMailAsyncTest가 확인한다.
+    async: false

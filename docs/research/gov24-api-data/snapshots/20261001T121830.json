@@ -1,0 +1,381 @@
+{
+  "snapshot_id": "20261001T121830",
+  "base_url": "https://api.odcloud.kr/api/gov24/v3",
+  "auth": "Authorization: Infuser <key>",
+  "per_page": 1000,
+  "modified_since": "20260929115527",
+  "started_at": "2026-10-01T12:18:30+09:00",
+  "paths": {
+    "serviceList": {
+      "totalCount": 10947,
+      "matchCount": 10947,
+      "records": 10947,
+      "pages": [
+        {
+          "page": 1,
+          "status": 200,
+          "bytes": 1747029,
+          "elapsed_ms": 554,
+          "fetched_at": "2026-10-01T12:18:31+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "34dc3f18d35803a88b40de697c865e8d916dd06bc674e5a38576529c9af2b71f"
+        },
+        {
+          "page": 2,
+          "status": 200,
+          "bytes": 1367121,
+          "elapsed_ms": 410,
+          "fetched_at": "2026-10-01T12:18:31+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "fec3119cc5828255f906928c2fbf93bc3cf855f1206767cae2e676a35e9dcd36"
+        },
+        {
+          "page": 3,
+          "status": 200,
+          "bytes": 1320802,
+          "elapsed_ms": 642,
+          "fetched_at": "2026-10-01T12:18:32+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "104463c23fd6ae4da94ab592d848b2e9d1e8d16bec3124f225428840b9eb71cb"
+        },
+        {
+          "page": 4,
+          "status": 200,
+          "bytes": 1270211,
+          "elapsed_ms": 538,
+          "fetched_at": "2026-10-01T12:18:33+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "996e669792d0a2abf6a7ae7eb9c749460c047c6df53e2525cab40934598a8605"
+        },
+        {
+          "page": 5,
+          "status": 200,
+          "bytes": 1259254,
+          "elapsed_ms": 420,
+          "fetched_at": "2026-10-01T12:18:33+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "94a12bd5ab98d8b5b032a2cfad1aff2a04ca0170f05aa62ec7961ff6dde4c0fe"
+        },
+        {
+          "page": 6,
+          "status": 200,
+          "bytes": 1301062,
+          "elapsed_ms": 547,
+          "fetched_at": "2026-10-01T12:18:34+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "1fc8f95e4a1bd702ea7968301eb6053645aa224b5c30be985364d615756cc084"
+        },
+        {
+          "page": 7,
+          "status": 200,
+          "bytes": 1310240,
+          "elapsed_ms": 410,
+          "fetched_at": "2026-10-01T12:18:35+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "b4bd35b3fbeb39c69af0ad618a3ce2bfcba7382bbe69d01abcafc78318b0f73c"
+        },
+        {
+          "page": 8,
+          "status": 200,
+          "bytes": 1484737,
+          "elapsed_ms": 429,
+          "fetched_at": "2026-10-01T12:18:35+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "6aa392d7c3d6616ffd0b6ae64c60c336477e55dc69f46b5e39c6afb26dd88f2b"
+        },
+        {
+          "page": 9,
+          "status": 200,
+          "bytes": 1443295,
+          "elapsed_ms": 423,
+          "fetched_at": "2026-10-01T12:18:36+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "515c850376982020be30a6e570ebb2858f9fbb64dd6d9906f9db8eebb28d0912"
+        },
+        {
+          "page": 10,
+          "status": 200,
+          "bytes": 1966301,
+          "elapsed_ms": 508,
+          "fetched_at": "2026-10-01T12:18:37+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "70b1c01bb21d70984ec854cd930fdbf505970d516ca9faa98c286d1e5fe0a9e3"
+        },
+        {
+          "page": 11,
+          "status": 200,
+          "bytes": 1633883,
+          "elapsed_ms": 484,
+          "fetched_at": "2026-10-01T12:18:38+09:00",
+          "currentCount": 947,
+          "records": 947,
+          "sha256": "21a61d445fe7df24e8df77a12f2f021be3621ab2560bc04f6b2d35d1d7837ad6"
+        }
+      ]
+    },
+    "serviceDetail": {
+      "totalCount": 10947,
+      "matchCount": 10947,
+      "records": 10947,
+      "pages": [
+        {
+          "page": 1,
+          "status": 200,
+          "bytes": 2098305,
+          "elapsed_ms": 452,
+          "fetched_at": "2026-10-01T12:18:38+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "14e75601b09ad3fa933c8c40f38fa1950151bfeb4cd8e3a9dfdfbcd9f0ad8d67"
+        },
+        {
+          "page": 2,
+          "status": 200,
+          "bytes": 1655989,
+          "elapsed_ms": 449,
+          "fetched_at": "2026-10-01T12:18:39+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "2ff58da8e99ff71b8ad8776105916d76fe1013362fd284ec49a154f5fc011c70"
+        },
+        {
+          "page": 3,
+          "status": 200,
+          "bytes": 1592151,
+          "elapsed_ms": 457,
+          "fetched_at": "2026-10-01T12:18:39+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "e89f94b6f3ef601269b3cf37382b6cca7b05eda9ac9153c1a28ccff4a314aa30"
+        },
+        {
+          "page": 4,
+          "status": 200,
+          "bytes": 1473150,
+          "elapsed_ms": 626,
+          "fetched_at": "2026-10-01T12:18:40+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "960c06eee0787848ee5de3863836b6d66655effebe260a30e388ea0c6145d377"
+        },
+        {
+          "page": 5,
+          "status": 200,
+          "bytes": 1462088,
+          "elapsed_ms": 444,
+          "fetched_at": "2026-10-01T12:18:41+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "5159d842f740c1f272223d678779c43086c3fef0928b8fa450c75260141bf39b"
+        },
+        {
+          "page": 6,
+          "status": 200,
+          "bytes": 1501888,
+          "elapsed_ms": 586,
+          "fetched_at": "2026-10-01T12:18:42+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "dd3cff54fbe5994c6b91901824599d6a6b422b2929d493fc9a0a6276ba2d0ce4"
+        },
+        {
+          "page": 7,
+          "status": 200,
+          "bytes": 1537234,
+          "elapsed_ms": 432,
+          "fetched_at": "2026-10-01T12:18:42+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "1d5f49af0c43831304d0ef7672df239e09b1198a833ae40825e40ae46774ce51"
+        },
+        {
+          "page": 8,
+          "status": 200,
+          "bytes": 1809879,
+          "elapsed_ms": 470,
+          "fetched_at": "2026-10-01T12:18:43+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "ea0187bdacf04811381fd7bbc871e5088c88eba38abd5a572a902623bc2bcf43"
+        },
+        {
+          "page": 9,
+          "status": 200,
+          "bytes": 1675628,
+          "elapsed_ms": 646,
+          "fetched_at": "2026-10-01T12:18:44+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "be7ee47381db46614db8d354792f7ef3a84a7a9d9bc7263f5ac045b94c7126c4"
+        },
+        {
+          "page": 10,
+          "status": 200,
+          "bytes": 2203391,
+          "elapsed_ms": 767,
+          "fetched_at": "2026-10-01T12:18:45+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "184d83584fa9c343ace4e60d814625efb944d516e77929b3545e331359cdb9a0"
+        },
+        {
+          "page": 11,
+          "status": 200,
+          "bytes": 1910310,
+          "elapsed_ms": 557,
+          "fetched_at": "2026-10-01T12:18:46+09:00",
+          "currentCount": 947,
+          "records": 947,
+          "sha256": "6c5cbbfb409ec72b316b17468eb715d06689e2f0b0dceb957f3cc058cce5fbd0"
+        }
+      ]
+    },
+    "supportConditions": {
+      "totalCount": 10947,
+      "matchCount": 10947,
+      "records": 10947,
+      "pages": [
+        {
+          "page": 1,
+          "status": 200,
+          "bytes": 743676,
+          "elapsed_ms": 425,
+          "fetched_at": "2026-10-01T12:18:46+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "9ca5124e4659601d8ff9419a519170705021f368f3dafe2875ac1a68d9e94742"
+        },
+        {
+          "page": 2,
+          "status": 200,
+          "bytes": 738118,
+          "elapsed_ms": 448,
+          "fetched_at": "2026-10-01T12:18:47+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "dedcf47bb81ee571b5dc2c3429ba6cad010f16e54e50fc95db5e3e4d5d0c9d92"
+        },
+        {
+          "page": 3,
+          "status": 200,
+          "bytes": 738198,
+          "elapsed_ms": 633,
+          "fetched_at": "2026-10-01T12:18:48+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "024c4a2187b0c2b3f7af35e15382777c1e776b2979ff62cef8c25c87ad28c251"
+        },
+        {
+          "page": 4,
+          "status": 200,
+          "bytes": 735105,
+          "elapsed_ms": 426,
+          "fetched_at": "2026-10-01T12:18:48+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "f2cea69e968acd6fd6db2d8aa827ef3b41b5484a0e1f40e27c1ba79c949e62dd"
+        },
+        {
+          "page": 5,
+          "status": 200,
+          "bytes": 735893,
+          "elapsed_ms": 461,
+          "fetched_at": "2026-10-01T12:18:49+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "857909a60d07a887e4deca56bdff032dcf37701c269352373a0819631d43ece9"
+        },
+        {
+          "page": 6,
+          "status": 200,
+          "bytes": 737117,
+          "elapsed_ms": 576,
+          "fetched_at": "2026-10-01T12:18:50+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "4e8cd4fced6ed691c3f2ddb2b646cba27526252b1a77897be3abf6fd88a66706"
+        },
+        {
+          "page": 7,
+          "status": 200,
+          "bytes": 737380,
+          "elapsed_ms": 493,
+          "fetched_at": "2026-10-01T12:18:50+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "f278dd431d45e24ffc7dd210ee21ae7f8e122046a7799e0bbcf08e8b4904bd93"
+        },
+        {
+          "page": 8,
+          "status": 200,
+          "bytes": 739592,
+          "elapsed_ms": 445,
+          "fetched_at": "2026-10-01T12:18:51+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "ed362e390e737ebe131b70d02f44e0b73fece9eab3c87430b6e180090d253ba5"
+        },
+        {
+          "page": 9,
+          "status": 200,
+          "bytes": 741519,
+          "elapsed_ms": 475,
+          "fetched_at": "2026-10-01T12:18:52+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "62a20ff100817b4e3fbaca96d82f126d061fc4d4053ee1ca4c1c4682cf134710"
+        },
+        {
+          "page": 10,
+          "status": 200,
+          "bytes": 742658,
+          "elapsed_ms": 538,
+          "fetched_at": "2026-10-01T12:18:53+09:00",
+          "currentCount": 1000,
+          "records": 1000,
+          "sha256": "b6ba64307a9fc3a2581818f7836ab9dfdc26f71d4e8d0c9c81eece1095e3a373"
+        },
+        {
+          "page": 11,
+          "status": 200,
+          "bytes": 702178,
+          "elapsed_ms": 403,
+          "fetched_at": "2026-10-01T12:18:53+09:00",
+          "currentCount": 947,
+          "records": 947,
+          "sha256": "92921d3495a031af9c5a63088d47451afbc887827681d737e7595abba50edbff"
+        }
+      ]
+    },
+    "serviceList-modified": {
+      "totalCount": 10947,
+      "matchCount": 25,
+      "records": 25,
+      "pages": [
+        {
+          "page": 1,
+          "status": 200,
+          "bytes": 62337,
+          "elapsed_ms": 136,
+          "fetched_at": "2026-10-01T12:18:53+09:00",
+          "currentCount": 25,
+          "records": 25,
+          "sha256": "28e0b89924be0047c855c1aa056c2f3e8ded17b85052fcd250e67f85e919a8cc"
+        }
+      ]
+    }
+  },
+  "status": "complete",
+  "finished_at": "2026-10-01T12:18:53+09:00",
+  "calls_used": 34
+}

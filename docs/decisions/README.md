@@ -1,0 +1,80 @@
+# 기술 결정 기록
+
+여러 이슈에 걸쳐 계속 지켜야 하는 기술 결정을 결정 하나당 문서 하나로 기록한다. 새 플랜을 쓸 때 지난 플랜을 뒤지지 않고 이 목록에서 지켜야 할 결정을 찾는다.
+
+## 다른 문서와의 관계
+
+| 문서 | 담는 것 |
+| --- | --- |
+| 이 디렉터리 | 결정을 내린 이슈가 끝난 뒤에도 다른 이슈가 따라야 하는 기술 결정 |
+| [이슈별 플랜](../plans/README.md)의 `설계 결정` | 그 이슈 안에서만 의미가 있는 결정. 결정 문서로 올린 결정은 링크한다 |
+| [개발 순서와 결정할 사항](../product/development.md)의 `DEC-*` | 제품 범위와 동작에 관한 결정 |
+| [AGENTS.md](../../AGENTS.md) | 모든 작업에 적용하는 작업·검증 규칙. 여기에 있는 결정은 결정 문서로 중복 기록하지 않는다 |
+
+## 결정 문서로 올리는 기준
+
+"결정을 내린 이슈가 끝난 뒤에도 다른 이슈의 코드·스키마·설정이 따라야 하는가?"로 판단한다.
+
+- 따라야 하면 결정 문서로 올리고, 플랜의 `설계 결정`에서는 링크한다. 예: DB 정렬 규칙, 시간대.
+- 그 이슈의 구성 방법에 그치면 플랜에 남긴다. 예: #1의 `.env` 읽는 방식.
+- `AGENTS.md`에 규칙으로 있으면 올리지 않는다. 예: Testcontainers MySQL 필수, `local` 프로필 기본 계정.
+- 제품 동작에 관한 결정은 `DEC-*`로 둔다.
+
+## 작성 규칙
+
+- 파일명은 `NNNN-<슬러그>.md`다. `NNNN`은 네 자리 순번이며, 대체되거나 철회된 번호도 재사용하지 않는다.
+- [템플릿](_template.md)을 복사해 쓴다.
+- 결정을 추가하거나 대체할 때 같은 커밋에서 아래 목록 표를 고친다.
+
+## 상태와 대체
+
+- `채택`: 현재 유효한 결정이다.
+- `대체됨 → NNNN`: 다른 결정으로 바뀌었다. 현재 유효한 결정은 `NNNN` 문서에 있다.
+
+채택된 결정 문서의 본문은 고치지 않는다. 결정이 바뀌면 다음 순서를 따른다.
+
+1. 새 번호로 결정 문서를 만들고 `대체` 줄에 기존 문서를 링크한다. 배경에 무엇이 바뀌어서 대체하는지 적는다.
+2. 기존 문서는 `상태` 줄만 `대체됨 → [NNNN](NNNN-<슬러그>.md)`으로 바꾼다.
+3. 목록 표에서 두 문서의 상태를 고친다.
+
+오탈자와 깨진 링크 수정은 본문을 고쳐도 된다.
+
+## 결정 목록
+
+| 번호 | 결정 | 상태 | 출처 |
+| --- | --- | --- | --- |
+| [0001](0001-db-collation.md) | DB 문자 집합과 정렬 규칙 | 채택 | #1 |
+| [0002](0002-db-timezone.md) | DB와 애플리케이션 시간대 | 채택 | #1 |
+| [0003](0003-source-record-retention.md) | 원문 보관과 내용 변경 감지 | 채택 | #15 |
+| [0004](0004-collection-run-status.md) | 수집 실행 상태와 격리 | 대체됨 → [0007](0007-collection-run-status-and-failures.md) | #15 |
+| [0005](0005-gov24-client-and-stub.md) | 공공서비스 API 호출과 테스트 stub | 채택 | #15 |
+| [0006](0006-gov24-failure-handling.md) | 공공서비스 API 실패 처리와 호출 예산 | 채택 | #16 |
+| [0007](0007-collection-run-status-and-failures.md) | 수집 실행 상태와 실패 기록 | 채택 | #16 |
+| [0008](0008-benefit-normalization.md) | 혜택 정규화 값의 저장과 원문 추적 | 채택 | #17 |
+| [0009](0009-api-error-response.md) | API 오류 응답 형식 | 채택 | #29 |
+| [0010](0010-api-time-format.md) | API 응답 시각 형식 | 채택 | #29 |
+| [0011](0011-online-apply-url-link.md) | 온라인 신청 URL의 링크 정리 | 채택 | #30 |
+| [0012](0012-api-spec-docs.md) | API 명세 문서화 방식 | 채택 | #33 |
+| [0013](0013-password-storage.md) | 비밀번호 저장과 길이 규칙 | 채택 | #38 |
+| [0014](0014-access-token.md) | 액세스 토큰 형식과 검증 | 채택 | #38 |
+| [0015](0015-api-auth-boundary.md) | API 인증 경계 | 대체됨 → [0018](0018-api-auth-boundary.md) | #38 |
+| [0016](0016-controller-response.md) | 컨트롤러 응답 방식 | 채택 | #40 |
+| [0017](0017-refresh-token.md) | 리프레시 토큰 저장·교체와 CSRF 방어 | 채택 | #45 |
+| [0018](0018-api-auth-boundary.md) | API 인증 경계 | 채택 | #45 |
+| [0019](0019-email-verification-password-reset.md) | 가입 전 이메일 인증과 비밀번호 재설정 | 채택 | #47 |
+| [0020](0020-account-mail-sender.md) | 계정 메일 발송 구현 경계 | 대체됨 → [0032](0032-account-mail-resend.md) | #47 |
+| [0021](0021-residence-region-code.md) | 거주 지역 코드 | 채택 | #49 |
+| [0022](0022-profile-attributes.md) | 프로필 속성 값과 미입력 표현 | 채택 | #49 |
+| [0023](0023-bookmark-benefit-reference.md) | 북마크의 혜택 참조 | 채택 | #56 |
+| [0024](0024-frontend-package-and-ci.md) | 프론트엔드 패키지 관리와 PR 검사 구조 | 채택 | #64 |
+| [0025](0025-agency-region.md) | 운영 기관 지역 판정 | 채택 | #68 |
+| [0026](0026-frontend-styling-and-preferences.md) | 웹 화면 스타일과 화면 설정 저장 | 대체됨 → [0028](0028-frontend-styling-and-preferences-spa.md) | #72 |
+| [0027](0027-frontend-static-spa.md) | 웹 프론트 정적 SPA 구조와 API 호출 | 대체됨 → [0029](0029-frontend-static-spa-credentials.md) | #76 |
+| [0028](0028-frontend-styling-and-preferences-spa.md) | 웹 화면 스타일과 화면 설정 저장(정적 SPA) | 채택 | #76 |
+| [0029](0029-frontend-static-spa-credentials.md) | 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용) | 채택 | #76, #73 |
+| [0030](0030-frontend-auth-session.md) | 웹 프론트 로그인 상태와 인증 요청 | 채택 | #73 |
+| [0031](0031-guest-profile-storage.md) | 비회원 프로필 값의 브라우저 보관 | 채택 | #74 |
+| [0032](0032-account-mail-resend.md) | 계정 메일 Resend 비동기 발송 | 채택 | #78 |
+| [0033](0033-test-shared-mysql.md) | 테스트 MySQL 컨테이너 공유와 테이블 정리 | 채택 | #85 |
+| [0034](0034-proxmox-deploy.md) | Proxmox 단일 호스트 배포 구조 | 채택 | #87 |
+| [0035](0035-login-attempt-limit.md) | 로그인·탈퇴의 비밀번호 확인 시도 제한 | 채택 | #52 |

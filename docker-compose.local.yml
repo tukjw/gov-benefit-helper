@@ -1,0 +1,35 @@
+# 로컬 개발용 MySQL. backend는 호스트에서 local 프로필로 실행한다.
+#   docker compose -f docker-compose.local.yml up -d
+#   cd backend && SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+# 계정 기본값은 backend/src/main/resources/application-local.yaml과 같다. 바꾸려면 루트 .env에 적는다.
+# 데이터는 mysql-data 볼륨에 남는다. 빈 DB로 되돌리려면 docker compose -f docker-compose.local.yml down -v
+
+# 프로젝트 이름을 고정해 워크트리에서 실행해도 같은 컨테이너와 볼륨을 쓴다.
+name: gov-benefit-helper
+
+services:
+  mysql:
+    image: mysql:8.4
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-gov_benefit}
+      MYSQL_USER: ${DB_USER:-gov_benefit_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-gov_benefit_user}
+      TZ: Asia/Seoul
+    ports:
+      # 기본은 이 컴퓨터에서만 접근 가능.
+      - "${MYSQL_BIND:-127.0.0.1}:${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mysql-data:

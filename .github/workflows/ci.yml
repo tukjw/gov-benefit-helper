@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # 필수 체크는 job 이름 `test`와 `frontend` 두 개다. 바꾸면 .github/rulesets/*.json도 함께 바꾼다.
+  test:
+    name: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Test
+        run: ./gradlew test
+
+      # Docker를 못 써서 건너뛴 테스트가 통과로 보이지 않게 한다.
+      - name: Fail on skipped tests
+        run: |
+          shopt -s nullglob
+          results=(build/test-results/test/*.xml)
+          if [ ${#results[@]} -eq 0 ]; then
+            echo "::error::테스트 결과 파일이 없습니다."
+            exit 1
+          fi
+          if skipped=$(grep -l '<skipped' "${results[@]}"); then
+            echo "::error::건너뛴 테스트가 있습니다."
+            echo "$skipped"
+            exit 1
+          fi
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: backend/build/reports/tests/test
+          retention-days: 7
+
+  # 머지 커밋의 첫 부모가 base 끝이므로 HEAD^1과 비교하면 이 PR이 더하는 변경이 나온다.
+  changes:
+    name: changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      frontend: ${{ steps.diff.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed paths
+        id: diff
+        run: |
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          if grep -qE '^frontend/|^\.github/workflows/ci\.yml$' <<< "$changed"; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "frontend=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  frontend-check:
+    name: frontend-check
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: http://localhost:8080
+
+  # `if:`로 건너뛴 job은 필수 체크에서 통과로 보이므로, 감지 실패로 검사가 빠진 경우를 여기서 실패로 만든다.
+  frontend:
+    name: frontend
+    needs: [changes, frontend-check]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check frontend results
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          FRONTEND_CHANGED: ${{ needs.changes.outputs.frontend }}
+          CHECK_RESULT: ${{ needs.frontend-check.result }}
+        run: |
+          if [ "$CHANGES_RESULT" = success ] && {
+            { [ "$FRONTEND_CHANGED" = true ] && [ "$CHECK_RESULT" = success ]; } ||
+            { [ "$FRONTEND_CHANGED" = false ] && [ "$CHECK_RESULT" = skipped ]; }
+          }; then
+            exit 0
+          fi
+          echo "::error::프론트 검사 결과가 맞지 않습니다. changes=$CHANGES_RESULT, frontend=$FRONTEND_CHANGED, frontend-check=$CHECK_RESULT"
+          exit 1

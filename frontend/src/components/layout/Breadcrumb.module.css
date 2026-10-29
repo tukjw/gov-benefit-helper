@@ -1,0 +1,21 @@
+.breadcrumb {
+  padding: 1.25rem 0;
+  color: var(--color-text-weak);
+  font-size: var(--text-meta);
+}
+
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.breadcrumb li + li::before {
+  content: "›";
+  margin-right: 0.25rem;
+}
+
+.breadcrumb a:hover {
+  color: var(--color-primary-strong);
+  text-decoration: underline;
+}

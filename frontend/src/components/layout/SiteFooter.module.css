@@ -1,0 +1,49 @@
+.footer {
+  margin-top: 4rem;
+  padding: 2rem 0 2.5rem;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-gray-bg);
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+}
+
+.name {
+  color: var(--color-text);
+  font-size: var(--text-sub);
+  font-weight: 700;
+}
+
+.disclaimer {
+  margin-top: 0.25rem;
+}
+
+/* 항목마다 이름과 값을 한 줄로 이어 쓰고, 좁으면 값이 이름 뒤에서 자연스럽게 줄바꿈된다. */
+.info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.info dt {
+  display: inline;
+  margin-right: 0.5rem;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.info dd {
+  display: inline;
+}
+
+.link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.link:hover {
+  color: var(--color-text);
+}

@@ -1,0 +1,15 @@
+.title {
+  margin-bottom: 1.5rem;
+  font-size: var(--text-h1);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.page {
+  padding-bottom: 4rem;
+}
+
+.loading {
+  padding: 3rem 0;
+  color: var(--color-text-weak);
+}

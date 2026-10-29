@@ -1,0 +1,157 @@
+package kr.govbenefit.benefit.domain;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+/**
+ * 목록(serviceList) 기준 혜택. 출처 서비스ID로 식별한다.
+ */
+@Entity
+@Table(name = "benefit")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Benefit {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String serviceId;
+
+    private String name;
+
+    private String purposeSummary;
+
+    private String serviceField;
+
+    private String userType;
+
+    private String supportType;
+
+    @Column(columnDefinition = "text")
+    private String target;
+
+    @Column(columnDefinition = "text")
+    private String selectionCriteria;
+
+    @Column(columnDefinition = "text")
+    private String supportContent;
+
+    private String applyPeriodText;
+
+    private String applyMethodType;
+
+    @Column(columnDefinition = "text")
+    private String phoneInquiry;
+
+    private String receptionAgency;
+
+    private String agencyName;
+
+    private String agencyType;
+
+    private String agencyCode;
+
+    private String departmentName;
+
+    private String detailUrl;
+
+    /** 출처 등록 시각. 원문에 없으면 null이다. */
+    @Column(columnDefinition = "datetime")
+    private LocalDateTime sourceRegisteredAt;
+
+    /** 출처 수정 시각. 원문에 없으면 null이다. 수집 시각과 다르다. */
+    @Column(columnDefinition = "datetime")
+    private LocalDateTime sourceModifiedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(20)")
+    private ApplyPeriodType applyPeriodType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(30)")
+    private ApplyPeriodRule applyPeriodRule;
+
+    /** 신청기한 원문을 함께 봐야 하는지. 세부 규칙이 정한다. */
+    private Boolean applyPeriodNeedsReview;
+
+    /** 목록에서 마지막으로 확인한 시각. 목록에서 빠지면 이전 값을 유지한다. */
+    private LocalDateTime lastSeenAt;
+
+    private LocalDateTime createdAt;
+
+    /** 내용 컬럼이 마지막으로 바뀐 시각. */
+    private LocalDateTime updatedAt;
+
+    public static Benefit create(String serviceId, BenefitContent content, BenefitNormalization normalization,
+                                 LocalDateTime now) {
+        Benefit benefit = new Benefit();
+        benefit.serviceId = serviceId;
+        benefit.setContent(content);
+        benefit.setNormalization(normalization);
+        benefit.lastSeenAt = now;
+        benefit.createdAt = now;
+        benefit.updatedAt = now;
+        return benefit;
+    }
+
+    /**
+     * 목록에서 다시 확인했다. 원문 값이나 해석한 값이 바뀐 경우에만 내용과 수정 시각을 바꾼다.
+     */
+    public void confirm(BenefitContent content, BenefitNormalization normalization, LocalDateTime now) {
+        if (!content.equals(content()) || !normalization.equals(normalization())) {
+            setContent(content);
+            setNormalization(normalization);
+            this.updatedAt = now;
+        }
+        this.lastSeenAt = now;
+    }
+
+    public BenefitNormalization normalization() {
+        return new BenefitNormalization(sourceRegisteredAt, sourceModifiedAt, applyPeriodRule);
+    }
+
+    public BenefitContent content() {
+        return new BenefitContent(name, purposeSummary, serviceField, userType, supportType, target,
+                selectionCriteria, supportContent, applyPeriodText, applyMethodType, phoneInquiry, receptionAgency,
+                agencyName, agencyType, agencyCode, departmentName, detailUrl);
+    }
+
+    private void setContent(BenefitContent content) {
+        this.name = content.name();
+        this.purposeSummary = content.purposeSummary();
+        this.serviceField = content.serviceField();
+        this.userType = content.userType();
+        this.supportType = content.supportType();
+        this.target = content.target();
+        this.selectionCriteria = content.selectionCriteria();
+        this.supportContent = content.supportContent();
+        this.applyPeriodText = content.applyPeriodText();
+        this.applyMethodType = content.applyMethodType();
+        this.phoneInquiry = content.phoneInquiry();
+        this.receptionAgency = content.receptionAgency();
+        this.agencyName = content.agencyName();
+        this.agencyType = content.agencyType();
+        this.agencyCode = content.agencyCode();
+        this.departmentName = content.departmentName();
+        this.detailUrl = content.detailUrl();
+    }
+
+    private void setNormalization(BenefitNormalization normalization) {
+        this.sourceRegisteredAt = normalization.sourceRegisteredAt();
+        this.sourceModifiedAt = normalization.sourceModifiedAt();
+        this.applyPeriodRule = normalization.applyPeriodRule();
+        this.applyPeriodType = normalization.applyPeriodRule().type();
+        this.applyPeriodNeedsReview = normalization.applyPeriodRule().needsReview();
+    }
+}

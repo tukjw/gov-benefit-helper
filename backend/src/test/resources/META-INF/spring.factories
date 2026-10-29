@@ -1,0 +1,3 @@
+# 모든 테스트가 함께 쓰는 DB를 테스트 메서드마다 비운다(결정 0033). 메모리에 있는 로그인 시도 제한 기록도 함께 비운다(결정 0035).
+org.springframework.test.context.TestExecutionListener=kr.govbenefit.DatabaseCleanupListener,\
+kr.govbenefit.LoginAttemptResetListener
