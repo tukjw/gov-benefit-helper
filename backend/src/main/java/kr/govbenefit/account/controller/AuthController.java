@@ -87,7 +87,7 @@ public class AuthController {
 
             - 같은 이메일·IP에서 15분 동안 5번, 같은 IP에서 15분 동안 30번 틀리면 429다. 맞는 비밀번호도 `Retry-After` 헤더의 \
             초가 지나야 받는다. 가입 여부와 관계없이 같은 기준이고 계정은 잠그지 않는다.
-            - 탈퇴할 때 비밀번호가 틀린 것도 같은 횟수로 센다.""")
+            - 탈퇴할 때 비밀번호가 틀린 것도 같은 횟수로 센다. 비밀번호를 재설정하면 그 이메일의 제한이 풀린다.""")
     @ApiResponse(responseCode = "200", description = "액세스 토큰", headers = @Header(name = HttpHeaders.SET_COOKIE,
             description = REFRESH_COOKIE_DESCRIPTION, schema = @Schema(type = "string")))
     @ApiResponse(responseCode = "400", description = "이메일이나 비밀번호가 비어 있다. `code`는 `INVALID_INPUT`이다.",

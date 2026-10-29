@@ -35,6 +35,7 @@ public class PasswordResetService {
     private final UserAccountRepository userAccountRepository;
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
+    private final LoginAttemptLimiter loginAttemptLimiter;
     private final PasswordResetProperties properties;
     private final AccountMailProperties mailProperties;
     private final ApplicationEventPublisher events;
@@ -71,7 +72,7 @@ public class PasswordResetService {
 
     /**
      * 토큰으로 비밀번호를 바꾸고 그 계정의 모든 로그인에서 받은 리프레시 토큰을 폐기한다. 이미 발급된 액세스 토큰은 만료까지
-     * 유효하다(DEC-AUTH의 한계).
+     * 유효하다(DEC-AUTH의 한계). 메일 소유를 확인했으므로 그 이메일의 로그인 시도 제한을 푼다(결정 0035).
      *
      * @param newPassword 가입과 같은 규칙을 통과한 비밀번호
      * @throws BusinessException {@code INVALID_RESET_TOKEN}. 형식이 틀렸거나, 없거나, 썼거나, 만료됐거나, 더 나중에
@@ -96,6 +97,8 @@ public class PasswordResetService {
                 .orElseThrow(PasswordResetService::invalidToken);
         account.changePassword(passwordEncoder.encode(newPassword));
         refreshTokenService.revokeAllOf(account.getId());
+        // 트랜잭션이 뒤에서 롤백되면 기록만 지워진다. 유효한 재설정 링크가 있어야 하고 얻는 것은 시도 몇 번이라 그대로 둔다.
+        loginAttemptLimiter.clearEmail(account.getEmail());
     }
 
     private static BusinessException invalidToken() {

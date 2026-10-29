@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
@@ -108,6 +109,32 @@ class LoginRateLimitApiTest {
     }
 
     @Test
+    void 비밀번호를_재설정하면_같은_IP에서_곧바로_로그인되고_IP_실패는_남는다() throws Exception {
+        for (int i = 0; i < PER_IP - PER_EMAIL_AND_IP; i++) {
+            login("user" + i + "@example.com", WRONG, IP).andExpect(status().isUnauthorized());
+        }
+        failLogins(ALICE, IP, PER_EMAIL_AND_IP);
+        assertTooManyRequests(login(ALICE, PASSWORD, IP));
+        requestPasswordReset(ALICE, OTHER_IP).andExpect(status().isNoContent());
+        resetPassword(mailSender.lastResetToken(ALICE), "new-alice-password").andExpect(status().isNoContent());
+
+        // (이메일+IP)는 풀렸지만 IP 한도의 실패 30번은 남아 있다.
+        assertTooManyRequests(login(ALICE, "new-alice-password", IP));
+        login(ALICE, "new-alice-password", OTHER_IP).andExpect(status().isOk());
+    }
+
+    @Test
+    void 비밀번호를_재설정하면_그_이메일의_제한이_풀린다() throws Exception {
+        failLogins(ALICE, IP, PER_EMAIL_AND_IP);
+        assertTooManyRequests(login(ALICE, PASSWORD, IP));
+
+        requestPasswordReset(ALICE, IP).andExpect(status().isNoContent());
+        resetPassword(mailSender.lastResetToken(ALICE), "new-alice-password").andExpect(status().isNoContent());
+
+        login(ALICE, "new-alice-password", IP).andExpect(status().isOk());
+    }
+
+    @Test
     void 가입된_이메일과_가입되지_않은_이메일의_제한_응답이_같다() throws Exception {
         failLogins(ALICE, IP, PER_EMAIL_AND_IP);
         failLogins("nobody@example.com", IP, PER_EMAIL_AND_IP);
@@ -195,6 +222,15 @@ class LoginRateLimitApiTest {
                 })
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonMapper.writeValueAsString(Map.of("email", email))));
+    }
+
+    private ResultActions resetPassword(String token, String newPassword) throws Exception {
+        Map<String, String> body = new HashMap<>();
+        body.put("token", token);
+        body.put("newPassword", newPassword);
+        return mockMvc.perform(post("/api/auth/password-reset/confirm")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsString(body)));
     }
 
     private String accessToken(ResultActions login) throws Exception {
