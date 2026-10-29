@@ -33,18 +33,21 @@ public class AccountService {
     private final AccessTokenIssuer accessTokenIssuer;
     private final RefreshTokenService refreshTokenService;
     private final EmailVerificationService emailVerificationService;
+    private final LoginAttemptLimiter loginAttemptLimiter;
     private final Clock clock;
     /** 가입되지 않은 이메일로 로그인할 때도 해시를 비교해 응답 시간으로 가입 여부를 알 수 없게 한다(결정 0013). */
     private final String dummyPasswordHash;
 
     public AccountService(UserAccountRepository userAccountRepository, PasswordEncoder passwordEncoder,
                           AccessTokenIssuer accessTokenIssuer, RefreshTokenService refreshTokenService,
-                          EmailVerificationService emailVerificationService, Clock clock) {
+                          EmailVerificationService emailVerificationService, LoginAttemptLimiter loginAttemptLimiter,
+                          Clock clock) {
         this.userAccountRepository = userAccountRepository;
         this.passwordEncoder = passwordEncoder;
         this.accessTokenIssuer = accessTokenIssuer;
         this.refreshTokenService = refreshTokenService;
         this.emailVerificationService = emailVerificationService;
+        this.loginAttemptLimiter = loginAttemptLimiter;
         this.clock = clock;
         this.dummyPasswordHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
@@ -79,10 +82,16 @@ public class AccountService {
      * 비밀번호가 틀린 경우와 가입되지 않은 이메일은 같은 실패다. 72바이트를 넘는 비밀번호는 비교하지 않고 실패다.
      * BCrypt는 앞 72바이트만 비교하므로, 비교하면 72바이트 비밀번호 뒤에 아무 글자를 붙여도 맞다고 한다(결정 0013).
      * 성공하면 새 로그인의 리프레시 토큰을 함께 발급한다.
+     *
+     * <p>계정을 조회하기 전에 시도 제한을 확인하므로 제한 응답으로 가입 여부를 알 수 없다(결정 0035).
+     *
+     * @param remoteAddr 요청자 주소. 시도 제한에 쓴다.
      */
     @Transactional
-    public AuthTokens login(LoginRequest request) {
-        Optional<UserAccount> account = userAccountRepository.findByEmail(Emails.normalize(request.email()));
+    public AuthTokens login(LoginRequest request, String remoteAddr) {
+        String email = Emails.normalize(request.email());
+        LoginAttemptLimiter.Attempt attempt = loginAttemptLimiter.reserve(email, remoteAddr);
+        Optional<UserAccount> account = userAccountRepository.findByEmail(email);
         String password = request.password();
         if (!PasswordRule.isWithinMaxBytes(password)) {
             throw invalidCredentials();
@@ -94,6 +103,7 @@ public class AccountService {
         if (!passwordEncoder.matches(password, account.get().getPasswordHash())) {
             throw invalidCredentials();
         }
+        loginAttemptLimiter.succeeded(attempt);
         Long userId = account.get().getId();
         return new AuthTokens(accessTokenIssuer.issue(userId), refreshTokenService.issueNewFamily(userId));
     }
@@ -128,17 +138,20 @@ public class AccountService {
     /**
      * 비밀번호를 다시 확인하고 계정을 지운다. 프로필·리프레시 토큰·재설정 토큰은 FK {@code ON DELETE CASCADE}로 함께
      * 지워진다. 계정 행을 잠가 같은 사용자의 프로필 저장·탈퇴와 순서를 정한다. 이미 없는 계정이면(탈퇴 뒤 남은 토큰)
-     * 인증되지 않은 요청이다. 비밀번호 비교는 로그인과 같다(결정 0013).
+     * 인증되지 않은 요청이다. 비밀번호 비교는 로그인과 같다(결정 0013). 실패는 그 계정의 이메일과 요청자 주소로 로그인과 같은
+     * 시도 제한에 센다(결정 0035).
      *
      * <p>한계: 탈퇴가 커밋되는 순간 같은 사용자의 로그인·재발급이 리프레시 토큰을 저장하면 FK 위반으로 실패한다.
      */
     @Transactional
-    public void withdraw(Long userId, String password) {
+    public void withdraw(Long userId, String password, String remoteAddr) {
         UserAccount account = userAccountRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
+        LoginAttemptLimiter.Attempt attempt = loginAttemptLimiter.reserve(account.getEmail(), remoteAddr);
         if (!PasswordRule.isWithinMaxBytes(password) || !passwordEncoder.matches(password, account.getPasswordHash())) {
             throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
         }
+        loginAttemptLimiter.succeeded(attempt);
         userAccountRepository.delete(account);
         log.info("계정을 탈퇴했습니다. userId={}", userId);
     }

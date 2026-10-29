@@ -64,7 +64,7 @@ class WithdrawalConcurrencyTest {
                 results.add(executor.submit(() -> {
                     ready.countDown();
                     start.await();
-                    accountService.withdraw(userId, "correct-horse");
+                    accountService.withdraw(userId, "correct-horse", "127.0.0.1");
                     return null;
                 }));
             }

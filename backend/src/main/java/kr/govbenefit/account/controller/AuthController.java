@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import kr.govbenefit.account.dto.AccountResponse;
 import kr.govbenefit.account.dto.LoginRequest;
@@ -82,7 +83,11 @@ public class AuthController {
 
     @Operation(summary = "로그인", description = """
             맞는 이메일·비밀번호면 15분 동안 쓸 수 있는 액세스 토큰을 본문으로, 14일 동안 쓸 수 있는 리프레시 토큰을 \
-            `refresh_token` 쿠키로 준다. 비밀번호가 틀린 경우와 가입되지 않은 이메일은 같은 응답이다.""")
+            `refresh_token` 쿠키로 준다. 비밀번호가 틀린 경우와 가입되지 않은 이메일은 같은 응답이다.
+
+            - 같은 이메일·IP에서 15분 동안 5번, 같은 IP에서 15분 동안 30번 틀리면 429다. 맞는 비밀번호도 `Retry-After` 헤더의 \
+            초가 지나야 받는다. 가입 여부와 관계없이 같은 기준이고 계정은 잠그지 않는다.
+            - 탈퇴할 때 비밀번호가 틀린 것도 같은 횟수로 센다. 비밀번호를 재설정하면 그 이메일의 제한이 풀린다.""")
     @ApiResponse(responseCode = "200", description = "액세스 토큰", headers = @Header(name = HttpHeaders.SET_COOKIE,
             description = REFRESH_COOKIE_DESCRIPTION, schema = @Schema(type = "string")))
     @ApiResponse(responseCode = "400", description = "이메일이나 비밀번호가 비어 있다. `code`는 `INVALID_INPUT`이다.",
@@ -93,9 +98,17 @@ public class AuthController {
                     schema = @Schema(implementation = ApiErrorResponse.class),
                     examples = @ExampleObject(value = """
                             {"code": "INVALID_CREDENTIALS", "message": "이메일 또는 비밀번호가 올바르지 않습니다.", "errors": []}""")))
+    @ApiResponse(responseCode = "429", description = "틀린 시도가 많아 제한에 걸렸다. `code`는 `TOO_MANY_REQUESTS`다.",
+            headers = @Header(name = HttpHeaders.RETRY_AFTER, description = "다시 시도할 수 있을 때까지의 초",
+                    schema = @Schema(type = "integer", example = "840")),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ApiErrorResponse.class),
+                    examples = @ExampleObject(value = """
+                            {"code": "TOO_MANY_REQUESTS", "message": "요청이 너무 많습니다. 잠시 뒤 다시 시도해 주세요.", "errors": []}""")))
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthTokens tokens = accountService.login(request);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request,
+                                               HttpServletRequest httpRequest) {
+        AuthTokens tokens = accountService.login(request, httpRequest.getRemoteAddr());
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookies.issue(tokens.refreshToken()))
                 .body(LoginResponse.from(tokens.accessToken()));
