@@ -94,6 +94,12 @@ auth:
   password-reset:
     token-ttl: 30m
     url: https://govbenefit.kr/reset-password
+  # 로그인·탈퇴의 비밀번호 확인 시도 제한(결정 0035). 최근 window 안의 실패를 같은 이메일·IP에서
+  # max-failures-per-email-and-ip번, 같은 IP에서 max-failures-per-ip번까지 받는다.
+  login-attempt:
+    window: 15m
+    max-failures-per-email-and-ip: 5
+    max-failures-per-ip: 30
   # 인증·재설정 메일 발송 제한(결정 0019). 같은 이메일에 cooldown 간격, 최근 window 안에 max-per-window번까지 보낸다.
   mail:
     cooldown: 60s
