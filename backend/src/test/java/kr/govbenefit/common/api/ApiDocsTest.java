@@ -345,12 +345,13 @@ class ApiDocsTest {
         assertThat(texts(schema("WithdrawalRequest").path("required"))).containsExactly("password");
 
         JsonNode responses = operation.path("responses");
-        assertThat(names(responses)).containsExactlyInAnyOrder("204", "400", "401", "500");
+        assertThat(names(responses)).containsExactlyInAnyOrder("204", "400", "401", "429", "500");
         assertThat(responses.path("204").path("content").isMissingNode()).isTrue();
         assertThat(responses.path("204").path("headers").has("Set-Cookie")).isTrue();
-        for (String code : List.of("400", "401", "500")) {
+        for (String code : List.of("400", "401", "429", "500")) {
             assertThat(schemaRef(responses, code)).as(code).isEqualTo(ERROR_REF);
         }
+        assertThat(responses.path("429").path("headers").has("Retry-After")).isTrue();
     }
 
     @Test

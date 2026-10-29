@@ -21,6 +21,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -50,6 +51,8 @@ class LoginRateLimitApiTest {
     private MockMvc mockMvc;
     @Autowired
     private JsonMapper jsonMapper;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
     @Autowired
     private MutableClock clock;
     @Autowired
@@ -127,6 +130,29 @@ class LoginRateLimitApiTest {
         login(ALICE, PASSWORD, IP).andExpect(status().isOk());
     }
 
+    @Test
+    void 탈퇴의_비밀번호_실패가_5번이면_429이고_계정은_남는다() throws Exception {
+        String accessToken = accessToken(login(ALICE, PASSWORD, OTHER_IP));
+        for (int i = 0; i < PER_EMAIL_AND_IP; i++) {
+            withdraw(accessToken, WRONG, IP).andExpect(status().isBadRequest());
+        }
+
+        assertTooManyRequests(withdraw(accessToken, PASSWORD, IP));
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM user_account", Integer.class)).isOne();
+        withdraw(accessToken, PASSWORD, OTHER_IP).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void 탈퇴와_로그인의_실패는_같은_한도를_함께_쓴다() throws Exception {
+        String accessToken = accessToken(login(ALICE, PASSWORD, OTHER_IP));
+        failLogins(ALICE, IP, 3);
+        withdraw(accessToken, WRONG, IP).andExpect(status().isBadRequest());
+        withdraw(accessToken, WRONG, IP).andExpect(status().isBadRequest());
+
+        assertTooManyRequests(login(ALICE, PASSWORD, IP));
+        assertTooManyRequests(withdraw(accessToken, PASSWORD, IP));
+    }
+
     private void failLogins(String email, String ip, int times) throws Exception {
         for (int i = 0; i < times; i++) {
             login(email, WRONG, ip).andExpect(status().isUnauthorized());
@@ -150,6 +176,17 @@ class LoginRateLimitApiTest {
                 .content(jsonMapper.writeValueAsString(Map.of("email", email, "password", password))));
     }
 
+    private ResultActions withdraw(String accessToken, String password, String ip) throws Exception {
+        return mockMvc.perform(post("/api/me/withdrawal")
+                .with(request -> {
+                    request.setRemoteAddr(ip);
+                    return request;
+                })
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsString(Map.of("password", password))));
+    }
+
     private ResultActions requestPasswordReset(String email, String ip) throws Exception {
         return mockMvc.perform(post("/api/auth/password-reset")
                 .with(request -> {
@@ -158,6 +195,10 @@ class LoginRateLimitApiTest {
                 })
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonMapper.writeValueAsString(Map.of("email", email))));
+    }
+
+    private String accessToken(ResultActions login) throws Exception {
+        return json(login.andExpect(status().isOk()).andReturn().getResponse()).get("accessToken").asString();
     }
 
     private JsonNode json(MockHttpServletResponse response) throws Exception {
