@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #87 Proxmox 호스트에 운영 환경을 구성하고 릴리스 태그로 배포·되돌리기
 
