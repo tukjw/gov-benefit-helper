@@ -49,7 +49,7 @@ class RefreshTokenConcurrencyTest {
 
     @Test
     void 같은_토큰으로_동시에_재발급해도_하나만_성공하고_이긴_토큰은_폐기되지_않는다() throws Exception {
-        String refreshToken = accountService.login(new LoginRequest("race@example.com", "correct-horse")).refreshToken();
+        String refreshToken = accountService.login(new LoginRequest("race@example.com", "correct-horse"), "127.0.0.1").refreshToken();
 
         CountDownLatch ready = new CountDownLatch(THREADS);
         CountDownLatch start = new CountDownLatch(1);
