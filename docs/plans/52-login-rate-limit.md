@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #52 로그인과 탈퇴의 비밀번호 확인에 시도 속도 제한 적용
 
