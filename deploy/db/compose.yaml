@@ -29,11 +29,39 @@ services:
       retries: 10
       start_period: 30s
     restart: unless-stopped
-    logging:
+    logging: &logging
       driver: json-file
       options:
         max-size: 10m
         max-file: "3"
+
+  # VM의 CPU·메모리·디스크 지표(결정 0036). 내부 브리지(vmbr1) 주소에만 리슨한다.
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    command:
+      - --path.rootfs=/host
+      - --web.listen-address=${DB_BIND:?}:9100
+    network_mode: host
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    restart: unless-stopped
+    logging: *logging
+
+  # MySQL 연결·쿼리 지표(결정 0036). 지표 전용 계정 exporter는 docs/ops/metrics.md의 절차로 만든다.
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.21.0
+    command:
+      - --mysqld.address=mysql:3306
+      - --mysqld.username=exporter
+    environment:
+      MYSQLD_EXPORTER_PASSWORD: ${EXPORTER_DB_PASSWORD:?}
+    ports:
+      - "${DB_BIND:?}:9104:9104"
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    logging: *logging
 
 volumes:
   mysql-data:
