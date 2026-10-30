@@ -1,0 +1,11 @@
+# 대시보드는 이 uid로 데이터 소스를 찾는다. 바꾸면 grafana/dashboards/*.json도 함께 고친다.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

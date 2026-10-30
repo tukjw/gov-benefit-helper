@@ -28,7 +28,7 @@ spring:
       # API 전용 서버라 정적 파일이 없다. 기본 매핑을 두면 springdoc을 꺼도 Swagger UI webjar가 /webjars/**로 열린다(결정 0012).
       add-mappings: false
 
-# 운영에서는 Cloudflare Tunnel(cloudflared)만 앱에 요청을 보낸다(결정 0034). Cloudflare가 넣는 CF-Connecting-IP를
+# 운영에서는 Cloudflare Tunnel(cloudflared)만 앱에 요청을 보낸다(결정 0036). Cloudflare가 넣는 CF-Connecting-IP를
 # 요청자 주소(getRemoteAddr)로 쓴다. 신뢰하는 프록시는 기본값(사설 대역)이며 cloudflared 컨테이너 주소가 여기에 든다.
 server:
   forward-headers-strategy: native
@@ -36,12 +36,24 @@ server:
     remoteip:
       remote-ip-header: CF-Connecting-IP
 
-# 배포 스크립트가 기동 완료를 확인하는 상태 확인만 연다(결정 0034). 세부 정보는 보이지 않는다.
+# actuator는 관리 포트에서만 연다(결정 0036). Tunnel은 앱 포트(8080)만 전달하므로 외부에서 닿지 않는다.
+# 상태 확인은 배포 스크립트가, 지표는 지표 VM의 Prometheus가 읽는다. 상태 확인의 세부 정보는 보이지 않는다.
 management:
+  server:
+    port: 8081
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
+  metrics:
+    distribution:
+      # 경로별 지연 백분위수를 Prometheus에서 계산한다. 버킷 범위를 좁혀 시계열 수를 줄인다.
+      percentiles-histogram:
+        "[http.server.requests]": true
+      minimum-expected-value:
+        "[http.server.requests]": 5ms
+      maximum-expected-value:
+        "[http.server.requests]": 10s
 
 # API 명세(/v3/api-docs)와 문서 화면(/swagger-ui.html)은 local 프로필에서만 연다(결정 0012).
 springdoc:
