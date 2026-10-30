@@ -34,9 +34,12 @@ echo "배포: ${previous:-없음} → $tag ($host)"
 ssh "$host" "cd $remote_dir && APP_TAG=$tag docker compose pull app && echo 'APP_TAG=$tag' > .env && docker compose up -d"
 
 # 4. 상태 확인. DB 연결과 Flyway 마이그레이션이 끝나야 UP이다.
+# 상태 확인은 관리 포트(8081)에 있다(결정 0036). 관리 포트가 없는 이미지(v0.1.0)는 앱 포트(8080)에 있어
+# 그 이미지로 되돌릴 때를 위해 8080도 본다. 그런 이미지로 되돌릴 일이 없어지면 8080 확인을 지운다.
+health_cmd="curl -fsS http://127.0.0.1:8081/actuator/health || curl -fsS http://127.0.0.1:8080/actuator/health"
 echo "상태 확인을 기다립니다(최대 ${health_timeout}초)."
 deadline=$((SECONDS + health_timeout))
-until ssh "$host" "curl -fsS http://127.0.0.1:8080/actuator/health" 2>/dev/null | grep -q '"status":"UP"'; do
+until ssh "$host" "$health_cmd" 2>/dev/null | grep -q '"status":"UP"'; do
   if (( SECONDS >= deadline )); then
     echo "실패: ${health_timeout}초 안에 상태 확인이 UP이 되지 않았습니다. 앱 로그 마지막 50줄:" >&2
     ssh "$host" "cd $remote_dir && docker compose logs --tail 50 app" >&2 || true
