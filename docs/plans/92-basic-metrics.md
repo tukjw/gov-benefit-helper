@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #92 운영 환경의 기본 지표를 수집하고 대시보드로 확인
 
