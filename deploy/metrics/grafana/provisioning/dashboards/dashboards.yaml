@@ -1,0 +1,12 @@
+# 저장소의 grafana/dashboards/*.json을 그대로 불러온다. 화면에서 고친 내용은 저장되지 않으므로
+# JSON으로 내보내 커밋한다(docs/ops/metrics.md).
+apiVersion: 1
+
+providers:
+  - name: gov-benefit
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 60
+    options:
+      path: /var/lib/grafana/dashboards

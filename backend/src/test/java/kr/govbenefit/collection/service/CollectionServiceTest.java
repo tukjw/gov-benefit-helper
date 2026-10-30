@@ -5,6 +5,8 @@ import static kr.govbenefit.collection.domain.SourceEndpoint.SERVICE_LIST;
 import static kr.govbenefit.collection.domain.SourceEndpoint.SUPPORT_CONDITIONS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +103,8 @@ class CollectionServiceTest {
     private JdbcTemplate jdbcTemplate;
     @Autowired
     private JsonMapper jsonMapper;
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
@@ -158,6 +162,25 @@ class CollectionServiceTest {
         assertThat(steps.get(0).getQuarantinedCount()).isEqualTo(1);
         assertThat(steps.get(1).getReceivedCount()).isEqualTo(3);
         assertThat(steps.get(2).getReceivedCount()).isEqualTo(3);
+    }
+
+    @Test
+    void 실행이_끝나면_상태와_소요_시간_처리_건수를_지표로_남긴다() {
+        double succeededBefore = succeededRuns();
+
+        collectionService.collectAll();
+
+        // 실행 수는 같은 컨텍스트를 쓰는 테스트끼리 누적되므로 차이로 본다.
+        assertThat(succeededRuns()).isEqualTo(succeededBefore + 1);
+        assertThat(lastRunStatus(CollectionStatus.SUCCEEDED)).isEqualTo(1);
+        assertThat(lastRunStatus(CollectionStatus.PARTIAL)).isZero();
+        assertThat(lastRunStatus(CollectionStatus.FAILED)).isZero();
+        assertThat(meterRegistry.get("collection.last.run.finished").gauge().value()).isPositive();
+        assertThat(meterRegistry.get("collection.last.run.duration").gauge().value()).isNotNegative();
+        assertThat(lastRunRecords(SERVICE_LIST, "received")).isEqualTo(4);
+        assertThat(lastRunRecords(SERVICE_LIST, "quarantined")).isEqualTo(1);
+        assertThat(lastRunRecords(SERVICE_DETAIL, "created")).isEqualTo(3);
+        assertThat(lastRunRecords(SUPPORT_CONDITIONS, "pages")).isEqualTo(2);
     }
 
     @Test
@@ -332,5 +355,19 @@ class CollectionServiceTest {
     private static List<Map<String, Object>> withoutColumns(List<Map<String, Object>> rows, String column) {
         rows.forEach(row -> row.remove(column));
         return rows;
+    }
+
+    private double succeededRuns() {
+        Counter counter = meterRegistry.find("collection.runs").tag("status", "SUCCEEDED").counter();
+        return counter == null ? 0 : counter.count();
+    }
+
+    private double lastRunStatus(CollectionStatus status) {
+        return meterRegistry.get("collection.last.run.status").tag("status", status.name()).gauge().value();
+    }
+
+    private double lastRunRecords(SourceEndpoint endpoint, String result) {
+        return meterRegistry.get("collection.last.run.records")
+                .tags("endpoint", endpoint.name(), "result", result).gauge().value();
     }
 }

@@ -1,6 +1,6 @@
 # 운영 배포와 되돌리기
 
-API를 app VM에 배포하고 되돌리는 절차, 처음 한 번 하는 Cloudflare·DB 설정, 첫 수집 방법이다. 구조는 [결정 0034](../decisions/0034-proxmox-deploy.md)에 있다. VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
+API를 app VM에 배포하고 되돌리는 절차, 처음 한 번 하는 Cloudflare·DB 설정, 첫 수집 방법이다. 구조는 [결정 0036](../decisions/0036-proxmox-deploy-and-metrics.md)에 있다. VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
 
 Cloudflare 대시보드 화면은 2026-10-28 기준이다. 화면이 바뀌었으면 Cloudflare 문서를 따른다. 토큰, API 키, 비밀번호는 이 문서와 저장소에 적지 않는다.
 
@@ -12,6 +12,7 @@ Cloudflare 대시보드 화면은 2026-10-28 기준이다. 화면이 바뀌었�
 | 외부 노출 | app VM의 `cloudflared` → `api.govbenefit.kr` | Cloudflare 대시보드 |
 | DB | db VM의 `mysql` 컨테이너 | 아래 "DB 구성 바꾸기" |
 | 프론트 | Cloudflare Pages → `govbenefit.kr` | `main`에 머지되면 자동 빌드 |
+| 지표 | 앱 관리 포트(8081)·exporter → 지표 VM의 Prometheus·Grafana | [운영 지표](metrics.md) |
 | 비밀값 | app VM `/opt/gov-benefit/app/app.env`·`cloudflared.env`, db VM `/opt/gov-benefit/db/.env` (권한 600) | 직접 수정 |
 
 ## 처음 한 번
@@ -28,10 +29,12 @@ db VM에서 비밀값을 채우고 띄운다.
 
 ```bash
 cd /opt/gov-benefit/db
-mv .env.example .env && chmod 600 .env && vi .env   # 비밀번호 두 개를 채운다
+mv .env.example .env && chmod 600 .env && vi .env   # 비밀번호 세 개를 채운다. EXPORTER_DB_PASSWORD는 지표 전용 계정용이다
 docker compose up -d
 docker compose ps   # STATUS가 healthy가 될 때까지 기다린다
 ```
+
+지표 전용 계정 `exporter`는 [운영 지표](metrics.md#1-db-vm에-exporter-계정과-실행-구성-반영)의 SQL로 만든다. 계정을 만들기 전에는 `mysqld-exporter`가 MySQL에 접속하지 못할 뿐 다른 컨테이너에는 영향이 없다.
 
 ### 2. 확인용 이미지 만들기
 
@@ -51,6 +54,7 @@ gh run watch   # 끝나면 요약에 이미지 태그(sha-<7자리>)가 나온�
 3. Public hostname을 추가한다.
    - Subdomain `api`, Domain `govbenefit.kr`, Path 비움
    - Service: Type `HTTP`, URL `app:8080`
+   - 관리 포트(8081)는 Tunnel에 더하지 않는다. 상태 확인과 지표가 외부에 열린다(결정 0036).
 
 ### 4. 앱 비밀값 채우기
 
@@ -76,8 +80,10 @@ Resend 키와 발신 주소는 [메일 발신 도메인 인증](mail-domain.md)�
 
 ```bash
 scripts/deploy.sh sha-<7자리>
-curl -s https://api.govbenefit.kr/actuator/health   # {"status":"UP",...}
+curl -s -o /dev/null -w '%{http_code}\n' https://api.govbenefit.kr/api/profile/options   # 200
 ```
+
+배포 스크립트가 app VM 안에서 관리 포트의 상태 확인을 기다린다. 외부에서는 Tunnel을 거쳐 공개 API가 응답하는지로 확인한다. 상태 확인은 관리 포트에만 있어 `https://api.govbenefit.kr/actuator/health`는 404다.
 
 ### 6. 첫 수집
 
@@ -127,6 +133,7 @@ Cloudflare 대시보드 → `govbenefit.kr` → Security → WAF → Rate limiti
 
 - `https://govbenefit.kr`: 검색·상세, 가입 인증 메일 수신·가입·로그인, 새로고침 후 로그인 유지, 로그아웃, 없는 경로(예: `/benefits/x/y`)를 주소창에 직접 입력
 - LAN의 다른 기기에서 db VM의 LAN 주소로 3306에, app VM의 LAN 주소로 8080에 닿지 않는다.
+- `https://api.govbenefit.kr/actuator/prometheus`가 404다.
 - 비회원 조건 비교 목록을 10초 안에 40회 넘게 보내면 429다.
 - 다음 날 04:00 뒤 `docker compose logs app | grep 수집`에 예약 수집 기록이 있다.
 
@@ -165,6 +172,8 @@ scripts/deploy.sh <직전 태그>
 ## 그 밖의 작업
 
 - 앱 로그: app VM에서 `cd /opt/gov-benefit/app && docker compose logs -f app`
+- 앱 상태 확인: app VM에서 `curl -s http://127.0.0.1:8081/actuator/health`
+- 지표와 대시보드: [운영 지표](metrics.md)
 - cloudflared 갱신: 배포 스크립트는 `app`만 받는다. app VM에서 `docker compose pull cloudflared && docker compose up -d cloudflared`
 - 비밀값 변경: 파일을 고친 뒤 `docker compose up -d`(바뀐 컨테이너만 다시 만든다)
-- DB 구성 바꾸기: `deploy/db/compose.yaml`을 고쳐 머지한 뒤 `scp`로 db VM에 복사하고 `docker compose up -d`. 그동안 앱의 DB 요청은 실패한다.
+- DB 구성 바꾸기: `deploy/db/compose.yaml`을 고쳐 머지한 뒤 `scp`로 db VM에 복사하고 `docker compose up -d`. `mysql` 서비스가 바뀌었으면 다시 만들어지는 동안 앱의 DB 요청은 실패한다. exporter만 바뀌었으면 MySQL은 그대로다.
