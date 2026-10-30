@@ -1,4 +1,4 @@
-# app VM 실행 구성(결정 0034). VM의 /opt/gov-benefit/app/에 둔다.
+# app VM 실행 구성(결정 0036). VM의 /opt/gov-benefit/app/에 둔다.
 # scripts/deploy.sh가 배포하는 태그 시점의 이 파일을 복사하고, 같은 디렉터리의 .env에 APP_TAG만 적는다.
 # 비밀값은 VM의 app.env·cloudflared.env에만 둔다(각 .example 참고). 절차는 docs/ops/deploy.md.
 name: gov-benefit-app

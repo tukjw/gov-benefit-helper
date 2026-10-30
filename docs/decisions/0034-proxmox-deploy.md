@@ -1,6 +1,6 @@
 # 0034. Proxmox 단일 호스트 배포 구조
 
-- 상태: 채택
+- 상태: 대체됨 → [0036](0036-proxmox-deploy-and-metrics.md)
 - 날짜: 2026-10-28
 - 출처: #87, [플랜](../plans/87-proxmox-deploy.md)
 

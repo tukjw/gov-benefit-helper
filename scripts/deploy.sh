@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# app VM의 앱을 지정한 이미지 태그로 바꾼다(결정 0034). 되돌리기도 직전 태그로 같은 명령을 실행한다.
+# app VM의 앱을 지정한 이미지 태그로 바꾼다(결정 0036). 되돌리기도 직전 태그로 같은 명령을 실행한다.
 # 사용법: scripts/deploy.sh <vX.Y.Z | sha-<커밋 7자리>>
 # SSH 대상은 DEPLOY_HOST(기본 govbenefit-app, ~/.ssh/config의 별칭)다. 절차는 docs/ops/deploy.md.
 # 실패해도 자동으로 되돌리지 않는다. 마이그레이션이 이미 적용됐을 수 있어 이전 이미지가 뜨는지 보고 판단한다.

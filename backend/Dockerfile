@@ -1,4 +1,4 @@
-# 운영 이미지(결정 0034). jar는 이미지 워크플로(.github/workflows/image.yml)가 ./gradlew bootJar로 먼저 만든다.
+# 운영 이미지(결정 0036). jar는 이미지 워크플로(.github/workflows/image.yml)가 ./gradlew bootJar로 먼저 만든다.
 FROM eclipse-temurin:21-jre-noble
 
 RUN useradd --system --no-create-home app

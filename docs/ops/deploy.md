@@ -1,6 +1,6 @@
 # 운영 배포와 되돌리기
 
-API를 app VM에 배포하고 되돌리는 절차, 처음 한 번 하는 Cloudflare·DB 설정, 첫 수집 방법이다. 구조는 [결정 0034](../decisions/0034-proxmox-deploy.md)에 있다. VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
+API를 app VM에 배포하고 되돌리는 절차, 처음 한 번 하는 Cloudflare·DB 설정, 첫 수집 방법이다. 구조는 [결정 0036](../decisions/0036-proxmox-deploy-and-metrics.md)에 있다. VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
 
 Cloudflare 대시보드 화면은 2026-10-28 기준이다. 화면이 바뀌었으면 Cloudflare 문서를 따른다. 토큰, API 키, 비밀번호는 이 문서와 저장소에 적지 않는다.
 

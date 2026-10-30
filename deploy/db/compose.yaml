@@ -1,4 +1,4 @@
-# db VM 실행 구성(결정 0034). VM의 /opt/gov-benefit/db/에 두고 같은 디렉터리의 .env(.env.example 참고)로 값을 받는다.
+# db VM 실행 구성(결정 0036). VM의 /opt/gov-benefit/db/에 두고 같은 디렉터리의 .env(.env.example 참고)로 값을 받는다.
 # 배포 스크립트는 db를 건드리지 않는다. 바꿀 때는 docs/ops/deploy.md의 절차를 따른다.
 name: gov-benefit-db
 
