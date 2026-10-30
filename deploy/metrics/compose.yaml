@@ -1,0 +1,44 @@
+# 지표 VM 실행 구성(결정 0036). VM의 /opt/gov-benefit/metrics/에 이 디렉터리를 통째로 복사한다.
+# 비밀값은 VM의 grafana.env에만 둔다(grafana.env.example 참고). 절차는 docs/ops/metrics.md.
+name: gov-benefit-metrics
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      # 하루 한 번인 수집 결과를 한 달 치 본다.
+      - --storage.tsdb.retention.time=30d
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      # Grafana는 Compose 네트워크로 붙는다. 직접 볼 때는 ssh -L 9090:127.0.0.1:9090 govbenefit-metrics
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  grafana:
+    image: grafana/grafana:13.2.5
+    # 관리자 비밀번호, 익명 접근·가입 끄기
+    env_file: grafana.env
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      # LAN에서 연다. 공유기 포트포워딩도 Tunnel도 없어 인터넷에서는 닿지 않는다.
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  prometheus-data:
+  grafana-data:
