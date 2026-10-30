@@ -3,6 +3,8 @@ package kr.govbenefit.collection.service;
 import jakarta.persistence.PersistenceException;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import kr.govbenefit.collection.client.Gov24ApiException;
 import kr.govbenefit.collection.client.Gov24CallBudget;
 import kr.govbenefit.collection.client.Gov24Client;
@@ -40,6 +42,7 @@ public class CollectionService {
     private final CollectionRunRepository runRepository;
     private final CollectionRunStepRepository stepRepository;
     private final CollectionFailureRepository failureRepository;
+    private final CollectionMetrics metrics;
     private final Clock clock;
 
     /**
@@ -53,8 +56,11 @@ public class CollectionService {
         CollectionRun run = runRepository.save(CollectionRun.start(now()));
         Gov24CallBudget budget = new Gov24CallBudget(properties.maxCallsPerRun());
         log.info("수집 시작 runId={}", run.getId());
-        RunOutcome outcome = collectEndpoints(run.getId(), budget);
+        List<CollectionRunStep> steps = new ArrayList<>();
+        RunOutcome outcome = collectEndpoints(run.getId(), budget, steps);
         run.finish(outcome.status(), outcome.errorType(), outcome.errorMessage(), now());
+        // 저장보다 먼저 기록해, DB 장애로 실행 기록을 저장하지 못해도 실패가 지표에 남게 한다.
+        metrics.record(run, steps);
         runRepository.save(run);
         switch (outcome.status()) {
             case SUCCEEDED -> log.info("수집 완료 runId={} calls={}", run.getId(), budget.used());
@@ -66,11 +72,11 @@ public class CollectionService {
         return run.getId();
     }
 
-    private RunOutcome collectEndpoints(Long runId, Gov24CallBudget budget) {
+    private RunOutcome collectEndpoints(Long runId, Gov24CallBudget budget, List<CollectionRunStep> steps) {
         try {
             boolean partial = false;
             for (SourceEndpoint endpoint : SourceEndpoint.values()) {
-                EndpointProgress progress = collectEndpoint(runId, endpoint, budget);
+                EndpointProgress progress = collectEndpoint(runId, endpoint, budget, steps);
                 if (endpoint == SourceEndpoint.SERVICE_LIST && !progress.firstPageDone) {
                     // 목록 1쪽이 없으면 이번 실행으로 갱신된 것이 없다.
                     return RunOutcome.stopped(CollectionStatus.FAILED, progress.stopCause);
@@ -91,8 +97,13 @@ public class CollectionService {
         }
     }
 
-    private EndpointProgress collectEndpoint(Long runId, SourceEndpoint endpoint, Gov24CallBudget budget) {
+    /**
+     * @param steps 시작한 경로의 기록을 담는다. 실행이 끝난 뒤 지표로 남긴다
+     */
+    private EndpointProgress collectEndpoint(Long runId, SourceEndpoint endpoint, Gov24CallBudget budget,
+                                             List<CollectionRunStep> steps) {
         CollectionRunStep step = stepRepository.save(CollectionRunStep.start(runId, endpoint, now()));
+        steps.add(step);
         EndpointProgress progress = new EndpointProgress();
         try {
             int lastPage = 1;

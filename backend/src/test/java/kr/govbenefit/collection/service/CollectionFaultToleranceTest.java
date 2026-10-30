@@ -6,6 +6,7 @@ import static kr.govbenefit.collection.domain.SourceEndpoint.SUPPORT_CONDITIONS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -94,6 +95,8 @@ class CollectionFaultToleranceTest {
     private CollectionFailureRepository failureRepository;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
@@ -235,6 +238,11 @@ class CollectionFaultToleranceTest {
         assertThat(run.getErrorType()).isEqualTo(CollectionErrorType.API_UNAVAILABLE);
         assertThat(run.getErrorMessage()).contains("/serviceList page=1", "HTTP 503");
         assertThat(stepStatuses(runId)).containsExactly(CollectionStatus.FAILED);
+        assertThat(meterRegistry.get("collection.last.run.status").tag("status", "FAILED").gauge().value())
+                .isEqualTo(1);
+        // 시작하지 못한 경로의 처리 건수는 0이다.
+        assertThat(meterRegistry.get("collection.last.run.records")
+                .tags("endpoint", SERVICE_DETAIL.name(), "result", "received").gauge().value()).isZero();
     }
 
     @Test
