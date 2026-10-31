@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# 시나리오 하나를 요청 속도 단계마다 부하 VM에서 실행하고, 결과와 같은 구간의 서버 지표를 저장소로 가져온다(결정 0037).
-# 사용법: scripts/loadtest/run.sh <search | detail | guest-match | login | mixed> <요청 속도>...
-#   예: scripts/loadtest/run.sh search 5 10 20 40 80 160
+# 시나리오를 요청 속도 단계마다 부하 VM에서 실행하고, 결과와 같은 구간의 서버 지표를 저장소로 가져온다(결정 0037).
+# 사용법: scripts/loadtest/run.sh <search | detail | guest-match | login | mixed | all> [요청 속도...]
+#   scripts/loadtest/run.sh all            다섯 시나리오를 차례로 자동 단계로 잰다. 하나가 실패하면 남은 시나리오는 실행하지 않는다.
+#   scripts/loadtest/run.sh search         자동 단계: 시나리오의 시작 속도부터 한계 단계까지 두 배씩 올리고, 마지막 정상 속도로
+#                                          워밍업 길이만큼 회복한 뒤 그 사이를 25% 간격(정수로 반올림)으로 다시 잰다.
+#   scripts/loadtest/run.sh search 5 10 20 정한 단계만 잰다(한계 단계가 나오면 멈춘다). 개선 전후를 같은 단계로 비교할 때 쓴다.
 # 부하 VM의 저장소에서 tmux 안에서 실행한다. 내 PC의 연결이 끊겨도 측정이 계속된다. 내 PC의 저장소 루트에서도 실행할 수 있다.
 # 절차(테스트 계정, API 막기, 끝난 뒤 정리)는 docs/ops/load-test.md.
 # 결과는 docs/research/load-test-baseline/results/<시각>-<시나리오>/에 쓴다.
-# 단계마다 한계 판정 기준(결정 0037)을 계산해, 한계 단계가 나오면 남은 단계를 실행하지 않는다.
+# 단계마다 한계 판정 기준(결정 0037)을 계산해, 한계 단계가 나오면 더 올리지 않는다.
 #
 # 환경 변수(괄호는 기본값)
-#   STEP_MINUTES(3)  WARMUP_MINUTES(3)  WARMUP_RATE(5)  MAX_VUS(1000, 로그인을 보내면 계정 수 1,000 이하)
-#   BASE_P95_MS      p95 기준. 없으면 이번 실행의 첫 단계 p95다. 세밀 단계를 다시 잴 때 거친 단계 첫 단계의 값을 준다.
+#   STEP_MINUTES(3)  WARMUP_MINUTES(3)  MAX_VUS(1000, 로그인을 보내면 계정 수 1,000 이하)
+#   WARMUP_RATE      워밍업 속도. 기본값은 시나리오의 시작 속도(search·detail·login 5, guest-match 1, mixed 2)다.
+#   MAX_RATE(1280)   자동 단계의 상한. 여기까지 한계가 없으면 멈춘다.
+#   BASE_P95_MS      p95 기준. 없으면 이번 실행의 첫 단계 p95다. 정한 단계로 세밀 단계만 다시 잴 때 거친 단계 첫 단계의 값을 준다.
 #   INPUTS           지난 결과의 inputs.json. 주면 같은 입력으로 다시 잰다. 없으면 prepare.py로 새로 만든다.
 #   LOADGEN_HOST(govbenefit-loadgen)  APP_HOST(govbenefit-app)  DB_HOST(govbenefit-db)  METRICS_HOST(govbenefit-metrics)
 #                    LOADGEN_HOST가 local이면 부하 VM 명령을 SSH 없이 이 기기에서 실행한다. 부하 VM(내부 브리지 주소
@@ -18,18 +23,36 @@
 #   PASSWORD_FILE    accounts.sh seed가 만든 비밀번호 파일(accounts.sh와 같은 기본 경로)
 set -euo pipefail
 
-usage() { echo "사용법: $0 <search | detail | guest-match | login | mixed> <요청 속도>..." >&2; exit 2; }
-[[ $# -ge 2 ]] || usage
+usage() { echo "사용법: $0 <search | detail | guest-match | login | mixed | all> [요청 속도...]" >&2; exit 2; }
+[[ $# -ge 1 ]] || usage
 scenario=$1
 shift
 rates=("$@")
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
 repo_root=$(cd "$script_dir/../.." && pwd)
+password_file=${PASSWORD_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/gov-benefit-loadtest/password}
+
+if [[ $scenario == all ]]; then
+  (( ${#rates[@]} == 0 )) || usage
+  [[ -z ${WARMUP_RATE:-}${BASE_P95_MS:-} ]] || { echo "all에는 WARMUP_RATE와 BASE_P95_MS를 줄 수 없습니다(시나리오마다 다르다)." >&2; exit 2; }
+  [[ -f $password_file ]] || { echo "테스트 계정 비밀번호가 없습니다. scripts/loadtest/accounts.sh seed를 먼저 실행하세요." >&2; exit 1; }
+  scenarios=(search detail guest-match login mixed)
+  for i in "${!scenarios[@]}"; do
+    if ! "$script_dir/run.sh" "${scenarios[i]}"; then
+      remaining=${scenarios[*]:i+1}
+      echo "${scenarios[i]}에서 멈췄습니다. 실행하지 않은 시나리오: ${remaining:-없음}" >&2
+      exit 1
+    fi
+  done
+  echo "모든 시나리오를 마쳤다. docs/ops/load-test.md의 '끝난 뒤'를 따른다(계정 지우기 → API 풀기)."
+  exit 0
+fi
+
 k6_image=grafana/k6:2.3.0
 step_minutes=${STEP_MINUTES:-3}
 warmup_minutes=${WARMUP_MINUTES:-3}
-warmup_rate=${WARMUP_RATE:-5}
+max_rate=${MAX_RATE:-1280}
 max_vus=${MAX_VUS:-1000}
 # 부하 VM에서 실행하면 부하 VM 명령을 SSH 없이 바로 실행한다. 내 PC(macOS)의 hostname에는 -I가 없어 거짓이 된다.
 if [[ -z ${LOADGEN_HOST:-} ]] && hostname -I 2>/dev/null | tr ' ' '\n' | grep -qx 10.10.0.14; then
@@ -39,7 +62,6 @@ else
 fi
 app_host=${APP_HOST:-govbenefit-app}
 db_host=${DB_HOST:-govbenefit-db}
-password_file=${PASSWORD_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/gov-benefit-loadtest/password}
 remote_root=${LOADGEN_DIR:-/opt/gov-benefit/loadtest}
 
 # 호스트에서 명령을 실행한다. local이면 SSH 없이 이 기기에서 실행한다.
@@ -55,25 +77,37 @@ copy_to_loadgen() {
 }
 
 # 1. 입력 확인
+# 시작 속도: 조건 비교는 요청마다 지원조건과 혜택 전체를 읽어 무겁고(로컬 p50 640ms), 혼합은 그 경로가 20%다.
 case $scenario in
-  search | detail | guest-match) password_file= ;;
+  search | detail) start_rate=5 password_file= ;;
+  guest-match) start_rate=1 password_file= ;;
   login | mixed)
+    [[ $scenario == login ]] && start_rate=5 || start_rate=2
     [[ -f $password_file ]] || { echo "테스트 계정 비밀번호가 없습니다. scripts/loadtest/accounts.sh seed를 먼저 실행하세요." >&2; exit 1; }
     (( max_vus <= 1000 )) || { echo "로그인을 보내는 시나리오는 MAX_VUS가 테스트 계정 수(1,000) 이하여야 합니다." >&2; exit 1; }
     ;;
   *) usage ;;
 esac
+warmup_rate=${WARMUP_RATE:-$start_rate}
 seen=" "
-for rate in "${rates[@]}" "$warmup_rate"; do
+for rate in "${rates[@]}" "$warmup_rate" "$max_rate"; do
   [[ $rate =~ ^[1-9][0-9]*$ ]] || { echo "요청 속도는 양의 정수입니다: $rate" >&2; exit 2; }
 done
+(( max_rate >= start_rate )) || { echo "MAX_RATE는 시작 속도(${start_rate}) 이상이어야 합니다." >&2; exit 2; }
 for rate in "${rates[@]}"; do
   [[ $seen != *" $rate "* ]] || { echo "같은 요청 속도가 두 번 있습니다: $rate" >&2; exit 2; }
   seen+="$rate "
 done
 
 # 2. 04:00 예약 수집은 공공 API를 부른다. 측정이 03:30~05:00(KST)과 겹치면 시작하지 않는다.
-estimate=$(( warmup_minutes + ${#rates[@]} * (step_minutes + 1) + 5 ))
+# 자동 단계는 상한까지 두 배씩 오르는 최대 단계 수에 회복 워밍업과 세밀 단계 3개를 더해 잡는다.
+if (( ${#rates[@]} > 0 )); then
+  estimate=$(( warmup_minutes + ${#rates[@]} * (step_minutes + 1) + 5 ))
+else
+  coarse_steps=0
+  for (( rate = start_rate; rate <= max_rate; rate *= 2 )); do (( ++coarse_steps )); done
+  estimate=$(( 2 * warmup_minutes + (coarse_steps + 3) * (step_minutes + 1) + 5 ))
+fi
 now=$(( 10#$(TZ=Asia/Seoul date +%H) * 60 + 10#$(TZ=Asia/Seoul date +%M) ))
 for (( minute = now; minute <= now + estimate; minute++ )); do
   if (( minute % 1440 >= 210 && minute % 1440 < 300 )); then
@@ -94,7 +128,12 @@ run_id=$(TZ=Asia/Seoul date +%Y%m%dT%H%M%S)-$scenario
 out=$repo_root/docs/research/load-test-baseline/results/$run_id
 work=$remote_root/runs/$run_id
 mkdir -p "$out"
-echo "측정: $scenario, 단계 ${rates[*]}(/s), 단계마다 ${step_minutes}분, 워밍업 ${warmup_rate}/s ${warmup_minutes}분 → $out"
+if (( ${#rates[@]} > 0 )); then
+  steps_desc="단계 ${rates[*]}(/s)"
+else
+  steps_desc="단계 ${start_rate}/s부터 한계까지 두 배씩(상한 ${max_rate}/s) 뒤 세밀 단계"
+fi
+echo "측정: $scenario, $steps_desc, 단계마다 ${step_minutes}분, 워밍업 ${warmup_rate}/s ${warmup_minutes}분 → $out"
 
 # 4. 스크립트 복사와 입력 준비
 on_host "$loadgen_host" "rm -rf $remote_root/k6 && mkdir -p $work"
@@ -148,21 +187,55 @@ status=0
 base_p95=${BASE_P95_MS:-}
 limit_step=
 limit_reasons=
+
+# 단계 하나를 실행하고 판정한다. 반환: 0 정상, 1 한계 단계(limit_step에 남긴다), 2 실행이나 판정 실패(status에 남긴다)
+measure() {
+  local rate=$1 verdict
+  run_step "rate-$rate" "$rate" "$step_minutes" || { status=$?; return 2; }
+  # 판정하지 못하면 한계를 넘었는지 모르므로 더 올리지 않는다.
+  verdict=$(judge "$rate" "$base_p95") || { echo "rate-$rate의 요약을 판정하지 못했습니다." >&2; status=1; return 2; }
+  [[ -n $base_p95 ]] || base_p95=${verdict%% *}
+  [[ -n ${verdict#* } ]] || return 0
+  limit_step=rate-$rate
+  limit_reasons=${verdict#* }
+  echo "한계 단계: $limit_step($limit_reasons)."
+  return 1
+}
+
 run_step warmup "$warmup_rate" "$warmup_minutes" || status=$?
-if (( status == 0 )); then
+if (( status == 0 && ${#rates[@]} > 0 )); then
   for rate in "${rates[@]}"; do
-    run_step "rate-$rate" "$rate" "$step_minutes" || { status=$?; break; }
-    # 판정하지 못하면 한계를 넘었는지 모르므로 더 올리지 않는다.
-    verdict=$(judge "$rate" "$base_p95") || { echo "rate-$rate의 요약을 판정하지 못했습니다." >&2; status=1; break; }
-    [[ -n $base_p95 ]] || base_p95=${verdict%% *}
-    if [[ -n ${verdict#* } ]]; then
-      limit_step=rate-$rate
-      limit_reasons=${verdict#* }
-      echo "한계 단계: $limit_step($limit_reasons). 남은 단계는 실행하지 않는다."
-      break
-    fi
+    measure "$rate" || break
   done
+elif (( status == 0 )); then
+  result=0
+  last_normal=
+  for (( rate = start_rate; rate <= max_rate; rate *= 2 )); do
+    measure "$rate" || { result=$?; break; }
+    last_normal=$rate
+  done
+  (( result != 0 )) || echo "상한(${max_rate}/s)까지 한계 단계가 없었다."
+  # 마지막 정상 단계와 한계 단계 사이를 25% 간격으로 다시 잰다. 둘과 같아지는 값은 뺀다(정수 속도).
+  fine=()
+  if (( result == 1 )) && [[ -n $last_normal ]]; then
+    for pct in 125 150 175; do
+      rate=$(( (last_normal * pct + 50) / 100 ))
+      (( rate > last_normal && rate < ${limit_step#rate-} )) || continue
+      [[ " ${fine[*]} " == *" $rate "* ]] || fine+=("$rate")
+    done
+  fi
+  if (( ${#fine[@]} > 0 )); then
+    echo "세밀 단계: ${fine[*]}(/s). 마지막 정상 속도(${last_normal}/s)로 ${warmup_minutes}분 회복한 뒤 잰다."
+    if run_step recovery "$last_normal" "$warmup_minutes"; then
+      for rate in "${fine[@]}"; do
+        measure "$rate" || break
+      done
+    else
+      status=$?
+    fi
+  fi
 fi
+[[ -z $limit_step ]] || echo "한계: $limit_step($limit_reasons)"
 
 # 7. 결과 가져오기
 if [[ $loadgen_host == local ]]; then cp -R "$work/." "$out/"; else scp -q -r "$loadgen_host:$work/*" "$out/"; fi
@@ -185,6 +258,7 @@ jq -n \
   --arg scenario "$scenario" --arg runId "$run_id" --arg k6Image "$k6_image" \
   --argjson stepMinutes "$step_minutes" --argjson warmupMinutes "$warmup_minutes" --argjson warmupRate "$warmup_rate" \
   --argjson maxVus "$max_vus" --arg appTag "$app_tag" --arg appComposeSha256 "$app_compose_sha" \
+  --arg mode "$( (( ${#rates[@]} > 0 )) && echo fixed || echo auto )" --argjson maxRate "$max_rate" \
   --arg repoCommit "$repo_commit" --argjson repoDirty "$repo_dirty" --arg repoComposeSha256 "$repo_compose_sha" \
   --argjson appVcpu "$app_vcpu" --argjson appMem "$app_mem" --argjson dbVcpu "$db_vcpu" --argjson dbMem "$db_mem" \
   --argjson loadgenVcpu "$loadgen_vcpu" --argjson loadgenMem "$loadgen_mem" \
@@ -193,6 +267,7 @@ jq -n \
   --rawfile steps "$out/steps.tsv" \
   '{
     scenario: $scenario, runId: $runId, k6Image: $k6Image,
+    mode: $mode, maxRate: (if $mode == "auto" then $maxRate else null end),
     stepMinutes: $stepMinutes, warmup: {rate: $warmupRate, minutes: $warmupMinutes}, maxVus: $maxVus,
     baseP95Ms: (if $baseP95 == "" then null else ($baseP95 | tonumber) end),
     limit: (if $limitStep == "" then null else {step: $limitStep, reasons: $limitReasons} end),
