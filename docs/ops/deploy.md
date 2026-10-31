@@ -13,6 +13,7 @@ Cloudflare 대시보드 화면은 2026-10-28 기준이다. 화면이 바뀌었�
 | DB | db VM의 `mysql` 컨테이너 | 아래 "DB 구성 바꾸기" |
 | 프론트 | Cloudflare Pages → `govbenefit.kr` | `main`에 머지되면 자동 빌드 |
 | 지표 | 앱 관리 포트(8081)·exporter → 지표 VM의 Prometheus·Grafana | [운영 지표](metrics.md) |
+| 부하 테스트 | 부하 생성 VM → 앱 포트(8080)의 내부 브리지 주소 `10.10.0.11`. Cloudflare를 거치지 않는다 | [부하 테스트](load-test.md) |
 | 비밀값 | app VM `/opt/gov-benefit/app/app.env`·`cloudflared.env`, db VM `/opt/gov-benefit/db/.env` (권한 600) | 직접 수정 |
 
 ## 처음 한 번
@@ -174,6 +175,7 @@ scripts/deploy.sh <직전 태그>
 - 앱 로그: app VM에서 `cd /opt/gov-benefit/app && docker compose logs -f app`
 - 앱 상태 확인: app VM에서 `curl -s http://127.0.0.1:8081/actuator/health`
 - 지표와 대시보드: [운영 지표](metrics.md)
+- 부하 테스트: [부하 테스트](load-test.md). 측정하는 동안 `cloudflared`를 멈춰 API를 막으므로 배포하지 않는다.
 - cloudflared 갱신: 배포 스크립트는 `app`만 받는다. app VM에서 `docker compose pull cloudflared && docker compose up -d cloudflared`
 - 비밀값 변경: 파일을 고친 뒤 `docker compose up -d`(바뀐 컨테이너만 다시 만든다)
 - DB 구성 바꾸기: `deploy/db/compose.yaml`을 고쳐 머지한 뒤 `scp`로 db VM에 복사하고 `docker compose up -d`. `mysql` 서비스가 바뀌었으면 다시 만들어지는 동안 앱의 DB 요청은 실패한다. exporter만 바뀌었으면 MySQL은 그대로다.
