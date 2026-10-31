@@ -1,4 +1,4 @@
-# 지표 VM 실행 구성(결정 0036). VM의 /opt/gov-benefit/metrics/에 이 디렉터리를 통째로 복사한다.
+# 지표 VM 실행 구성(결정 0037). VM의 /opt/gov-benefit/metrics/에 이 디렉터리를 통째로 복사한다.
 # 비밀값은 VM의 grafana.env에만 둔다(grafana.env.example 참고). 절차는 docs/ops/metrics.md.
 name: gov-benefit-metrics
 

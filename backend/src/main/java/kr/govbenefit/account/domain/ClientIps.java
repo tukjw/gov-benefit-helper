@@ -13,7 +13,7 @@ public final class ClientIps {
     }
 
     /**
-     * @param remoteAddr {@code getRemoteAddr()}의 값. 운영에서는 Cloudflare가 넣은 요청자 주소다(결정 0036).
+     * @param remoteAddr {@code getRemoteAddr()}의 값. 운영에서는 Cloudflare가 넣은 요청자 주소다(결정 0037).
      * @return IPv4는 주소 그대로, IPv6는 {@code <앞 64비트>::/64}. 해석할 수 없으면 받은 값 그대로다.
      */
     public static String limitKey(String remoteAddr) {

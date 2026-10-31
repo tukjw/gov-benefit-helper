@@ -1,4 +1,4 @@
-# 지표 VM의 Prometheus 수집 대상(결정 0036). 모두 내부 브리지(vmbr1) 주소다.
+# 지표 VM의 Prometheus 수집 대상(결정 0037). 모두 내부 브리지(vmbr1) 주소다.
 global:
   scrape_interval: 15s
   evaluation_interval: 15s

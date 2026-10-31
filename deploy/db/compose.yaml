@@ -1,4 +1,4 @@
-# db VM 실행 구성(결정 0036). VM의 /opt/gov-benefit/db/에 두고 같은 디렉터리의 .env(.env.example 참고)로 값을 받는다.
+# db VM 실행 구성(결정 0037). VM의 /opt/gov-benefit/db/에 두고 같은 디렉터리의 .env(.env.example 참고)로 값을 받는다.
 # 배포 스크립트는 db를 건드리지 않는다. 바꿀 때는 docs/ops/deploy.md의 절차를 따른다.
 name: gov-benefit-db
 
@@ -35,7 +35,7 @@ services:
         max-size: 10m
         max-file: "3"
 
-  # VM의 CPU·메모리·디스크 지표(결정 0036). 내부 브리지(vmbr1) 주소에만 리슨한다.
+  # VM의 CPU·메모리·디스크 지표(결정 0037). 내부 브리지(vmbr1) 주소에만 리슨한다.
   node-exporter:
     image: prom/node-exporter:v1.12.1
     command:
@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
     logging: *logging
 
-  # MySQL 연결·쿼리 지표(결정 0036). 지표 전용 계정 exporter는 docs/ops/metrics.md의 절차로 만든다.
+  # MySQL 연결·쿼리 지표(결정 0037). 지표 전용 계정 exporter는 docs/ops/metrics.md의 절차로 만든다.
   mysqld-exporter:
     image: prom/mysqld-exporter:v0.21.0
     command:

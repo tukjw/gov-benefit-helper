@@ -1,4 +1,4 @@
-# app VM 실행 구성(결정 0036). VM의 /opt/gov-benefit/app/에 둔다.
+# app VM 실행 구성(결정 0037). VM의 /opt/gov-benefit/app/에 둔다.
 # scripts/deploy.sh가 배포하는 태그 시점의 이 파일을 복사하고, 같은 디렉터리의 .env에 APP_TAG만 적는다.
 # 비밀값은 VM의 app.env·cloudflared.env에만 둔다(각 .example 참고). 절차는 docs/ops/deploy.md.
 name: gov-benefit-app
@@ -10,7 +10,7 @@ services:
     ports:
       # VM 안에서만 연다. 외부 요청은 cloudflared가 Compose 네트워크로 전달한다.
       - "127.0.0.1:8080:8080"
-      # 관리 포트(상태 확인·지표, 결정 0036). 배포 스크립트는 127.0.0.1로, 지표 VM의 Prometheus는 내부 브리지(vmbr1)로 읽는다.
+      # 관리 포트(상태 확인·지표, 결정 0037). 배포 스크립트는 127.0.0.1로, 지표 VM의 Prometheus는 내부 브리지(vmbr1)로 읽는다.
       # Tunnel 경로는 8080뿐이라 외부로 열리지 않는다. 배포 스크립트가 .env를 APP_TAG 한 줄로 덮어써 주소를 여기 적는다.
       - "127.0.0.1:8081:8081"
       - "10.10.0.11:8081:8081"
@@ -37,7 +37,7 @@ services:
     restart: unless-stopped
     logging: *logging
 
-  # VM의 CPU·메모리·디스크 지표(결정 0036). 내부 브리지(vmbr1) 주소에만 리슨한다.
+  # VM의 CPU·메모리·디스크 지표(결정 0037). 내부 브리지(vmbr1) 주소에만 리슨한다.
   node-exporter:
     image: prom/node-exporter:v1.12.1
     command:

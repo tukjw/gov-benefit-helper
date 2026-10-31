@@ -1,6 +1,6 @@
 # Proxmox VM 만들기
 
-운영 app VM, db VM, 지표 VM을 만드는 절차다. 구조는 [결정 0036](../decisions/0036-proxmox-deploy-and-metrics.md), 선택 이유는 [`DEC-OPS(배포)`](../product/development.md#결정한-사항)에 있다. VM이 망가지면 이 문서대로 다시 만들고, app·db VM은 [배포 절차](deploy.md)의 "처음 한 번"을, 지표 VM은 [지표 절차](metrics.md)를 따른다.
+운영 app VM, db VM, 지표 VM을 만드는 절차다. 구조는 [결정 0037](../decisions/0037-proxmox-deploy-metrics-and-load-test.md), 선택 이유는 [`DEC-OPS(배포)`](../product/development.md#결정한-사항)에 있다. VM이 망가지면 이 문서대로 다시 만들고, app·db VM은 [배포 절차](deploy.md)의 "처음 한 번"을, 지표 VM은 [지표 절차](metrics.md)를 따른다.
 
 명령의 `<...>`는 호스트마다 다른 값이다. 스토리지 이름(`local-lvm`)도 호스트에 맞게 바꾼다.
 
