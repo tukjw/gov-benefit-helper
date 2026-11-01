@@ -1,0 +1,101 @@
+{
+  "scenario": "detail",
+  "runId": "20261031T201000-detail",
+  "k6Image": "grafana/k6:2.3.0",
+  "mode": "auto",
+  "maxRate": 1280,
+  "stepMinutes": 3,
+  "warmup": {
+    "rate": 5,
+    "minutes": 3
+  },
+  "maxVus": 1000,
+  "baseP95Ms": 11.524954,
+  "limit": null,
+  "app": {
+    "imageTag": "v0.1.1",
+    "composeSha256": "9247526baa4d0152cb95d3baf776b1333765592dbf913676e591d1108e169cf9"
+  },
+  "repo": {
+    "commit": "e5888f1d15741470df2655646f185dc2a673c5ff",
+    "dirty": false,
+    "composeSha256": "9247526baa4d0152cb95d3baf776b1333765592dbf913676e591d1108e169cf9"
+  },
+  "vms": {
+    "app": {
+      "vcpu": 4,
+      "memMiB": 3909
+    },
+    "db": {
+      "vcpu": 2,
+      "memMiB": 3910
+    },
+    "loadgen": {
+      "vcpu": 2,
+      "memMiB": 3910
+    }
+  },
+  "benefitCount": 10942,
+  "steps": [
+    {
+      "name": "warmup",
+      "rate": 5,
+      "start": 1793445003,
+      "end": 1793445183
+    },
+    {
+      "name": "rate-5",
+      "rate": 5,
+      "start": 1793445183,
+      "end": 1793445364
+    },
+    {
+      "name": "rate-10",
+      "rate": 10,
+      "start": 1793445364,
+      "end": 1793445544
+    },
+    {
+      "name": "rate-20",
+      "rate": 20,
+      "start": 1793445544,
+      "end": 1793445725
+    },
+    {
+      "name": "rate-40",
+      "rate": 40,
+      "start": 1793445725,
+      "end": 1793445905
+    },
+    {
+      "name": "rate-80",
+      "rate": 80,
+      "start": 1793445905,
+      "end": 1793446085
+    },
+    {
+      "name": "rate-160",
+      "rate": 160,
+      "start": 1793446085,
+      "end": 1793446266
+    },
+    {
+      "name": "rate-320",
+      "rate": 320,
+      "start": 1793446266,
+      "end": 1793446447
+    },
+    {
+      "name": "rate-640",
+      "rate": 640,
+      "start": 1793446447,
+      "end": 1793446627
+    },
+    {
+      "name": "rate-1280",
+      "rate": 1280,
+      "start": 1793446627,
+      "end": 1793446808
+    }
+  ]
+}

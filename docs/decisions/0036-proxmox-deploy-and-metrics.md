@@ -1,6 +1,6 @@
 # 0036. Proxmox 단일 호스트 배포와 운영 지표
 
-- 상태: 채택
+- 상태: 대체됨 → [0037](0037-proxmox-deploy-metrics-and-load-test.md)
 - 날짜: 2026-10-30
 - 출처: #92, [플랜](../plans/92-basic-metrics.md)
 - 대체: [0034](0034-proxmox-deploy.md)

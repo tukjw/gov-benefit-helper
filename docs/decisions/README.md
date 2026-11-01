@@ -78,4 +78,5 @@
 | [0033](0033-test-shared-mysql.md) | 테스트 MySQL 컨테이너 공유와 테이블 정리 | 채택 | #85 |
 | [0034](0034-proxmox-deploy.md) | Proxmox 단일 호스트 배포 구조 | 대체됨 → [0036](0036-proxmox-deploy-and-metrics.md) | #87 |
 | [0035](0035-login-attempt-limit.md) | 로그인·탈퇴의 비밀번호 확인 시도 제한 | 채택 | #52 |
-| [0036](0036-proxmox-deploy-and-metrics.md) | Proxmox 단일 호스트 배포와 운영 지표 | 채택 | #92 |
+| [0036](0036-proxmox-deploy-and-metrics.md) | Proxmox 단일 호스트 배포와 운영 지표 | 대체됨 → [0037](0037-proxmox-deploy-metrics-and-load-test.md) | #92 |
+| [0037](0037-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 채택 | #96 |

@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * 수집 실행 결과를 지표로 내보낸다(결정 0036). 실행 수는 누적하고, 마지막 실행의 상태·시각·소요 시간·경로별 처리 건수는
+ * 수집 실행 결과를 지표로 내보낸다(결정 0037). 실행 수는 누적하고, 마지막 실행의 상태·시각·소요 시간·경로별 처리 건수는
  * 실행이 끝날 때마다 덮는다. 마지막 실행 지표는 첫 실행이 끝난 뒤에 생긴다. 재시작하면 다음 실행까지 없고,
  * 지난 값은 Prometheus에 남아 있다.
  */

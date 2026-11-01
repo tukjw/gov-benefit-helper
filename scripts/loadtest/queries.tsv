@@ -1,0 +1,30 @@
+# 단계 구간마다 저장하는 서버 지표(결정 0037). 형식: 이름<탭>범위<탭>PromQL
+# 범위 step은 단계마다, all은 측정 전체 구간에 한 번 저장한다. export-metrics.sh가 query_range(15초 간격)로 받는다.
+# 단계 길이(3분)에 맞춰 [1m] 창을 쓴다. 단계 첫 1분의 값에는 앞 단계가 섞이므로 비교는 그 뒤의 값으로 한다.
+# 관리 포트 요청(/actuator)은 Prometheus 수집이라 뺀다. 이름을 바꾸면 보고서의 참조도 고친다.
+app_requests	step	sum by (uri, status) (rate(http_server_requests_seconds_count{job="app", uri!~"/actuator.*"}[1m]))
+app_latency_p50	step	histogram_quantile(0.5, sum by (le, uri) (rate(http_server_requests_seconds_bucket{job="app", uri!~"/actuator.*"}[1m])))
+app_latency_p95	step	histogram_quantile(0.95, sum by (le, uri) (rate(http_server_requests_seconds_bucket{job="app", uri!~"/actuator.*"}[1m])))
+app_latency_p99	step	histogram_quantile(0.99, sum by (le, uri) (rate(http_server_requests_seconds_bucket{job="app", uri!~"/actuator.*"}[1m])))
+app_process_cpu	step	process_cpu_usage{job="app"}
+jvm_heap_used	step	sum(jvm_memory_used_bytes{job="app", area="heap"})
+jvm_gc_pause	step	sum by (action) (rate(jvm_gc_pause_seconds_sum{job="app"}[1m]))
+jvm_threads_live	step	jvm_threads_live_threads{job="app"}
+hikari_active	step	hikaricp_connections_active{job="app"}
+hikari_pending	step	hikaricp_connections_pending{job="app"}
+hikari_acquire_avg	step	rate(hikaricp_connections_acquire_seconds_sum{job="app"}[1m]) / rate(hikaricp_connections_acquire_seconds_count{job="app"}[1m])
+vm_cpu_busy	step	1 - avg by (vm) (rate(node_cpu_seconds_total{job="node", mode="idle"}[1m]))
+vm_cpu_by_mode	step	avg by (vm, mode) (rate(node_cpu_seconds_total{job="node", mode=~"user|system|iowait|steal|softirq"}[1m]))
+vm_memory_available	step	node_memory_MemAvailable_bytes{job="node"}
+vm_disk_read	step	sum by (vm) (rate(node_disk_read_bytes_total{job="node", device!~"loop.*|sr.*"}[1m]))
+vm_disk_written	step	sum by (vm) (rate(node_disk_written_bytes_total{job="node", device!~"loop.*|sr.*"}[1m]))
+vm_network_received	step	sum by (vm) (rate(node_network_receive_bytes_total{job="node", device!~"lo|docker.*|veth.*|br-.*"}[1m]))
+mysql_queries	step	rate(mysql_global_status_queries{job="mysql"}[1m])
+mysql_commands	step	sum by (command) (rate(mysql_global_status_commands_total{job="mysql", command=~"select|insert|update|delete"}[1m]))
+mysql_threads_connected	step	mysql_global_status_threads_connected{job="mysql"}
+mysql_threads_running	step	mysql_global_status_threads_running{job="mysql"}
+mysql_slow_queries	step	increase(mysql_global_status_slow_queries{job="mysql"}[1m])
+mysql_buffer_pool_disk_reads	step	rate(mysql_global_status_innodb_buffer_pool_reads{job="mysql"}[1m])
+collection_runs	all	sum by (status) (collection_runs_total{job="app"})
+mail_requests	all	sum by (uri) (http_server_requests_seconds_count{job="app", uri=~"/api/auth/email-verification|/api/auth/password-reset"})
+app_requests_total	all	sum by (uri) (http_server_requests_seconds_count{job="app", uri!~"/actuator.*"})

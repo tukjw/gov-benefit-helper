@@ -15,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 /**
- * Cloudflare가 넣는 {@code CF-Connecting-IP}가 요청자 주소가 된다(결정 0036). 헤더는 Tomcat이 처리하므로 MockMvc가 아니라
+ * Cloudflare가 넣는 {@code CF-Connecting-IP}가 요청자 주소가 된다(결정 0037). 헤더는 Tomcat이 처리하므로 MockMvc가 아니라
  * 실제 서버를 띄워 확인한다.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "gov24.schedule.enabled=false")

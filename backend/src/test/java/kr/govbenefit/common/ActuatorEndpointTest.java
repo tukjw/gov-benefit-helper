@@ -13,7 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 /**
- * actuator는 관리 포트에서만 열린다(결정 0036). 배포 스크립트의 상태 확인과 Prometheus의 지표는 토큰 없이 읽고,
+ * actuator는 관리 포트에서만 열린다(결정 0037). 배포 스크립트의 상태 확인과 Prometheus의 지표는 토큰 없이 읽고,
  * Tunnel이 전달하는 앱 포트에는 actuator 경로가 없다. 포트가 나뉘는 것은 MockMvc로 볼 수 없어 실제 서버를 띄운다.
  * 테스트 컨텍스트마다 공유 MySQL 연결을 잡으므로(결정 0033), 실제 서버를 띄우는 {@link ClientIpTest}와 설정을 같게 두어 컨텍스트를 함께 쓴다.
  */
