@@ -12,7 +12,7 @@
   - `meta.json`: 실행 정보, 단계별 시작·끝 시각, 한계 판정
   - `<단계>.json`: k6 요약
   - `vmstat-<단계>.txt`: 부하 생성 VM의 CPU
-  - `prometheus/<단계>/`: 서버 지표
+  - `prometheus.json`: 서버 지표(단계별 Prometheus 응답 원본)
   - `inputs.json`: 준비 데이터
   - `app-log-check.txt`: 앱 로그에서 `수집`·`메일`을 찾은 결과
 - 다시 잴 때: `inputs.json`을 `INPUTS`로 넘기면 같은 입력으로 잰다.

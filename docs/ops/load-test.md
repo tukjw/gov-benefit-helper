@@ -107,7 +107,7 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 | `inputs.json` | 입력 데이터. `INPUTS`로 다시 쓸 수 있다 |
 | `warmup.json`, `recovery.json`, `rate-<N>.json` | 단계별 k6 요약(`recovery`는 세밀 단계 앞 회복). 지연은 실패 요청을 포함하고, `{name:…}` 하위 지표가 경로별 값이다 |
 | `vmstat-<단계>.txt` | 부하 생성 VM의 CPU(생성기가 병목이 아니었다는 근거). 단계 중 `id`(유휴)가 20% 아래로 떨어지면 생성기가 병목일 수 있다. 그 단계는 버리고 부하 생성 VM의 vCPU를 늘려(`qm set 104 --cores 4 --affinity <C5·C6 스레드>`) 다시 잰다 |
-| `prometheus/<단계>/*.json`, `prometheus/all/*.json` | 같은 구간의 서버 지표(Prometheus `query_range` 응답 원본) |
+| `prometheus.json` | 같은 구간의 서버 지표. 단계 이름(측정 전체 구간은 `all`) → 쿼리 이름 → Prometheus `query_range` 응답 원본으로 묶었고, 쿼리 하나가 한 줄이다. 쿼리 이름은 `scripts/loadtest/queries.tsv`에 있다 |
 | `app-log-check.txt` | 측정 구간의 앱 로그에서 `수집`·`메일`을 찾은 결과 |
 
 내 PC의 저장소 루트에서 실행해도 같은 일을 한다. 이때는 부하 생성 VM의 명령을 SSH로 실행하므로 내 PC가 측정 내내 켜져 있어야 한다.
@@ -139,7 +139,7 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 5. Proxmox 호스트에서 부하 생성 VM을 끈다: `qm shutdown 104`
 6. 메일 발송과 공공 API 호출이 없었는지 확인한다.
    - 결과 디렉터리마다 `app-log-check.txt`에 머리줄 말고 내용이 없다.
-   - `prometheus/all/collection_runs.json`과 `prometheus/all/mail_requests.json`의 값이 구간 처음과 끝에서 같거나, 결과가 비어 있다(앱을 띄운 뒤 한 번도 없었다).
+   - `prometheus.json`의 `all.collection_runs`와 `all.mail_requests` 값이 구간 처음과 끝에서 같거나, 결과가 비어 있다(앱을 띄운 뒤 한 번도 없었다). `jq -c '.all.collection_runs.data.result, .all.mail_requests.data.result' <결과 디렉터리>/prometheus.json`으로 본다.
    - Resend 대시보드의 Emails에 측정 시간대의 발송 기록이 없다.
 7. 결과 디렉터리와 [보고서](../research/load-test-baseline.md)를 커밋해 PR로 올린다.
 
