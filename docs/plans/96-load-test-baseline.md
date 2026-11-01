@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #96 부하 생성 VM을 만들고 운영 API의 기준 지연·처리량 측정
 
@@ -230,6 +230,16 @@ cd backend && ./gradlew test   # 0036 → 0037 주석 변경
   - 부하 VM에서 실행하도록 바꾼 뒤 다시 돌렸다. 로컬을 부하 VM으로 보고(`LOADGEN_HOST=local`) `login 2 4`를, 내 PC 방식(가짜 `ssh`)으로 `search 2 4`를 단계 1분으로 실행했다. 둘 다 오류율 0%로 끝까지 돌았고 결과·지표 파일이 남았다. 부하 VM 자동 감지는 Ubuntu 24.04 컨테이너에 `10.10.0.14`를 줬을 때만 `local`이 됐다. 부하 VM의 SSH 키와 `tmux`는 첫 측정에서 확인한다.
   - 단계를 `run.sh`가 정하게 바꾼 뒤, k6 대신 단계 요약만 쓰는 가짜 `docker`로 한계 속도를 바꿔 가며 단계 순서를 확인했다. 세밀 단계에서 한계(1→2→4→8 뒤 5에서 6이 한계), 세밀 단계 없음(1과 2 사이), 첫 단계가 한계, 상한까지 한계 없음, 정한 단계, `all`의 성공·중간 실패·인자 오류가 모두 의도대로였다. 실제 k6로도 `search` 자동 단계(상한 10, 단계 1분)를 끝까지 돌렸다.
 - `queries.tsv`의 PromQL 26개를 `promtool check rules`로 검사했다.
+
+(측정) 2026-10-31 19:36~22:08 운영에서 부하 VM의 `tmux` 안에서 `run.sh all`로 다섯 시나리오를 끝까지 쟀다. 결과와 근거는 [보고서](../research/load-test-baseline.md)에 있다.
+- 부하 VM의 SSH 키, Prometheus SSH 터널, 운영 VM의 `docker compose`·`vmstat`·`/proc/meminfo`가 실제로 동작했다. VM 사양과 실행 구성 해시가 `meta.json`에 남았다.
+- 측정 뒤 사용자가 다음을 확인했다.
+  - 테스트 계정 0개, 리프레시 토큰 0개
+  - 앱 상태 `UP`, `OutOfMemoryError` 없음
+  - API를 푼 뒤 200
+  - Resend 발송 기록 없음
+  - LAN에서 app VM 8080에 닿지 않음
+- 호스트 CPU 클럭은 `amd-pstate`·`schedutil`이었다. 낮은 부하에서 느린 현상과 그 영향은 보고서의 한계에 적었다.
 
 ## 결정 필요
 
