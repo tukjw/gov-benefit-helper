@@ -7,7 +7,7 @@
 #   scripts/loadtest/run.sh search 5 10 20 정한 단계만 잰다(한계 단계가 나오면 멈춘다). 개선 전후를 같은 단계로 비교할 때 쓴다.
 # 부하 VM의 저장소에서 tmux 안에서 실행한다. 내 PC의 연결이 끊겨도 측정이 계속된다. 내 PC의 저장소 루트에서도 실행할 수 있다.
 # 절차(테스트 계정, API 막기, 끝난 뒤 정리)는 docs/ops/load-test.md.
-# 결과는 docs/research/load-test-baseline/results/<시각>-<시나리오>/에 쓴다.
+# 결과는 RESULTS_DIR/<시각>-<시나리오>/에 쓴다.
 # 단계마다 한계 판정 기준(결정 0037)을 계산해, 한계 단계가 나오면 더 올리지 않는다.
 #
 # 환경 변수(괄호는 기본값)
@@ -16,6 +16,8 @@
 #   MAX_RATE(1280)   자동 단계의 상한. 여기까지 한계가 없으면 멈춘다.
 #   BASE_P95_MS      p95 기준. 없으면 이번 실행의 첫 단계 p95다. 정한 단계로 세밀 단계만 다시 잴 때 거친 단계 첫 단계의 값을 준다.
 #   INPUTS           지난 결과의 inputs.json. 주면 같은 입력으로 다시 잰다. 없으면 prepare.py로 새로 만든다.
+#   RESULTS_DIR(docs/research/load-test-baseline/results)  결과를 쓸 디렉터리. 저장소 루트 기준이다. 개선 측정은 그 작업의
+#                    보고서 옆에 둔다.
 #   LOADGEN_HOST(govbenefit-loadgen)  APP_HOST(govbenefit-app)  DB_HOST(govbenefit-db)  METRICS_HOST(govbenefit-metrics)
 #                    LOADGEN_HOST가 local이면 부하 VM 명령을 SSH 없이 이 기기에서 실행한다. 부하 VM(내부 브리지 주소
 #                    10.10.0.14가 있는 기기)에서 실행하면 기본값이 local이다.
@@ -130,7 +132,7 @@ if ! on_host "$loadgen_host" 'curl -sf -o /dev/null --max-time 5 "${BASE_URL:-ht
 fi
 
 run_id=$(TZ=Asia/Seoul date +%Y%m%dT%H%M%S)-$scenario
-out=$repo_root/docs/research/load-test-baseline/results/$run_id
+out=$repo_root/${RESULTS_DIR:-docs/research/load-test-baseline/results}/$run_id
 work=$remote_root/runs/$run_id
 mkdir -p "$out"
 if (( ${#rates[@]} > 0 )); then
