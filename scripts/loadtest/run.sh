@@ -123,6 +123,11 @@ if grep -qx cloudflared <<< "$running"; then
   echo "app VM의 cloudflared가 실행 중입니다. docs/ops/load-test.md의 'API 막기'를 먼저 하세요." >&2
   exit 1
 fi
+# 부하 VM에서 앱 포트에 닿아야 한다. 결과 디렉터리를 만들기 전에 확인해, 빈 결과를 남기지 않는다.
+if ! on_host "$loadgen_host" 'curl -sf -o /dev/null --max-time 5 "${BASE_URL:-http://10.10.0.11:8080}/api/profile/options"'; then
+  echo "부하 VM에서 앱 포트(10.10.0.11:8080)에 닿지 않습니다. docs/ops/load-test.md의 'API 막기' 확인을 먼저 하세요." >&2
+  exit 1
+fi
 
 run_id=$(TZ=Asia/Seoul date +%Y%m%dT%H%M%S)-$scenario
 out=$repo_root/docs/research/load-test-baseline/results/$run_id
