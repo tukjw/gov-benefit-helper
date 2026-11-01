@@ -13,6 +13,7 @@ import kr.govbenefit.collection.client.Gov24Properties;
 import kr.govbenefit.collection.domain.CollectionErrorType;
 import kr.govbenefit.collection.domain.CollectionFailure;
 import kr.govbenefit.collection.domain.CollectionRun;
+import kr.govbenefit.collection.domain.CollectionRunFinished;
 import kr.govbenefit.collection.domain.CollectionRunStep;
 import kr.govbenefit.collection.domain.CollectionStatus;
 import kr.govbenefit.collection.domain.PageResult;
@@ -22,6 +23,7 @@ import kr.govbenefit.collection.repository.CollectionRunRepository;
 import kr.govbenefit.collection.repository.CollectionRunStepRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
@@ -43,11 +45,13 @@ public class CollectionService {
     private final CollectionRunStepRepository stepRepository;
     private final CollectionFailureRepository failureRepository;
     private final CollectionMetrics metrics;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     /**
      * 전체 수집을 한 번 실행하고 실행 ID를 돌려준다.
      * 목록 1쪽을 저장하지 못하면 실패, 그 밖에 실패한 쪽이 있거나 중단되면 부분 실패로 끝낸다.
+     * 실행 기록을 저장한 뒤 {@link CollectionRunFinished}를 낸다. 받는 쪽은 같은 스레드에서 돈다.
      *
      * @throws IllegalStateException 인증키가 없을 때. 이때는 실행 기록을 만들지 않는다
      */
@@ -69,6 +73,8 @@ public class CollectionService {
             default -> log.warn("수집 실패 runId={} errorType={} calls={} message={}", run.getId(),
                     outcome.errorType(), budget.used(), outcome.errorMessage());
         }
+        // 쪽마다 커밋하므로 실패한 실행도 저장한 쪽이 있을 수 있어, 상태와 관계없이 알린다.
+        events.publishEvent(new CollectionRunFinished(run.getId(), outcome.status()));
         return run.getId();
     }
 

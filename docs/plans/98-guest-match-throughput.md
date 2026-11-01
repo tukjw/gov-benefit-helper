@@ -121,6 +121,18 @@ status: in-progress
    - `jfr view`로 묶어 보고, 두 쿼리의 `EXPLAIN ANALYZE`를 남긴다.
    - (나) 대안 A: `list()`가 benefit을 필요한 컬럼만 읽게 임시로 바꿔 같은 방식으로 잰다. 잰 뒤 되돌린다.
    - 결과(k6 요약, `jfr view` 출력, 실행 계획)는 `docs/research/guest-match-throughput/local/`에 둔다. JFR 원본 파일은 두지 않는다.
+   - (구현 중 변경) `jfr view` 대신 `scripts/loadtest/local-profile.sh`와 `local-breakdown.py`로 잰다. 이유는 세 가지다.
+     - `hot-methods`는 스택 맨 안쪽 메서드만 보여 JDBC·엔티티 적재·JSON 파싱·판정으로 나누기 어렵다.
+     - JFR 할당 샘플은 초당 개수가 제한돼, 요청 사이에 쌓인 양이 다음 요청의 첫 할당(톰캣의 `Instant.now`)에 몰려 잡혔다.
+     - GC·JIT 스레드의 CPU는 CPU 샘플에 들어오지 않는다.
+
+     그래서 다음 방식으로 바꿨다.
+     - 스레드 묶음별 CPU는 구간 앞뒤 스레드 덤프의 `cpu=`로 잰다.
+     - 단계별 몫은 CPU 샘플의 스택을 따라 올라가며 정한다.
+     - 할당은 `jdk.ThreadAllocationStatistics` 증가량의 합만 쓴다.
+     - 앱은 `bootJar`로 만든 jar를 `-Xmx2304m -XX:ActiveProcessorCount=4`, 로그 INFO로 띄우고, k6는 로컬 바이너리(v2.3.0)로 보낸다.
+   - (구현 중 확인) 결과는 `local/before`·`local/columns`·`local/snapshot`과 `local/explain-analyze.txt`에 뒀다. (나)의 실험 변경은 `local/columns/experiment.patch`로 남겼다.
+   - (구현 중 확인) 운영과 같은 JDBC 주소(`sslMode` 없음)라 로컬 연결도 TLS였다(`Ssl_cipher` `TLS_AES_256_GCM_SHA384`). 요청 처리 CPU에서 TLS 몫은 1% 안팎이었다.
 3. **수집 종료 이벤트**(설계 1)
    - `collection/domain/CollectionRunFinished.java`: `record CollectionRunFinished(Long runId, CollectionStatus status)`
    - `CollectionService.collectAll()`: `ApplicationEventPublisher`를 받아, 실행 기록을 저장하고 로그를 남긴 뒤 이벤트를 낸다.
@@ -144,11 +156,16 @@ status: in-progress
    - `MatchCandidateStoreTest`(단위, 가짜 loader)
      - 비어 있을 때 시작한 생성을 래치로 멈추고 교체를 일으킨다. 생성이 늦게 끝나도 마지막 값이 교체 결과다.
      - 비어 있을 때 동시에 부르면 loader를 한 번만 부른다.
+     - (구현 중 변경) 교체에 실패하면 비우고, 다음 요청이 다시 만드는지도 본다.
    - `MatchListApiTest`
      - 수집이 끝나면 바뀐 지원조건이 목록 판정에 반영된다.
      - 부분 실패로 끝난 수집 뒤에도 바뀐 목록이 반영된다.
    - 기존 조건 비교 테스트는 고치지 않고 통과해야 한다.
+   - (구현 중 변경) `ApiDocsTest`의 두 목록 API 테스트에서 설명에 "마지막으로 끝난 수집 기준"이 있는지 본다.
+   - (구현 중 확인) 수집 이벤트 발행을 빼고 교체에서 잠금을 빼면, 새 테스트 3개(교체 반영 2개, 늦은 생성 1개)가 실패하는 것을 확인했다.
 8. **로컬 확인(설계 5의 (다))**: 스냅샷으로 단계 2와 같은 측정을 한다.
+   - (구현 중 변경) 요청이 가벼워져 초당 32건 구간을 더했다.
+   - (구현 중 확인) 프로필 20개와 빈 프로필을 기본·전체 범위로 받은 응답 42개(쪽 1, 크기 100)를 (가)·(나)·(다)에서 비교했다. 바이트 단위로 같았다. (가)는 커밋 `95c1cdf`를 `git archive`로 따로 풀어 빌드했다.
 9. **문서**
    - `docs/decisions/0038-match-list-snapshot.md`(설계 7)를 쓰고, `docs/decisions/README.md` 목록에 더한다.
    - `docs/product/development.md`
@@ -188,7 +205,8 @@ status: in-progress
 
 ```bash
 cd backend && ./gradlew test
-bash -n scripts/loadtest/run.sh
+bash -n scripts/loadtest/run.sh scripts/loadtest/local-profile.sh
+python3 -I -c "import ast; ast.parse(open('scripts/loadtest/local-breakdown.py').read())"
 ```
 
 로컬 측정(단계 2·8)과 운영 측정(단계 11)은 위 절차대로 하고 결과를 보고서에 남긴다.

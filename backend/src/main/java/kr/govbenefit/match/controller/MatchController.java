@@ -52,6 +52,7 @@ public class MatchController {
             - `NEEDS_CHECK`인 혜택도 숨기지 않는다. 프로필을 입력하지 않았으면 개인 대상 혜택이 모두 `NEEDS_CHECK`다.
             - 항목의 판정은 같은 혜택의 조건 비교(`GET /api/me/matches/{serviceId}`)와 같다. 비교한 값과 원문은 그 API로 본다.
             - 프로필은 요청할 때의 값으로 비교하므로, 수정하면 다음 요청에 바로 반영된다.
+            - 혜택과 지원조건은 마지막으로 끝난 수집 기준이다. 수집 중에는 직전 수집 기준이다.
             - 마지막 쪽을 넘은 번호는 오류가 아니라 `items`가 빈 배열인 200이다.""",
             security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     @ApiResponse(responseCode = "200", description = "조건 비교 결과 순 혜택 목록")

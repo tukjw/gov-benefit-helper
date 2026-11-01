@@ -1,5 +1,6 @@
 package kr.govbenefit.match.controller;
 
+import static kr.govbenefit.collection.domain.SourceEndpoint.SERVICE_DETAIL;
 import static kr.govbenefit.collection.domain.SourceEndpoint.SERVICE_LIST;
 import static kr.govbenefit.collection.domain.SourceEndpoint.SUPPORT_CONDITIONS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -481,6 +482,39 @@ class MatchListApiTest {
         JsonNode body = list(ALICE);
         assertThat(ids(body)).containsExactly("R06", "R07");
         assertItem(item(body, "R07").get("agencyRegion"), "MET", "REGION_INCLUDES");
+    }
+
+    @Test
+    void 수집이_끝나면_바뀐_지원조건으로_다시_판정한다() throws Exception {
+        service("S01", "가 혜택", "개인", UNCHANGED);
+        collectionService.collectAll();
+        putProfile(ALICE, ALICE_PROFILE);
+        assertThat(results(list(ALICE))).containsExactly("MATCH");
+
+        AGE_ON_BOUNDARY.accept(stub.record(SUPPORT_CONDITIONS, "S01"));
+        collectionService.collectAll();
+
+        JsonNode body = list(ALICE);
+        assertThat(results(body)).containsExactly("NEEDS_CHECK");
+        assertItem(item(body, "S01").get("age"), "NEEDS_CHECK", "AGE_ON_BOUNDARY");
+    }
+
+    @Test
+    void 부분_실패로_끝난_수집도_그때까지_저장한_목록을_반영한다() throws Exception {
+        service("S01", "가 혜택", "개인", UNCHANGED);
+        service("S02", "나 혜택", "개인", UNCHANGED);
+        collectionService.collectAll();
+        putProfile(ALICE, ALICE_PROFILE);
+        assertThat(ids(list(ALICE))).containsExactly("S01", "S02");
+
+        stub.record(SERVICE_LIST, "S02").put("사용자구분", "법인/시설/단체");
+        // 호출 한도 초과는 실행을 멈추므로 목록만 저장되고 부분 실패로 끝난다.
+        stub.override(SERVICE_DETAIL, 1, 429, "{\"code\":-429,\"msg\":\"호출 한도 초과\"}");
+        Long runId = collectionService.collectAll();
+
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM collection_run WHERE id = ?", String.class, runId))
+                .isEqualTo("PARTIAL");
+        assertThat(ids(list(ALICE))).containsExactly("S01");
     }
 
     @Test

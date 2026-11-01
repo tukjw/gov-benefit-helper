@@ -478,6 +478,7 @@ class ApiDocsTest {
                 "age", "gender", "lifeAttributes", "householdAttributes", "agencyRegion");
         assertThat(names(schema("MatchItemResult").path("properties"))).containsExactlyInAnyOrder("status", "reason");
         assertThat(schema("MatchListResponse").path("description").asString()).contains("신청 가능 확정이 아니다");
+        assertThat(list.path("description").asString()).contains("마지막으로 끝난 수집 기준");
     }
 
     @Test
@@ -494,6 +495,7 @@ class ApiDocsTest {
         assertThat(names(list.path("parameters"))).containsExactly("regionScope", "page", "size");
         assertThat(names(list.path("responses"))).containsExactlyInAnyOrder("200", "400", "500");
         assertThat(schemaRef(list.path("responses"), "200")).isEqualTo("#/components/schemas/MatchListResponse");
+        assertThat(list.path("description").asString()).contains("마지막으로 끝난 수집 기준");
         assertThat(names(match.path("parameters"))).containsExactly("serviceId");
         assertThat(names(match.path("responses"))).containsExactlyInAnyOrder("200", "400", "404", "500");
         assertThat(schemaRef(match.path("responses"), "200")).isEqualTo("#/components/schemas/MatchResponse");

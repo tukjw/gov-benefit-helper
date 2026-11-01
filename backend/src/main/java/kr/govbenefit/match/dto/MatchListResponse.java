@@ -3,7 +3,6 @@ package kr.govbenefit.match.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.List;
-import kr.govbenefit.benefit.domain.Benefit;
 import kr.govbenefit.benefit.dto.BenefitSummary;
 import kr.govbenefit.match.domain.ItemJudgement;
 import kr.govbenefit.match.domain.ItemStatus;
@@ -71,8 +70,8 @@ public record MatchListResponse(
                     - `NEEDS_CHECK`: 원문을 확인해야 하는 항목이 있다.""") MatchResult result,
             @Schema(description = "항목별 판정") MatchItemResults items) {
 
-        public static MatchListItem of(Benefit benefit, MatchOutcome outcome) {
-            return new MatchListItem(BenefitSummary.from(benefit), outcome.result(), new MatchItemResults(
+        public static MatchListItem of(BenefitSummary benefit, MatchOutcome outcome) {
+            return new MatchListItem(benefit, outcome.result(), new MatchItemResults(
                     MatchItemResult.from(outcome.personalTarget()),
                     MatchItemResult.from(outcome.age()),
                     MatchItemResult.from(outcome.gender()),
