@@ -1,6 +1,6 @@
 # 운영 배포와 되돌리기
 
-API를 app VM에 배포하고 되돌리는 절차, 처음 한 번 하는 Cloudflare·DB 설정, 첫 수집 방법이다. 구조는 [결정 0037](../decisions/0037-proxmox-deploy-metrics-and-load-test.md)에 있다. VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
+API를 app VM에 배포하고 되돌리는 절차, 처음 한 번 하는 Cloudflare·DB 설정, 첫 수집 방법이다. 구조는 [결정 0039](../decisions/0039-proxmox-deploy-metrics-and-load-test.md)에 있다. VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
 
 Cloudflare 대시보드 화면은 2026-10-28 기준이다. 화면이 바뀌었으면 Cloudflare 문서를 따른다. 토큰, API 키, 비밀번호는 이 문서와 저장소에 적지 않는다.
 
@@ -55,7 +55,7 @@ gh run watch   # 끝나면 요약에 이미지 태그(sha-<7자리>)가 나온�
 3. Public hostname을 추가한다.
    - Subdomain `api`, Domain `govbenefit.kr`, Path 비움
    - Service: Type `HTTP`, URL `app:8080`
-   - 관리 포트(8081)는 Tunnel에 더하지 않는다. 상태 확인과 지표가 외부에 열린다(결정 0037).
+   - 관리 포트(8081)는 Tunnel에 더하지 않는다. 상태 확인과 지표가 외부에 열린다(결정 0039).
 
 ### 4. 앱 비밀값 채우기
 
@@ -142,7 +142,7 @@ Cloudflare 대시보드 → `govbenefit.kr` → Security → WAF → Rate limiti
 
 AGENTS.md의 릴리스 절차로 `develop → main` PR을 머지하고 태그를 push한 뒤:
 
-1. GitHub Actions의 Image 워크플로가 성공했는지 본다. `backend/build.gradle`의 `version`과 태그가 다르면 실패한다.
+1. GitHub Actions의 Image 워크플로가 성공해 태그와 같은 이름의 이미지(`ghcr.io/tukjw/gov-benefit-helper:vX.Y.Z`)가 올라갔는지 본다.
 2. 내 PC에서 배포한다.
 
    ```bash

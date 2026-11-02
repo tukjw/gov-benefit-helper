@@ -54,7 +54,6 @@
 | 일반 이슈 | `develop` | `develop` | squash |
 | hotfix | `main` | `main` | merge commit |
 | hotfix 역머지 | `develop` | `develop` | merge commit |
-| 릴리스 버전 반영 | `develop` | `develop` | squash |
 | 릴리스 | `develop` (그대로 head) | `main` | merge commit |
 
 `main`은 merge commit만 허용합니다. 역머지를 squash하면 `main`이 `develop`에 합쳐지지 않으므로 merge commit을 고릅니다.
@@ -69,10 +68,9 @@
 
 ### 릴리스
 
-- 장기 release 브랜치는 두지 않습니다. 버전 반영 PR을 `develop`에 머지한 뒤 `develop → main` PR로 릴리스합니다.
-- 버전 반영 PR은 `develop`에서 `release/vX.Y.Z` 브랜치를 만들어 `backend/build.gradle`의 `version`을 `X.Y.Z`로 맞추고, 제목 `release: vX.Y.Z 버전 반영`으로 `develop`에 올립니다. SNAPSHOT 접미사는 쓰지 않습니다.
+- 장기 release 브랜치는 두지 않습니다. `develop → main` PR을 머지하고 머지 커밋에 태그를 push하면 릴리스가 끝납니다.
 - 릴리스 PR 제목은 `release: vX.Y.Z`입니다. `release`는 대응하는 이슈 라벨이 없는 유일한 커밋 type이며 이슈 번호를 붙이지 않습니다.
-- 머지 커밋에 `git tag -a vX.Y.Z -m "vX.Y.Z"`를 붙이고 push합니다. 버전의 단일 소스는 git 태그입니다.
+- 머지 커밋에 `git tag -a vX.Y.Z -m "vX.Y.Z"`를 붙이고 push합니다. 버전의 단일 소스는 git 태그이며, `backend/build.gradle`에는 버전을 두지 않습니다.
 - PR 머지 이후의 태그와 push는 사용자가 직접 합니다. 에이전트는 실행할 명령만 제시합니다.
 
 ## 하지 말 것

@@ -1,6 +1,6 @@
 # 0037. Proxmox 단일 호스트 배포·운영 지표·부하 테스트
 
-- 상태: 채택
+- 상태: 대체됨 → [0039](0039-proxmox-deploy-metrics-and-load-test.md)
 - 날짜: 2026-10-31
 - 출처: #96, [플랜](../plans/96-load-test-baseline.md)
 - 대체: [0036](0036-proxmox-deploy-and-metrics.md)
