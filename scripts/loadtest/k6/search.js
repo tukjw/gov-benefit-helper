@@ -1,4 +1,4 @@
-// 시나리오: 혜택 검색(결정 0037). 실행은 scripts/loadtest/run.sh search <요청 속도…>
+// 시나리오: 혜택 검색(결정 0039). 실행은 scripts/loadtest/run.sh search <요청 속도…>
 import { stepOptions, summarize } from './lib.js';
 import { search } from './requests.js';
 

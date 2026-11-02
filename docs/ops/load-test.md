@@ -1,6 +1,6 @@
 # 부하 테스트
 
-부하 생성 VM에서 운영 API의 지연·처리량을 재는 절차다. 구조와 측정 방식은 [결정 0037](../decisions/0037-proxmox-deploy-metrics-and-load-test.md), 기준 측정 결과는 [부하 테스트 기준 측정](../research/load-test-baseline.md)에 있다. 부하 생성 VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
+부하 생성 VM에서 운영 API의 지연·처리량을 재는 절차다. 구조와 측정 방식은 [결정 0039](../decisions/0039-proxmox-deploy-metrics-and-load-test.md), 기준 측정 결과는 [부하 테스트 기준 측정](../research/load-test-baseline.md)에 있다. 부하 생성 VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
 
 테스트 계정 비밀번호와 DB 비밀번호는 이 문서와 저장소에 적지 않는다.
 
@@ -150,4 +150,4 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 
 ## 다시 잴 때
 
-성능 개선 전후를 비교할 때는 같은 스크립트·단계·판정 기준으로 잰다(결정 0037). 기준 측정과 같은 단계로 재려면 속도를 직접 준다: `scripts/loadtest/run.sh search 5 10 20 40`. 이때는 정한 단계만 재고, 한계 단계가 나오면 멈춘다. 같은 입력으로 재려면 `INPUTS`로 기준 측정의 `inputs.json`을 넘긴다. 데이터 규모(혜택 수)가 달라졌으면 보고서에 함께 적는다. 개선 측정의 결과는 `RESULTS_DIR`로 그 작업의 보고서 옆에 둔다(예: `RESULTS_DIR=docs/research/guest-match-throughput/results`).
+성능 개선 전후를 비교할 때는 같은 스크립트·단계·판정 기준으로 잰다(결정 0039). 기준 측정과 같은 단계로 재려면 속도를 직접 준다: `scripts/loadtest/run.sh search 5 10 20 40`. 이때는 정한 단계만 재고, 한계 단계가 나오면 멈춘다. 같은 입력으로 재려면 `INPUTS`로 기준 측정의 `inputs.json`을 넘긴다. 데이터 규모(혜택 수)가 달라졌으면 보고서에 함께 적는다. 개선 측정의 결과는 `RESULTS_DIR`로 그 작업의 보고서 옆에 둔다(예: `RESULTS_DIR=docs/research/guest-match-throughput/results`).

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 부하 테스트 계정을 운영 DB에 넣고 지운다(결정 0037). 절차는 docs/ops/load-test.md.
+# 부하 테스트 계정을 운영 DB에 넣고 지운다(결정 0039). 절차는 docs/ops/load-test.md.
 # 사용법: scripts/loadtest/accounts.sh <seed | cleanup | count>
 #   seed    비밀번호를 새로 만들고 계정 1,000개를 넣는다. 비밀번호는 PASSWORD_FILE에만 둔다.
 #   cleanup 계정을 지우고(관련 데이터는 CASCADE) 남은 수를 센 뒤 PASSWORD_FILE을 지운다.

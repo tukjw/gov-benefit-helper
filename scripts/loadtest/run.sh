@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 시나리오를 요청 속도 단계마다 부하 VM에서 실행하고, 결과와 같은 구간의 서버 지표를 저장소로 가져온다(결정 0037).
+# 시나리오를 요청 속도 단계마다 부하 VM에서 실행하고, 결과와 같은 구간의 서버 지표를 저장소로 가져온다(결정 0039).
 # 사용법: scripts/loadtest/run.sh <search | detail | guest-match | login | mixed | all> [요청 속도...]
 #   scripts/loadtest/run.sh all            다섯 시나리오를 차례로 자동 단계로 잰다. 하나가 실패하면 남은 시나리오는 실행하지 않는다.
 #   scripts/loadtest/run.sh search         자동 단계: 시나리오의 시작 속도부터 한계 단계까지 두 배씩 올리고, 마지막 정상 속도로
@@ -8,7 +8,7 @@
 # 부하 VM의 저장소에서 tmux 안에서 실행한다. 내 PC의 연결이 끊겨도 측정이 계속된다. 내 PC의 저장소 루트에서도 실행할 수 있다.
 # 절차(테스트 계정, API 막기, 끝난 뒤 정리)는 docs/ops/load-test.md.
 # 결과는 RESULTS_DIR/<시각>-<시나리오>/에 쓴다.
-# 단계마다 한계 판정 기준(결정 0037)을 계산해, 한계 단계가 나오면 더 올리지 않는다.
+# 단계마다 한계 판정 기준(결정 0039)을 계산해, 한계 단계가 나오면 더 올리지 않는다.
 #
 # 환경 변수(괄호는 기본값)
 #   STEP_MINUTES(3)  WARMUP_MINUTES(3)  MAX_VUS(1000, 로그인을 보내면 계정 수 1,000 이하)
@@ -173,7 +173,7 @@ run_step() {
   on_host "$loadgen_host" "bash $remote_root/step.sh $work $k6_image $scenario $1 $2 ${3}m $max_vus" < "${password_file:-/dev/null}"
 }
 
-# 단계 요약으로 한계 판정 기준(결정 0037)을 계산한다. 출력: "<p95 ms> <사유, 없으면 빈 값>"
+# 단계 요약으로 한계 판정 기준(결정 0039)을 계산한다. 출력: "<p95 ms> <사유, 없으면 빈 값>"
 judge() {
   local rate=$1 base=$2
   on_host "$loadgen_host" "cat $work/rate-$rate.json" | jq -r \

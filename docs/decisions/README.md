@@ -79,5 +79,6 @@
 | [0034](0034-proxmox-deploy.md) | Proxmox 단일 호스트 배포 구조 | 대체됨 → [0036](0036-proxmox-deploy-and-metrics.md) | #87 |
 | [0035](0035-login-attempt-limit.md) | 로그인·탈퇴의 비밀번호 확인 시도 제한 | 채택 | #52 |
 | [0036](0036-proxmox-deploy-and-metrics.md) | Proxmox 단일 호스트 배포와 운영 지표 | 대체됨 → [0037](0037-proxmox-deploy-metrics-and-load-test.md) | #92 |
-| [0037](0037-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 채택 | #96 |
+| [0037](0037-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 대체됨 → [0039](0039-proxmox-deploy-metrics-and-load-test.md) | #96 |
 | [0038](0038-match-list-snapshot.md) | 조건 비교 목록의 메모리 판정 입력 | 채택 | #98 |
+| [0039](0039-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 채택 | #101 |

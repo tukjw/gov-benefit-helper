@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# 측정 구간의 서버 지표를 Prometheus에서 받아 결과 디렉터리에 저장한다(결정 0037). run.sh가 끝에 부른다.
+# 측정 구간의 서버 지표를 Prometheus에서 받아 결과 디렉터리에 저장한다(결정 0039). run.sh가 끝에 부른다.
 # 사용법: scripts/loadtest/export-metrics.sh <결과 디렉터리>
 # <결과 디렉터리>/steps.tsv의 단계 구간마다 queries.tsv의 쿼리를 query_range(15초 간격)로 받고, 범위가 all인 쿼리는 측정 전체
 # 구간으로 받는다. 응답 원본을 prometheus.json 하나에 {"<단계 | all>": {"<이름>": 응답}} 형태로 쓴다. 쿼리 하나가 한 줄이다.
 # 쿼리마다 파일을 나누면 결과 하나에 파일이 수백 개 생긴다.
-# Prometheus는 지표 VM의 127.0.0.1:9090에만 열려 있어(결정 0037) SSH 터널(METRICS_HOST, 기본 govbenefit-metrics)로 읽는다.
+# Prometheus는 지표 VM의 127.0.0.1:9090에만 열려 있어(결정 0039) SSH 터널(METRICS_HOST, 기본 govbenefit-metrics)로 읽는다.
 set -euo pipefail
 
 [[ $# -eq 1 ]] || { echo "사용법: $0 <결과 디렉터리>" >&2; exit 2; }
