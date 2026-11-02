@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #98 비회원 조건 비교 목록의 처리량 개선
 
@@ -185,6 +185,16 @@ status: in-progress
       - `RESULTS_DIR=docs/research/guest-match-throughput/results INPUTS=<#96 guest-match의 inputs.json> scripts/loadtest/run.sh guest-match`
       - 테스트 계정을 넣은 뒤 `RESULTS_DIR=… INPUTS=<#96 mixed의 inputs.json> scripts/loadtest/run.sh mixed`
     - 끝나면 `.env`의 `APP_TAG`를 `v0.1.1`로 되돌려 `docker compose up -d app`을 실행하고, 상태를 확인한다. 테스트 계정을 지우고 API를 푼다.
+    - (측정) 2026-11-02 13:23\~14:44(KST)에 `sha-f9fcd2b`로 조건 비교와 혼합을 쟀다. 결과와 근거는 [보고서](../research/guest-match-throughput.md)에 있다.
+      - 조건 비교 한계는 초당 512\~640건(기준 7\~8건), 혼합은 256\~320건(기준 24\~32건)이다.
+      - 결과를 내 PC로 가져올 때 경로가 한 단계 더 들어가(`guest-match-throughput/guest-match-throughput/results/`) 원래 자리로 옮겼다. 파일 목록, JSON, 단계별 지표가 모두 있고, 입력이 #96과 같은 것을 확인했다.
+      - 측정 뒤 사용자가 다음을 확인했다.
+        - `v0.1.1`로 되돌림
+        - 테스트 계정 정리
+        - API 풀기
+        - 측정 전 governor `schedutil`
+        - Resend 발송 기록 없음
+      - API는 15:00:51에 외부 주소에서 200으로 돌아온 것을 확인했다. 그 전에는 Cloudflare 1033(Tunnel 연결 없음)이었다.
 12. **보고서 마무리와 PR**: 운영 결과를 보고서에 반영하고 검증 명령을 통과시킨다. 마지막 커밋에서 `status: done`으로 바꾸고 PR을 올린다. PR 본문은 `Closes #98`이다.
 
 ## 제안 (이 이슈에서 하지 않음)
