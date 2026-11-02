@@ -1,6 +1,6 @@
 # 운영 지표
 
-지표 VM의 Prometheus로 운영 app의 지표, app·db VM의 지표, MySQL 지표를 모으고 Grafana로 보는 절차다. 구조는 [결정 0036](../decisions/0036-proxmox-deploy-and-metrics.md)에 있다. 지표 VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
+지표 VM의 Prometheus로 운영 app의 지표, app·db VM의 지표, MySQL 지표를 모으고 Grafana로 보는 절차다. 구조는 [결정 0037](../decisions/0037-proxmox-deploy-metrics-and-load-test.md)에 있다. 지표 VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
 
 비밀번호는 이 문서와 저장소에 적지 않는다.
 
@@ -89,7 +89,7 @@ provisioning으로 불러온 대시보드는 화면에서 저장할 수 없다. 
    scp -r deploy/metrics/grafana/dashboards/. govbenefit-metrics:/opt/gov-benefit/metrics/grafana/dashboards/
    ```
 
-앱의 지표 이름이나 태그를 바꾸면 대시보드 쿼리도 함께 고친다(결정 0036).
+앱의 지표 이름이나 태그를 바꾸면 대시보드 쿼리도 함께 고친다(결정 0037).
 
 ### Prometheus 설정·이미지 버전 바꾸기
 

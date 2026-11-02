@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# app VM의 앱을 지정한 이미지 태그로 바꾼다(결정 0036). 되돌리기도 직전 태그로 같은 명령을 실행한다.
+# app VM의 앱을 지정한 이미지 태그로 바꾼다(결정 0037). 되돌리기도 직전 태그로 같은 명령을 실행한다.
 # 사용법: scripts/deploy.sh <vX.Y.Z | sha-<커밋 7자리>>
 # SSH 대상은 DEPLOY_HOST(기본 govbenefit-app, ~/.ssh/config의 별칭)다. 절차는 docs/ops/deploy.md.
 # 실패해도 자동으로 되돌리지 않는다. 마이그레이션이 이미 적용됐을 수 있어 이전 이미지가 뜨는지 보고 판단한다.
@@ -34,7 +34,7 @@ echo "배포: ${previous:-없음} → $tag ($host)"
 ssh "$host" "cd $remote_dir && APP_TAG=$tag docker compose pull app && echo 'APP_TAG=$tag' > .env && docker compose up -d"
 
 # 4. 상태 확인. DB 연결과 Flyway 마이그레이션이 끝나야 UP이다.
-# 상태 확인은 관리 포트(8081)에 있다(결정 0036). 관리 포트가 없는 이미지(v0.1.0)는 앱 포트(8080)에 있어
+# 상태 확인은 관리 포트(8081)에 있다(결정 0037). 관리 포트가 없는 이미지(v0.1.0)는 앱 포트(8080)에 있어
 # 그 이미지로 되돌릴 때를 위해 8080도 본다. 그런 이미지로 되돌릴 일이 없어지면 8080 확인을 지운다.
 health_cmd="curl -fsS http://127.0.0.1:8081/actuator/health || curl -fsS http://127.0.0.1:8080/actuator/health"
 echo "상태 확인을 기다립니다(최대 ${health_timeout}초)."

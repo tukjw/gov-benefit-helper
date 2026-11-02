@@ -34,7 +34,7 @@ public class SecurityConfig {
             "/api/matches/**",
             // 비회원 조건 비교의 입력 선택지
             "/api/profile/options",
-            // 관리 포트에서만 열린다(결정 0036). 배포 스크립트가 기동 완료를, Prometheus가 지표를 읽는다.
+            // 관리 포트에서만 열린다(결정 0037). 배포 스크립트가 기동 완료를, Prometheus가 지표를 읽는다.
             // 앱 포트에서는 처리할 경로가 없어 404다.
             "/actuator/health",
             "/actuator/prometheus",

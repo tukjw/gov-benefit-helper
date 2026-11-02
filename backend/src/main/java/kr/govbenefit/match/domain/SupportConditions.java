@@ -12,7 +12,8 @@ import kr.govbenefit.profile.domain.ProfileAttribute;
 import tools.jackson.databind.JsonNode;
 
 /**
- * 혜택 하나의 지원조건 코드 중 비교 항목에 쓰는 값. 원문(supportConditions)에서 조회할 때마다 읽는다(결정 0008).
+ * 혜택 하나의 지원조건 코드 중 비교 항목에 쓰는 값. 원문(supportConditions)에서 읽는다. 상세 비교는 요청마다, 목록은 수집이
+ * 끝날 때 읽는다.
  * 코드의 의미는 데이터 검증 보고서 §5를 따른다. {@code "Y"}는 그 속성이 있는 사람도 대상에 포함된다는 뜻이다.
  *
  * @param ageStart 대상연령 시작(JA0110). 없거나 정수가 아니면 null이다.

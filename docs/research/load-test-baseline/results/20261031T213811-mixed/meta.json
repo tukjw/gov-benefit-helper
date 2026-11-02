@@ -1,0 +1,104 @@
+{
+  "scenario": "mixed",
+  "runId": "20261031T213811-mixed",
+  "k6Image": "grafana/k6:2.3.0",
+  "mode": "auto",
+  "maxRate": 1280,
+  "stepMinutes": 3,
+  "warmup": {
+    "rate": 2,
+    "minutes": 3
+  },
+  "maxVus": 1000,
+  "baseP95Ms": 579.3552464,
+  "limit": {
+    "step": "rate-28",
+    "reasons": "못 보낸 요청 9건"
+  },
+  "app": {
+    "imageTag": "v0.1.1",
+    "composeSha256": "9247526baa4d0152cb95d3baf776b1333765592dbf913676e591d1108e169cf9"
+  },
+  "repo": {
+    "commit": "e5888f1d15741470df2655646f185dc2a673c5ff",
+    "dirty": false,
+    "composeSha256": "9247526baa4d0152cb95d3baf776b1333765592dbf913676e591d1108e169cf9"
+  },
+  "vms": {
+    "app": {
+      "vcpu": 4,
+      "memMiB": 3909
+    },
+    "db": {
+      "vcpu": 2,
+      "memMiB": 3910
+    },
+    "loadgen": {
+      "vcpu": 2,
+      "memMiB": 3910
+    }
+  },
+  "benefitCount": 10942,
+  "steps": [
+    {
+      "name": "warmup",
+      "rate": 2,
+      "start": 1793450293,
+      "end": 1793450474
+    },
+    {
+      "name": "rate-2",
+      "rate": 2,
+      "start": 1793450474,
+      "end": 1793450655
+    },
+    {
+      "name": "rate-4",
+      "rate": 4,
+      "start": 1793450655,
+      "end": 1793450835
+    },
+    {
+      "name": "rate-8",
+      "rate": 8,
+      "start": 1793450836,
+      "end": 1793451016
+    },
+    {
+      "name": "rate-16",
+      "rate": 16,
+      "start": 1793451016,
+      "end": 1793451197
+    },
+    {
+      "name": "rate-32",
+      "rate": 32,
+      "start": 1793451197,
+      "end": 1793451379
+    },
+    {
+      "name": "recovery",
+      "rate": 16,
+      "start": 1793451379,
+      "end": 1793451560
+    },
+    {
+      "name": "rate-20",
+      "rate": 20,
+      "start": 1793451560,
+      "end": 1793451741
+    },
+    {
+      "name": "rate-24",
+      "rate": 24,
+      "start": 1793451741,
+      "end": 1793451921
+    },
+    {
+      "name": "rate-28",
+      "rate": 28,
+      "start": 1793451921,
+      "end": 1793452102
+    }
+  ]
+}
