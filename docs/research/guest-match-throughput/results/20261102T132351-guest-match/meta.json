@@ -1,0 +1,128 @@
+{
+  "scenario": "guest-match",
+  "runId": "20261102T132351-guest-match",
+  "k6Image": "grafana/k6:2.3.0",
+  "mode": "auto",
+  "maxRate": 1280,
+  "stepMinutes": 3,
+  "warmup": {
+    "rate": 1,
+    "minutes": 3
+  },
+  "maxVus": 1000,
+  "baseP95Ms": 47.235045,
+  "limit": {
+    "step": "rate-640",
+    "reasons": "응답 수가 목표의 95% 미만, 못 보낸 요청 8248건, p95가 기준(47ms)의 2배 초과"
+  },
+  "app": {
+    "imageTag": "sha-f9fcd2b",
+    "composeSha256": "9247526baa4d0152cb95d3baf776b1333765592dbf913676e591d1108e169cf9"
+  },
+  "repo": {
+    "commit": "f9fcd2bc263361500afe8e8ea439903173c6ceb2",
+    "dirty": false,
+    "composeSha256": "9247526baa4d0152cb95d3baf776b1333765592dbf913676e591d1108e169cf9"
+  },
+  "vms": {
+    "app": {
+      "vcpu": 4,
+      "memMiB": 3909
+    },
+    "db": {
+      "vcpu": 2,
+      "memMiB": 3910
+    },
+    "loadgen": {
+      "vcpu": 2,
+      "memMiB": 3910
+    }
+  },
+  "benefitCount": 10942,
+  "steps": [
+    {
+      "name": "warmup",
+      "rate": 1,
+      "start": 1793593433,
+      "end": 1793593614
+    },
+    {
+      "name": "rate-1",
+      "rate": 1,
+      "start": 1793593614,
+      "end": 1793593794
+    },
+    {
+      "name": "rate-2",
+      "rate": 2,
+      "start": 1793593794,
+      "end": 1793593975
+    },
+    {
+      "name": "rate-4",
+      "rate": 4,
+      "start": 1793593975,
+      "end": 1793594155
+    },
+    {
+      "name": "rate-8",
+      "rate": 8,
+      "start": 1793594155,
+      "end": 1793594336
+    },
+    {
+      "name": "rate-16",
+      "rate": 16,
+      "start": 1793594336,
+      "end": 1793594516
+    },
+    {
+      "name": "rate-32",
+      "rate": 32,
+      "start": 1793594516,
+      "end": 1793594697
+    },
+    {
+      "name": "rate-64",
+      "rate": 64,
+      "start": 1793594697,
+      "end": 1793594877
+    },
+    {
+      "name": "rate-128",
+      "rate": 128,
+      "start": 1793594877,
+      "end": 1793595058
+    },
+    {
+      "name": "rate-256",
+      "rate": 256,
+      "start": 1793595058,
+      "end": 1793595238
+    },
+    {
+      "name": "rate-512",
+      "rate": 512,
+      "start": 1793595238,
+      "end": 1793595419
+    },
+    {
+      "name": "rate-1024",
+      "rate": 1024,
+      "start": 1793595419,
+      "end": 1793595601
+    },
+    {
+      "name": "recovery",
+      "rate": 512,
+      "start": 1793595601,
+      "end": 1793595782
+    },
+    {
+      "name": "rate-640",
+      "rate": 640,
+      "start": 1793595782,
+      "end": 1793595964
+    }
+  ]
+}

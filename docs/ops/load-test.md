@@ -14,7 +14,7 @@
 | 시나리오 | `scripts/loadtest/k6/`의 `search`(혜택 검색), `detail`(혜택 상세), `guest-match`(비회원 조건 비교 목록), `login`(로그인), `mixed`(혼합) |
 | 테스트 계정 | 운영 DB의 `loadtest-0001@loadtest.invalid` ~ `loadtest-1000@loadtest.invalid`. `scripts/loadtest/accounts.sh`로 넣고 지운다. 비밀번호는 부하 생성 VM의 `~/.local/state/gov-benefit-loadtest/password`(권한 600)에만 있다 |
 | 서버 지표 | 지표 VM의 Prometheus. `scripts/loadtest/export-metrics.sh`가 단계 구간마다 `scripts/loadtest/queries.tsv`의 쿼리를 받는다 |
-| 결과 | 부하 생성 VM 저장소의 `docs/research/load-test-baseline/results/<시각>-<시나리오>/`. 끝나면 내 PC로 가져와 커밋한다 |
+| 결과 | 부하 생성 VM 저장소의 `<RESULTS_DIR>/<시각>-<시나리오>/`. `RESULTS_DIR`의 기본값은 `docs/research/load-test-baseline/results`다. 끝나면 내 PC로 가져와 커밋한다 |
 
 ## 측정하는 동안 지킬 것
 
@@ -131,9 +131,10 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 4. 결과를 내 PC로 가져온다. 내 PC의 저장소 루트에서 실행하고, 가져온 뒤 부하 생성 VM의 결과는 지운다(다음 측정 결과와 섞이지 않게).
 
    ```bash
-   mkdir -p docs/research/load-test-baseline/results
-   scp -r 'govbenefit-loadgen:gov-benefit-helper/docs/research/load-test-baseline/results/*' docs/research/load-test-baseline/results/
-   ssh govbenefit-loadgen 'rm -rf gov-benefit-helper/docs/research/load-test-baseline/results'
+   results=docs/research/load-test-baseline/results   # RESULTS_DIR을 줬으면 그 값
+   mkdir -p "$results"
+   scp -r "govbenefit-loadgen:gov-benefit-helper/$results/*" "$results/"
+   ssh govbenefit-loadgen "rm -rf gov-benefit-helper/$results"
    ```
 
 5. Proxmox 호스트에서 부하 생성 VM을 끈다: `qm shutdown 104`
@@ -141,7 +142,7 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
    - 결과 디렉터리마다 `app-log-check.txt`에 머리줄 말고 내용이 없다.
    - `prometheus.json`의 `all.collection_runs`와 `all.mail_requests` 값이 구간 처음과 끝에서 같거나, 결과가 비어 있다(앱을 띄운 뒤 한 번도 없었다). `jq -c '.all.collection_runs.data.result, .all.mail_requests.data.result' <결과 디렉터리>/prometheus.json`으로 본다.
    - Resend 대시보드의 Emails에 측정 시간대의 발송 기록이 없다.
-7. 결과 디렉터리와 [보고서](../research/load-test-baseline.md)를 커밋해 PR로 올린다.
+7. 결과 디렉터리와 보고서(기준 측정은 [부하 테스트 기준 측정](../research/load-test-baseline.md))를 커밋해 PR로 올린다.
 
 ## 중간에 끊겼을 때
 
@@ -149,4 +150,4 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 
 ## 다시 잴 때
 
-성능 개선 전후를 비교할 때는 같은 스크립트·단계·판정 기준으로 잰다(결정 0037). 기준 측정과 같은 단계로 재려면 속도를 직접 준다: `scripts/loadtest/run.sh search 5 10 20 40`. 이때는 정한 단계만 재고, 한계 단계가 나오면 멈춘다. 같은 입력으로 재려면 `INPUTS`로 기준 측정의 `inputs.json`을 넘긴다. 데이터 규모(혜택 수)가 달라졌으면 보고서에 함께 적는다.
+성능 개선 전후를 비교할 때는 같은 스크립트·단계·판정 기준으로 잰다(결정 0037). 기준 측정과 같은 단계로 재려면 속도를 직접 준다: `scripts/loadtest/run.sh search 5 10 20 40`. 이때는 정한 단계만 재고, 한계 단계가 나오면 멈춘다. 같은 입력으로 재려면 `INPUTS`로 기준 측정의 `inputs.json`을 넘긴다. 데이터 규모(혜택 수)가 달라졌으면 보고서에 함께 적는다. 개선 측정의 결과는 `RESULTS_DIR`로 그 작업의 보고서 옆에 둔다(예: `RESULTS_DIR=docs/research/guest-match-throughput/results`).

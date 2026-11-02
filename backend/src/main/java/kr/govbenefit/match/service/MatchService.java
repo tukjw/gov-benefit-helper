@@ -4,12 +4,9 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import kr.govbenefit.account.repository.UserAccountRepository;
 import kr.govbenefit.benefit.domain.Benefit;
 import kr.govbenefit.benefit.repository.BenefitRepository;
-import kr.govbenefit.benefit.service.BenefitQueryService;
 import kr.govbenefit.collection.domain.SourceEndpoint;
 import kr.govbenefit.collection.domain.SourceRecord;
 import kr.govbenefit.collection.repository.SourceRecordRepository;
@@ -33,13 +30,15 @@ import kr.govbenefit.region.domain.Regions;
 import kr.govbenefit.region.service.RegionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 프로필과 혜택의 지원조건 비교(REQ-MATCH-01, DEC-MATCH). 로그인 사용자는 토큰 주인의 저장된 프로필로(결정 0018), 비회원은
  * 요청에 담은 값으로 비교한다. 요청 값은 저장하지 않으며, 두 경로는 같은 판정·범위·정렬·페이지를 쓴다.
- * 지원조건은 저장된 원문(supportConditions)을 조회할 때마다 읽으므로(결정 0008) 프로필을 바꾸면 다음 비교에 바로 반영된다.
+ * 상세 비교는 지원조건 원문을 요청마다 읽고, 목록은 수집이 끝날 때 만든 판정 입력({@link MatchCandidateStore})으로 판정한다.
+ * 프로필은 두 경로 모두 요청할 때 읽으므로 바꾸면 다음 비교에 바로 반영된다.
  */
 @Service
 @RequiredArgsConstructor
@@ -51,6 +50,7 @@ public class MatchService {
     private final BenefitRepository benefitRepository;
     private final SourceRecordRepository sourceRecordRepository;
     private final RegionService regionService;
+    private final MatchCandidateStore candidateStore;
     private final ProfileValidator profileValidator;
     private final JsonMapper jsonMapper;
     private final Clock clock;
@@ -95,13 +95,14 @@ public class MatchService {
      * 비교 결과 순(해당 → 확인 필요) 혜택 한 쪽. 개인 대상이 아닌 혜택(미해당)은 뺀다.
      * 운영 기관 지역 범위는 판정과 같은 운영 기관 지역으로 메모리에서 거른다. 범위 규칙을 SQL에 따로 두지 않는다.
      * 순서가 프로필에 따라 달라 DB에서 자를 수 없으므로 요청마다 전체 혜택을 판정한다. 같은 결과 안에서는 검색과 같은 순서가
-     * 되도록 DB가 정렬한 순서를 그대로 두고 결과별로 나눈다. DB 콜레이션은 Java 문자열 비교와 순서가 달라 다시 정렬하지 않는다.
-     * 프로필·혜택·지원조건을 한 읽기 트랜잭션에서 같은 스냅샷으로 읽는다.
+     * 되도록 판정 입력의 순서(DB 정렬)를 그대로 두고 결과별로 나눈다.
+     * 혜택과 지원조건은 마지막으로 끝난 수집 기준이다. 판정하는 동안 커넥션을 쥐지 않도록 트랜잭션 밖에서 돈다.
      *
      * @param requested 요청한 지역 범위. 없으면 null이다.
      * @param page      1부터 센 쪽 번호
      * @throws BusinessException 계정이 없다({@code UNAUTHENTICATED}).
      */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public MatchListResponse list(Long userId, RegionScope requested, int page, int size) {
         requireAccount(userId);
         LocalDate today = LocalDate.now(clock);
@@ -113,6 +114,7 @@ public class MatchService {
      *
      * @throws InvalidInputException 지원하지 않는 값이나 모순된 입력이다. 프로필 저장과 같은 항목별 오류다.
      */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public MatchListResponse listWith(ProfileRequest profile, RegionScope requested, int page, int size) {
         ProfileValues values = profileValidator.validate(profile);
         LocalDate today = LocalDate.now(clock);
@@ -122,24 +124,20 @@ public class MatchService {
     private MatchListResponse list(MatchSubject subject, RegionScope requested, int page, int size,
                                    LocalDate today) {
         RegionScope scope = scope(requested, subject);
-        Regions regions = regionService.regions();
-        Map<String, SupportConditions> conditions = sourceRecordRepository
-                .findAllByEndpoint(SourceEndpoint.SUPPORT_CONDITIONS).stream()
-                .collect(Collectors.toMap(SourceRecord::getServiceId, this::parse));
         // 해당을 담고, 다 판정한 뒤 확인 필요를 이어 붙인다.
         List<MatchListItem> listed = new ArrayList<>();
         List<MatchListItem> needsCheck = new ArrayList<>();
-        for (Benefit benefit : benefitRepository.findAll(BenefitQueryService.SEARCH_ORDER)) {
-            AgencyRegion agencyRegion = regions.agencyRegionOf(benefit.getAgencyType(), benefit.getAgencyCode());
+        for (MatchCandidate candidate : candidateStore.get()) {
+            AgencyRegion agencyRegion = candidate.agencyRegion();
             if (scope == RegionScope.MY_REGION && !agencyRegion.isWithin(subject.sidoCode(), subject.sigunguCode())) {
                 continue;
             }
             // 지원조건을 수집하지 못한 혜택은 null로 판정해 확인 필요가 된다. 상세 비교와 같다.
-            MatchOutcome outcome = ConditionMatcher.match(subject, conditions.get(benefit.getServiceId()),
-                    benefit.getUserType(), agencyRegion);
+            MatchOutcome outcome = ConditionMatcher.match(subject, candidate.conditions(), candidate.userType(),
+                    agencyRegion);
             switch (outcome.result()) {
-                case MATCH -> listed.add(MatchListItem.of(benefit, outcome));
-                case NEEDS_CHECK -> needsCheck.add(MatchListItem.of(benefit, outcome));
+                case MATCH -> listed.add(MatchListItem.of(candidate.summary(), outcome));
+                case NEEDS_CHECK -> needsCheck.add(MatchListItem.of(candidate.summary(), outcome));
                 case MISMATCH -> {
                 }
             }
@@ -169,7 +167,7 @@ public class MatchService {
     }
 
     private MatchSubject subject(Long userId, LocalDate today) {
-        return MatchSubject.of(userProfileRepository.findById(userId).orElse(null), today);
+        return MatchSubject.of(userProfileRepository.findWithConditionCodesByUserId(userId).orElse(null), today);
     }
 
     private SupportConditions parse(SourceRecord record) {

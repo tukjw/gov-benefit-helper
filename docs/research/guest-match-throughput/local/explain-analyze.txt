@@ -1,0 +1,12 @@
+*************************** 1. row ***************************
+EXPLAIN: -> Sort: benefit.`name`, benefit.service_id  (cost=1200 rows=9646) (actual time=31.2..42 rows=10950 loops=1)
+    -> Table scan on benefit  (cost=1200 rows=9646) (actual time=0.572..8.33 rows=10950 loops=1)
+
+*************************** 1. row ***************************
+EXPLAIN: -> Filter: (source_record.endpoint = 'SUPPORT_CONDITIONS')  (cost=3863 rows=2973) (actual time=11.2..15.7 rows=10950 loops=1)
+    -> Table scan on source_record  (cost=3863 rows=29732) (actual time=0.0183..13.6 rows=32850 loops=1)
+
+*************************** 1. row ***************************
+EXPLAIN: -> Sort: benefit.`name`, benefit.service_id  (cost=1200 rows=9646) (actual time=7.57..8.29 rows=10950 loops=1)
+    -> Table scan on benefit  (cost=1200 rows=9646) (actual time=0.0158..2.88 rows=10950 loops=1)
+

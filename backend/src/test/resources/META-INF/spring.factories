@@ -1,3 +1,5 @@
-# 모든 테스트가 함께 쓰는 DB를 테스트 메서드마다 비운다(결정 0033). 메모리에 있는 로그인 시도 제한 기록도 함께 비운다(결정 0035).
+# 모든 테스트가 함께 쓰는 DB를 테스트 메서드마다 비운다(결정 0033). 메모리에 있는 로그인 시도 제한 기록(결정 0035)과
+# 조건 비교 목록의 판정 입력(결정 0038)도 함께 비운다.
 org.springframework.test.context.TestExecutionListener=kr.govbenefit.DatabaseCleanupListener,\
-kr.govbenefit.LoginAttemptResetListener
+kr.govbenefit.LoginAttemptResetListener,\
+kr.govbenefit.MatchCandidateResetListener
