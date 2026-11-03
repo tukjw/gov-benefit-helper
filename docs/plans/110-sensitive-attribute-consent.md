@@ -9,7 +9,7 @@ status: in-progress
 - 목표: 생애 속성 중 건강에 관한 4개(장애인, 질병/질환자, 임산부, 예비부모/난임)는 별도 동의가 있을 때만 받고, 회원은 동의 시각을 기록한다(개인정보 보호법 제23조).
 - 포함:
   - 요청 필드 `sensitiveAttributeConsent`와 항목별 검증. 회원 프로필 저장과 비회원 조건 비교(목록·상세) 모두에 적용한다.
-  - `user_profile.sensitive_attribute_consented_at` 컬럼과 기존 4개 속성 삭제(V13).
+  - `user_profile.sensitive_attribute_consented_at` 컬럼과 기존 4개 속성 삭제(V15).
   - 프로필 응답의 동의 시각, 선택지 응답의 민감 속성 표시.
   - 프로필 화면의 동의 체크박스와 안내문, 비회원 보관 값 형식 변경.
   - API 명세, `DEC-PROFILE`, `REQ-PROFILE-01`, 디자인 문서 F3.
@@ -25,7 +25,7 @@ status: in-progress
 - 대상 4개 속성의 지원조건 코드: `PROSPECTIVE_PARENT`=`JA0301`, `PREGNANT`=`JA0302`, `DISABLED`=`JA0328`, `PATIENT`=`JA0330`(`LifeAttribute`).
 - 속성은 `user_profile_attribute`에 코드로 저장되고, 그룹에 코드가 없으면 미입력이다(결정 0022). 4개를 지운 뒤 생애 그룹에 남는 코드가 없으면 그 사용자의 생애 속성은 미입력이 된다. `NONE`(`JA0322`)은 다른 값과 함께 저장될 수 없으므로 지운 뒤 `NONE`만 남는 경우는 없다.
 - 계정 → `user_profile` → `user_profile_attribute`가 `ON DELETE CASCADE`로 이어져 있다(V9). `user_profile`의 컬럼은 탈퇴할 때 행과 함께 지워진다.
-- 스키마는 Flyway가 만들고 Hibernate는 검증만 한다. 다음 마이그레이션 번호는 V13이다.
+- 스키마는 Flyway가 만들고 Hibernate는 검증만 한다. 다음 마이그레이션 번호는 V15다(#109의 V13, #107의 V14가 있다).
 - 비회원 프로필은 `frontend/src/lib/profile/guestProfile.ts`가 sessionStorage에 `ProfileRequest` 그대로 두고(결정 0031), `matchRoute.ts`·`benefitDetailLoader.ts`가 읽어 조건 비교 요청 본문으로 보낸다. `isProfileRequest`가 형식이 맞지 않는 값을 미입력으로 본다.
 - `profileForm.isEmptyProfile`은 `ProfileRequest`의 모든 값이 `null`인지로 판단한다. boolean 필드가 생기면 그대로는 항상 거짓이다.
 - `AttributeChips`는 고른 값을 자기 상태로만 갖는다. 동의 체크박스를 보이고 숨기려면 페이지가 생애 속성 선택을 알아야 한다.
@@ -53,7 +53,7 @@ status: in-progress
 4. **민감 속성 여부는 `LifeAttribute`가 갖고, 선택지 API의 `AttributeOption.sensitive`로 내보낸다.**
    - 서버와 화면이 같은 기준을 쓴다. 화면에 4개 값을 따로 적지 않는다.
    - `ProfileAttribute`에 `default boolean sensitive()`(`false`)를 두고 `LifeAttribute`만 생성자 인자로 덮는다. 가구 속성은 모두 `false`다.
-5. **기존 4개 속성은 V13에서 조건 없이 지운다.** 지금까지 동의 기록이 하나도 없으므로 완료 조건("동의 기록 없이 저장된 4개 속성이 남아 있지 않다")과 같다.
+5. **기존 4개 속성은 V15에서 조건 없이 지운다.** 지금까지 동의 기록이 하나도 없으므로 완료 조건("동의 기록 없이 저장된 4개 속성이 남아 있지 않다")과 같다.
 6. **안내문의 보유 기간은 회원 "탈퇴하거나 이 항목을 모두 빼고 저장할 때까지", 비회원 "서버에 저장하지 않음"이다.** 2026-11-03 사용자 결정. #111의 처리방침도 같은 표현을 쓴다.
 7. **비회원 보관 값에 `sensitiveAttributeConsent`가 없으면 형식이 맞지 않는 값으로 보고 미입력으로 다룬다.**
    - 배포 전에 탭에 남은 값은 동의 없이 4개 속성을 담았을 수 있다. 그대로 보내면 조건 비교가 400이 된다.
@@ -61,7 +61,7 @@ status: in-progress
 
 ## 단계별 구현 계획
 
-1. **마이그레이션** `V13__add_user_profile_sensitive_attribute_consent.sql`
+1. **마이그레이션** `V15__add_user_profile_sensitive_attribute_consent.sql`
    ```sql
    -- 건강 관련 생애 속성의 별도 동의(#110, DEC-PROFILE, 개인정보 보호법 제23조). 처음 동의한 시각이며 NULL이면 동의 기록이 없다.
    -- 4개 속성을 모두 빼고 저장하면 비우고, 탈퇴하면 행과 함께 지워진다.
@@ -121,7 +121,7 @@ status: in-progress
       - 기존 판정 테스트(`PREGNANT`를 보내는 것)에 동의를 더해 판정이 지금과 같은지 확인한다.
     - `WithdrawalApiTest`: 동의와 함께 저장한 뒤 탈퇴하면 `user_profile` 행(동의 시각 포함)이 남지 않는다.
     - `profile.SensitiveAttributeMigrationTest`(새 파일)
-      - 공용 컨테이너에 별도 스키마를 만들어 Flyway로 V12까지 올린 뒤, 4개 코드와 다른 코드를 함께 가진 프로필과 4개만 가진 프로필을 넣고 V13을 적용한다.
+      - 공용 컨테이너에 별도 스키마를 만들어 Flyway로 V14까지 올린 뒤, 4개 코드와 다른 코드를 함께 가진 프로필과 4개만 가진 프로필을 넣고 V15를 적용한다.
       - 4개 코드가 남지 않고, 다른 코드는 남고, 동의 시각이 모두 `NULL`이다. 스키마는 테스트 끝에 지운다.
       - 스키마 생성 권한이 테스트 계정에 없으면 컨테이너의 root 계정으로 접속한다. 구현 때 확인한다.
     - `ApiDocsTest`의 프로필 테스트: `ProfileRequest` 속성에 `sensitiveAttributeConsent`, `ProfileResponse`에 `sensitiveAttributeConsentedAt`, `AttributeOption`에 `sensitive`를 더한다.

@@ -299,7 +299,8 @@ class ProfileApiTest {
                 SELECT column_name FROM information_schema.columns
                 WHERE table_schema = DATABASE() AND table_name IN ('user_profile', 'user_profile_attribute')""",
                 String.class)).containsExactlyInAnyOrder("user_id", "birth_date", "gender", "sido_code",
-                "sigungu_code", "created_at", "updated_at", "user_id", "condition_code");
+                "sigungu_code", "sensitive_attribute_consented_at", "created_at", "updated_at", "user_id",
+                "condition_code");
     }
 
     @Test

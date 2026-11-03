@@ -45,6 +45,9 @@ public class UserProfile {
     @Column(columnDefinition = "char(7)")
     private String sigunguCode;
 
+    /** 건강 관련 생애 속성 처리에 처음 동의한 시각(#110, DEC-PROFILE). null이면 동의 기록이 없다. */
+    private LocalDateTime sensitiveAttributeConsentedAt;
+
     @Getter(AccessLevel.NONE)
     @ElementCollection
     @CollectionTable(name = "user_profile_attribute", joinColumns = @JoinColumn(name = "user_id"))
