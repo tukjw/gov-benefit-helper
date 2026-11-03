@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #110 건강 관련 프로필 속성은 별도 동의를 받아 처리
 
