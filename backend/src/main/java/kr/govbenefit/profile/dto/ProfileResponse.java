@@ -23,10 +23,14 @@ public record ProfileResponse(
         List<LifeAttribute> lifeAttributes,
         @Schema(description = "가구 속성. `null`이면 미입력, `[\"NONE\"]`이면 해당 없음이다.")
         List<HouseholdAttribute> householdAttributes,
+        @Schema(description = """
+                건강 관련 생애 속성 처리에 처음 동의한 시각(#110). 동의 기록이 없으면 `null`이다. 이 속성을 모두 빼고 저장하면 \
+                `null`이 된다.""", example = "2026-10-17T10:00:00+09:00")
+        OffsetDateTime sensitiveAttributeConsentedAt,
         @Schema(description = "마지막으로 저장한 시각. 저장한 적이 없으면 `null`이다.", example = "2026-10-17T10:00:00+09:00")
         OffsetDateTime updatedAt) {
 
     public static ProfileResponse empty() {
-        return new ProfileResponse(null, null, null, null, null, null, null, null);
+        return new ProfileResponse(null, null, null, null, null, null, null, null, null);
     }
 }

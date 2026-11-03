@@ -12,4 +12,9 @@ public interface ProfileAttribute {
 
     /** 사람이 읽는 이름 */
     String label();
+
+    /** 건강에 관한 민감정보라 고를 때 별도 동의가 필요한지(#110, DEC-PROFILE) */
+    default boolean sensitive() {
+        return false;
+    }
 }

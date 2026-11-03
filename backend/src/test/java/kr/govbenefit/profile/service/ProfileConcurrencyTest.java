@@ -58,7 +58,7 @@ class ProfileConcurrencyTest {
                 futures.add(executor.submit(() -> {
                     start.await();
                     return profileService.put(userId, new ProfileRequest(null, null, null, null, null,
-                            List.of(attribute.name())));
+                            List.of(attribute.name()), null));
                 }));
             }
             start.countDown();

@@ -99,6 +99,8 @@ export type ProfileRequest = {
   sigunguCode: string | null;
   lifeAttributes: string[] | null;
   householdAttributes: string[] | null;
+  // 건강 관련 생애 속성(선택지의 sensitive)을 보낼 때마다 true여야 한다(#110).
+  sensitiveAttributeConsent: boolean;
 };
 
 export type ProfileResponse = {
@@ -109,11 +111,14 @@ export type ProfileResponse = {
   sigungu: Region | null;
   lifeAttributes: string[] | null;
   householdAttributes: string[] | null;
+  // 건강 관련 속성 처리에 처음 동의한 시각. 동의 기록이 없으면 null이다.
+  sensitiveAttributeConsentedAt: string | null;
   // 저장한 적이 없으면 null이다.
   updatedAt: string | null;
 };
 
-export type AttributeOption = { value: string; label: string };
+// sensitive는 건강에 관한 민감정보라 고를 때 별도 동의가 필요한 값이다(#110).
+export type AttributeOption = { value: string; label: string; sensitive: boolean };
 
 export type ProfileOptionsResponse = {
   sidos: SidoOption[];

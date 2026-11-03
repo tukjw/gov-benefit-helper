@@ -133,8 +133,12 @@ class PublicMatchApiTest {
         Map<String, Object> unordered = profile();
         unordered.put("lifeAttributes", List.of("EMPLOYEE", "LIVESTOCK_FARMER"));
         unordered.put("householdAttributes", null);
+        // 동의한 건강 관련 속성도 같은 기준으로 비교한다(#110).
+        Map<String, Object> sensitive = profile();
+        sensitive.put("lifeAttributes", List.of("PREGNANT", "LIVESTOCK_FARMER"));
+        sensitive.put("sensitiveAttributeConsent", true);
 
-        for (Map<String, Object> profile : List.of(full, sidoOnly, noRegion, unordered)) {
+        for (Map<String, Object> profile : List.of(full, sidoOnly, noRegion, unordered, sensitive)) {
             putProfile(profile);
             for (String[] params : List.of(new String[0], new String[]{"regionScope", "MY_REGION"},
                     new String[]{"regionScope", "ALL"}, new String[]{"page", "2", "size", "3"})) {
@@ -155,6 +159,7 @@ class PublicMatchApiTest {
     void 상세_비교의_프로필_속성은_보낸_순서가_아니라_저장된_프로필과_같은_순서다() throws Exception {
         Map<String, Object> profile = profile();
         profile.put("lifeAttributes", List.of("JOB_SEEKER", "LIVESTOCK_FARMER", "PREGNANT"));
+        profile.put("sensitiveAttributeConsent", true);
 
         JsonNode body = json(guest(PATH + "/R01", profile).andExpect(status().isOk()));
 
@@ -239,7 +244,11 @@ class PublicMatchApiTest {
                 Map.of("birthDate", "2026-10-21"),
                 Map.of("birthDate", "1990-02-30"),
                 Map.of("gender", "OTHER"),
-                Map.of("birthDate", "1900-01-01", "gender", "male", "lifeAttributes", List.of("NONE", "FARMER")));
+                Map.of("birthDate", "1900-01-01", "gender", "male", "lifeAttributes", List.of("NONE", "FARMER")),
+                // 건강 관련 속성은 별도 동의가 있어야 받는다(#110).
+                Map.of("lifeAttributes", List.of("DISABLED")),
+                Map.of("lifeAttributes", List.of("EMPLOYEE", "PATIENT"), "sensitiveAttributeConsent", false),
+                Map.of("gender", "OTHER", "lifeAttributes", List.of("PREGNANT")));
 
         for (Map<String, Object> body : invalid) {
             JsonNode saved = json(mockMvc.perform(put("/api/me/profile")

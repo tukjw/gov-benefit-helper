@@ -159,6 +159,59 @@
   border-style: dashed;
 }
 
+/* 건강 관련 정보 처리 동의(#110) */
+.consent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-gray-bg);
+}
+
+.consentTitle {
+  font-size: var(--text-sub);
+  font-weight: 700;
+}
+
+.consentTerms {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.375rem 1rem;
+  margin: 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+}
+
+.consentTerms dt {
+  font-weight: 700;
+}
+
+.consentTerms dd {
+  margin: 0;
+}
+
+.consentCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-sub);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.consentCheck input {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--color-primary);
+}
+
+.consentCheck input[aria-invalid="true"] {
+  outline: 2px solid var(--color-danger);
+  outline-offset: 2px;
+}
+
 .state {
   color: var(--color-text-weak);
   font-size: var(--text-meta);

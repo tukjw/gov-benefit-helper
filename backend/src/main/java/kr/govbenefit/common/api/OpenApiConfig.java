@@ -35,6 +35,7 @@ public class OpenApiConfig {
             - 로그인하면 리프레시 토큰을 `refresh_token` 쿠키(HttpOnly)로 준다. 액세스 토큰이 만료되면 재발급 API로 새 액세스 토큰을 받고, 로그아웃 API로 리프레시 토큰을 폐기한다. 리프레시 토큰은 14일 동안 쓰지 않으면 만료된다(결정 0017).
             - 혜택 검색은 운영 기관 지역(`agencySidoCode`·`agencySigunguCode`)으로 거를 수 있다. 소관기관 소재지이며 거주 요건이 아니다. 코드는 로그인 없이 지역 목록(`GET /api/benefits/regions`)에서 고른다(결정 0025).
             - 프로필은 생년월일·거주 시도·시군구·성별·생애·가구 속성이며 모두 선택 입력이다. `PUT /api/me/profile`은 본문 전체로 바꾸고, 빠진 필드와 `null`은 미입력이다. 속성의 `["NONE"]`은 해당 없음이다. 지역 코드(행정표준기관코드)와 속성 값은 로그인 없이 `GET /api/profile/options`에서 고른다(결정 0021·0022).
+            - 생애 속성 중 장애인·질병/질환자·임산부·예비부모/난임(선택지의 `sensitive: true`)은 건강에 관한 민감정보라, 고를 때마다 `sensitiveAttributeConsent: true`를 함께 보내야 한다. 없으면 400 `INVALID_INPUT`이고 `errors[].field`는 `sensitiveAttributeConsent`다. 프로필 저장과 비회원 조건 비교 모두 같다. 회원은 처음 동의한 시각(`sensitiveAttributeConsentedAt`)이 기록되고, 이 속성을 모두 빼고 저장하면 지워진다(DEC-PROFILE).
             - 북마크는 서비스 ID로 저장(`PUT /api/me/bookmarks/{serviceId}`)·해제(`DELETE`)하고, 둘 다 다시 보내도 결과가 같다. 목록(`GET /api/me/bookmarks`)은 마지막으로 저장한 순서이고 혜택의 현재 정보를 보여준다.
             - 조건 비교(`GET /api/me/matches/{serviceId}`)는 프로필과 혜택의 지원조건 코드를 비교한 결과이며 신청 가능 확정이 아니다. 결과가 `NEEDS_CHECK`이면 함께 주는 원문과 공식 링크로 확인한다(DEC-MATCH). 운영 기관 지역은 거주지와 비교하며 다른 지역 기관은 `NEEDS_CHECK`다. 목록(`GET /api/me/matches`)은 `MATCH` → `NEEDS_CHECK` 순이고 개인 대상이 아닌 혜택은 나오지 않으며, 기본으로 내 지역 기관과 지역 없는 기관의 혜택만 담는다(`regionScope`).
             - 로그인하지 않았으면 프로필 값을 본문에 담아 `POST /api/matches`(목록)·`POST /api/matches/{serviceId}`(상세)로 비교한다. 본문은 `PUT /api/me/profile`과 같은 형식이고 저장하지 않으며, 판정·순서·범위·쪽 처리는 로그인 사용자의 조건 비교와 같다.

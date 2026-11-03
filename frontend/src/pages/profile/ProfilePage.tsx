@@ -7,6 +7,7 @@ import type { SidoOption } from "@/lib/api/types";
 import { GUEST_NOTICE } from "@/lib/profile/guestProfile";
 import { GENDERS } from "@/lib/profile/profileForm";
 import { AttributeChips } from "./components/AttributeChips";
+import { SensitiveConsent } from "./components/SensitiveConsent";
 import type { ProfileData, ProfileResult } from "./profileRoute";
 import styles from "./ProfilePage.module.css";
 
@@ -18,6 +19,12 @@ export function ProfilePage() {
   const errors = result?.fieldErrors ?? {};
   usePageTitle(member ? "내 조건" : "조건 입력");
   const today = new Date().toLocaleDateString("sv-SE");
+  // 건강 관련 속성을 고르면 동의 안내를 보인다(#110). 숨겼다 다시 보여도 체크 상태는 남는다.
+  const [lifeSelected, setLifeSelected] = useState<string[]>(profile?.lifeAttributes ?? []);
+  const [consent, setConsent] = useState(profile?.sensitiveAttributeConsent ?? false);
+  const sensitiveSelected = options.lifeAttributes.filter(
+    (option) => option.sensitive && lifeSelected.includes(option.value),
+  );
 
   return (
     <ProfileFrame member={member}>
@@ -79,15 +86,27 @@ export function ProfilePage() {
         <FieldCard
           title="생애·직업·건강"
           description="해당하는 것을 모두 골라 주세요. 아무것도 해당하지 않으면 '해당 없음'을 고르세요."
-          errors={[errors.lifeAttributes]}
+          errors={[errors.lifeAttributes, errors.sensitiveAttributeConsent]}
         >
           {(describedBy) => (
-            <AttributeChips
-              name="lifeAttributes"
-              options={options.lifeAttributes}
-              defaultValue={profile?.lifeAttributes ?? null}
-              describedBy={errors.lifeAttributes ? describedBy : undefined}
-            />
+            <>
+              <AttributeChips
+                name="lifeAttributes"
+                options={options.lifeAttributes}
+                defaultValue={profile?.lifeAttributes ?? null}
+                describedBy={errors.lifeAttributes ? describedBy : undefined}
+                onChange={setLifeSelected}
+              />
+              {sensitiveSelected.length > 0 && (
+                <SensitiveConsent
+                  member={member}
+                  selected={sensitiveSelected}
+                  checked={consent}
+                  onChange={setConsent}
+                  describedBy={errors.sensitiveAttributeConsent ? describedBy : undefined}
+                />
+              )}
+            </>
           )}
         </FieldCard>
 
