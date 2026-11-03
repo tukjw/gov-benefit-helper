@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #106 로그인한 사용자의 새 혜택 알림 켜기·끄기 설정 제공
 
