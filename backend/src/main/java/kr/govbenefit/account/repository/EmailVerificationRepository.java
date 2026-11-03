@@ -46,4 +46,14 @@ public interface EmailVerificationRepository extends JpaRepository<EmailVerifica
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("update EmailVerification v set v.ticketUsedAt = :now where v.id = :id and v.ticketUsedAt is null")
     int useTicket(@Param("id") Long id, @Param("now") LocalDateTime now);
+
+    /**
+     * {@code cutoff} 이전(같은 시각 포함)에 보낸 기록을 지운다(결정 0041). 발송 제한의 창은 {@code cutoff}보다 뒤의
+     * 발송만 세므로, {@code cutoff}를 창의 시작으로 주면 쓰이지 않는 행만 지운다.
+     *
+     * @return 지운 행 수
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("delete from EmailVerification v where v.createdAt <= :cutoff")
+    int deleteSentAtOrBefore(@Param("cutoff") LocalDateTime cutoff);
 }
