@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * 인증·재설정 메일의 발송 제한(결정 0019). 같은 대상에게 마지막 발송에서 {@code cooldown}이 지나야 다시 보내고,
+ * 인증·재설정 메일의 발송 제한(결정 0041). 같은 대상에게 마지막 발송에서 {@code cooldown}이 지나야 다시 보내고,
  * 최근 {@code window} 안에는 {@code maxPerWindow}번까지 보낸다. 창은 고정된 날짜가 아니라 지금부터 거꾸로 센다.
  *
  * @param cooldown     같은 대상에게 다시 보내기까지의 간격

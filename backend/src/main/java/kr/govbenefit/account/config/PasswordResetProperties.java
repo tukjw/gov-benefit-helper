@@ -4,7 +4,7 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 비밀번호 재설정 설정(결정 0019).
+ * 비밀번호 재설정 설정(결정 0041).
  *
  * @param tokenTtl 재설정 토큰 유효 기간
  * @param url      프론트의 재설정 화면. 메일의 링크는 {@code url#token=<토큰>}이다.

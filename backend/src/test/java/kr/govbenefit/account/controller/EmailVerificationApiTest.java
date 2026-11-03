@@ -33,7 +33,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 가입 전 이메일 인증(결정 0019). 메일은 가짜 발송에 기록만 하고, 시각은 고정한 시계로 옮긴다.
+ * 가입 전 이메일 인증(결정 0041). 메일은 가짜 발송에 기록만 하고, 시각은 고정한 시계로 옮긴다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc

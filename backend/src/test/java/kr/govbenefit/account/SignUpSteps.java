@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 가입은 인증번호 요청 → 가짜 발송에서 번호 확인 → 확인 → 가입 순서다(결정 0019). 가입이 목적이 아닌 테스트의 준비 단계에서
+ * 가입은 인증번호 요청 → 가짜 발송에서 번호 확인 → 확인 → 가입 순서다(결정 0041). 가입이 목적이 아닌 테스트의 준비 단계에서
  * 이 순서를 한 번에 한다. 같은 이메일을 60초 안에 다시 인증하면 발송 제한에 걸린다.
  */
 public class SignUpSteps {

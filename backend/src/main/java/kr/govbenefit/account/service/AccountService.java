@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 가입·로그인·로그인 유지·로그아웃·내 정보·탈퇴(REQ-ACCOUNT-01, DEC-AUTH). 가입은 이메일 인증을 마친 뒤에만 한다(결정 0019).
+ * 가입·로그인·로그인 유지·로그아웃·내 정보·탈퇴(REQ-ACCOUNT-01, DEC-AUTH). 가입은 이메일 인증을 마친 뒤에만 한다(결정 0041).
  */
 @Slf4j
 @Service

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 /**
- * 인증번호 확인(결정 0019). 형식이 틀린 번호는 입력 오류이고 시도로 세지 않는다.
+ * 인증번호 확인(결정 0041). 형식이 틀린 번호는 입력 오류이고 시도로 세지 않는다.
  */
 @Schema(description = "인증번호 확인")
 public record EmailVerificationConfirmRequest(

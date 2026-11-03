@@ -29,8 +29,8 @@ public class OpenApiConfig {
     private static final String DESCRIPTION = """
             로그인 없이 쓰는 혜택 검색·상세·비회원 조건 비교·프로필 선택지 API와 이메일 인증·가입·로그인·로그인 유지·로그아웃·비밀번호 재설정·내 정보·프로필·북마크·조건 비교·알림 설정·탈퇴 API.
 
-            - 가입은 인증번호 요청(`POST /api/auth/email-verification`) → 메일의 6자리 번호로 확인(`/confirm`, 가입 티켓을 받음) → 가입(`POST /api/auth/signup`에 티켓을 넣음) 순서다(결정 0019).
-            - 비밀번호를 잊으면 재설정 요청(`POST /api/auth/password-reset`)으로 메일의 링크를 받고, 링크의 `#token=` 값과 새 비밀번호로 재설정(`/confirm`)한다. 재설정하면 그 계정의 모든 로그인이 끝난다(결정 0019).
+            - 가입은 인증번호 요청(`POST /api/auth/email-verification`) → 메일의 6자리 번호로 확인(`/confirm`, 가입 티켓을 받음) → 가입(`POST /api/auth/signup`에 티켓을 넣음) 순서다(결정 0041).
+            - 비밀번호를 잊으면 재설정 요청(`POST /api/auth/password-reset`)으로 메일의 링크를 받고, 링크의 `#token=` 값과 새 비밀번호로 재설정(`/confirm`)한다. 재설정하면 그 계정의 모든 로그인이 끝난다(결정 0041).
             - 개인 API는 로그인으로 받은 액세스 토큰을 `Authorization: Bearer <토큰>` 헤더로 보낸다. 토큰은 15분 뒤 만료되며, 토큰이 없거나 위조·만료됐으면 401 `UNAUTHENTICATED`다(결정 0014·0018).
             - 로그인하면 리프레시 토큰을 `refresh_token` 쿠키(HttpOnly)로 준다. 액세스 토큰이 만료되면 재발급 API로 새 액세스 토큰을 받고, 로그아웃 API로 리프레시 토큰을 폐기한다. 리프레시 토큰은 14일 동안 쓰지 않으면 만료된다(결정 0017).
             - 혜택 검색은 운영 기관 지역(`agencySidoCode`·`agencySigunguCode`)으로 거를 수 있다. 소관기관 소재지이며 거주 요건이 아니다. 코드는 로그인 없이 지역 목록(`GET /api/benefits/regions`)에서 고른다(결정 0025).

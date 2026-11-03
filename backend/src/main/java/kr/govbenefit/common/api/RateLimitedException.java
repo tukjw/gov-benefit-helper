@@ -4,7 +4,7 @@ import java.time.Duration;
 
 /**
  * 요청 횟수 제한에 걸렸다. 응답은 429 {@code TOO_MANY_REQUESTS}이고 {@code Retry-After} 헤더로 다시 시도할 수 있을 때까지의
- * 초를 준다(결정 0009·0019).
+ * 초를 준다(결정 0009·0041).
  */
 public class RateLimitedException extends BusinessException {
 

@@ -61,7 +61,7 @@
 | [0016](0016-controller-response.md) | 컨트롤러 응답 방식 | 채택 | #40 |
 | [0017](0017-refresh-token.md) | 리프레시 토큰 저장·교체와 CSRF 방어 | 채택 | #45 |
 | [0018](0018-api-auth-boundary.md) | API 인증 경계 | 채택 | #45 |
-| [0019](0019-email-verification-password-reset.md) | 가입 전 이메일 인증과 비밀번호 재설정 | 채택 | #47 |
+| [0019](0019-email-verification-password-reset.md) | 가입 전 이메일 인증과 비밀번호 재설정 | 대체됨 → [0041](0041-email-verification-retention.md) | #47 |
 | [0020](0020-account-mail-sender.md) | 계정 메일 발송 구현 경계 | 대체됨 → [0032](0032-account-mail-resend.md) | #47 |
 | [0021](0021-residence-region-code.md) | 거주 지역 코드 | 채택 | #49 |
 | [0022](0022-profile-attributes.md) | 프로필 속성 값과 미입력 표현 | 채택 | #49 |
@@ -83,3 +83,4 @@
 | [0038](0038-match-list-snapshot.md) | 조건 비교 목록의 메모리 판정 입력 | 채택 | #98 |
 | [0039](0039-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 채택 | #101 |
 | [0040](0040-frontend-static-spa-cors-methods.md) | 웹 프론트 정적 SPA 구조와 API 호출(PATCH 허용) | 채택 | #106 |
+| [0041](0041-email-verification-retention.md) | 가입 전 이메일 인증과 비밀번호 재설정(인증 기록 24시간 보관) | 채택 | #109 |

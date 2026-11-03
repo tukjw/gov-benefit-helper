@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 비밀번호 재설정(REQ-ACCOUNT-01, DEC-AUTH, 결정 0019). 요청은 가입 여부를 드러내지 않는다.
+ * 비밀번호 재설정(REQ-ACCOUNT-01, DEC-AUTH, 결정 0041). 요청은 가입 여부를 드러내지 않는다.
  */
 @Tag(name = "계정")
 @RestController

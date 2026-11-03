@@ -43,7 +43,7 @@ public class UserAccount {
     }
 
     /**
-     * 비밀번호 재설정(결정 0019). 그 계정의 리프레시 토큰 폐기는 호출한 쪽이 한다.
+     * 비밀번호 재설정(결정 0041). 그 계정의 리프레시 토큰 폐기는 호출한 쪽이 한다.
      */
     public void changePassword(String passwordHash) {
         this.passwordHash = passwordHash;

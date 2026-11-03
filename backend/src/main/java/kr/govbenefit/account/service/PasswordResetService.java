@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 비밀번호 재설정(REQ-ACCOUNT-01, DEC-AUTH, 결정 0019). 메일의 일회용 링크로 비밀번호를 바꾸고 그 계정의 리프레시 토큰을
+ * 비밀번호 재설정(REQ-ACCOUNT-01, DEC-AUTH, 결정 0041). 메일의 일회용 링크로 비밀번호를 바꾸고 그 계정의 리프레시 토큰을
  * 모두 폐기한다.
  */
 @Service

@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * 인증번호의 동시 추측과 가입 티켓의 동시 사용은 실제 MySQL의 조건부 UPDATE로 막는다(결정 0019).
+ * 인증번호의 동시 추측과 가입 티켓의 동시 사용은 실제 MySQL의 조건부 UPDATE로 막는다(결정 0041).
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @Import(TestcontainersConfiguration.class)
