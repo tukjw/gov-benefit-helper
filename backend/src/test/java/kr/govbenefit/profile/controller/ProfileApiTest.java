@@ -27,6 +27,8 @@ import kr.govbenefit.benefit.repository.BenefitRepository;
 import kr.govbenefit.common.security.AccessTokenIssuer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -89,7 +91,7 @@ class ProfileApiTest {
     void 저장한_값이_조회되고_수정하면_바뀐_값이_조회된다() throws Exception {
         JsonNode saved = json(putProfile(aliceId, body("birthDate", "1995-03-01", "gender", "FEMALE", "sidoCode", SEOUL,
                 "sigunguCode", GANGNAM, "lifeAttributes", List.of("EMPLOYEE", "PREGNANT"),
-                "householdAttributes", List.of("NONE"))).andExpect(status().isOk()));
+                "householdAttributes", List.of("NONE"), "sensitiveAttributeConsent", true)).andExpect(status().isOk()));
 
         JsonNode body = json(getProfile(aliceId).andExpect(status().isOk()));
         assertThat(body).isEqualTo(saved);
@@ -243,6 +245,59 @@ class ProfileApiTest {
         assertThat(body.get("errors").get(2).get("value").asString()).isEqualTo("NONE,EMPLOYEE");
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"PROSPECTIVE_PARENT", "PREGNANT", "DISABLED", "PATIENT"})
+    void 건강_관련_속성은_동의가_없으면_동의_항목_오류로_거절하고_저장하지_않는다(String sensitive) throws Exception {
+        List<Map<String, Object>> withoutConsent = List.of(
+                body("gender", "FEMALE", "lifeAttributes", List.of("EMPLOYEE", sensitive)),
+                body("gender", "FEMALE", "lifeAttributes", List.of(sensitive), "sensitiveAttributeConsent", false),
+                body("gender", "FEMALE", "lifeAttributes", List.of(sensitive), "sensitiveAttributeConsent", null));
+
+        // 처음 저장이면 프로필 행이 생기지 않는다.
+        for (Map<String, Object> request : withoutConsent) {
+            assertRejected(request, "sensitiveAttributeConsent");
+        }
+        assertThat(profileRows()).isZero();
+
+        // 이미 있던 프로필은 그대로다.
+        putProfile(aliceId, body("gender", "MALE", "lifeAttributes", List.of("EMPLOYEE"))).andExpect(status().isOk());
+        JsonNode before = json(getProfile(aliceId));
+        for (Map<String, Object> request : withoutConsent) {
+            assertRejected(request, "sensitiveAttributeConsent");
+        }
+        assertThat(json(getProfile(aliceId))).isEqualTo(before);
+    }
+
+    @Test
+    void 동의_항목_오류는_받은_값과_이유를_알려주고_다른_오류와_함께_모은다() throws Exception {
+        JsonNode body = json(putProfile(aliceId, body("gender", "OTHER", "lifeAttributes", List.of("DISABLED"),
+                "sensitiveAttributeConsent", false)).andExpect(status().isBadRequest()));
+
+        assertThat(errorFields(body)).containsExactly("gender", "sensitiveAttributeConsent");
+        JsonNode consent = body.get("errors").get(1);
+        assertThat(consent.get("value").asString()).isEqualTo("false");
+        assertThat(consent.get("reason").asString())
+                .isEqualTo("장애인·질병/질환자·임산부·예비부모/난임을 고르려면 건강 정보 처리에 동의해야 합니다.");
+
+        JsonNode missing = json(putProfile(aliceId, body("lifeAttributes", List.of("PATIENT")))
+                .andExpect(status().isBadRequest()));
+        assertThat(missing.get("errors").get(0).get("value").isNull()).isTrue();
+    }
+
+    @Test
+    void 건강_관련_속성이_없으면_동의_없이_저장한다() throws Exception {
+        List<Map<String, Object>> requests = List.of(
+                body("lifeAttributes", List.of("EMPLOYEE", "VETERAN"), "householdAttributes", List.of("NONE")),
+                body("lifeAttributes", List.of("NONE"), "sensitiveAttributeConsent", false),
+                body("lifeAttributes", null, "householdAttributes", List.of("SINGLE_PERSON_HOUSEHOLD")),
+                body("lifeAttributes", List.of("FARMER"), "sensitiveAttributeConsent", true));
+
+        for (Map<String, Object> request : requests) {
+            putProfile(aliceId, request).andExpect(status().isOk());
+        }
+        assertThat(texts(json(getProfile(aliceId)).get("lifeAttributes"))).containsExactly("FARMER");
+    }
+
     @Test
     void 시도가_틀리면_시군구는_소속을_따지지_않는다() throws Exception {
         JsonNode body = json(putProfile(aliceId, body("sidoCode", "9999999", "sigunguCode", GANGNAM))
@@ -280,7 +335,8 @@ class ProfileApiTest {
 
     @Test
     void 다른_사용자가_저장한_값은_보이지_않는다() throws Exception {
-        putProfile(aliceId, body("gender", "FEMALE", "lifeAttributes", List.of("PREGNANT"))).andExpect(status().isOk());
+        putProfile(aliceId, body("gender", "FEMALE", "lifeAttributes", List.of("PREGNANT"),
+                "sensitiveAttributeConsent", true)).andExpect(status().isOk());
 
         assertAllNull(json(getProfile(bobId).andExpect(status().isOk())));
     }
@@ -391,12 +447,13 @@ class ProfileApiTest {
         assertThat(household.get(8).get("value").asString()).isEqualTo("NONE");
         assertThat(sensitiveValues(household)).isEmpty();
 
-        // 선택지에서 고른 값으로 저장된다.
+        // 선택지에서 고른 값으로 저장된다. 첫 생애 속성(예비부모/난임)은 동의가 필요하다.
         JsonNode sido = sidos.get(12);
         putProfile(aliceId, body("sidoCode", sido.get("code").asString(),
                 "sigunguCode", sido.get("sigungus").get(0).get("code").asString(),
                 "lifeAttributes", List.of(life.get(0).get("value").asString()),
-                "householdAttributes", List.of(household.get(0).get("value").asString()))).andExpect(status().isOk());
+                "householdAttributes", List.of(household.get(0).get("value").asString()),
+                "sensitiveAttributeConsent", true)).andExpect(status().isOk());
     }
 
     private static List<String> sensitiveValues(JsonNode options) {

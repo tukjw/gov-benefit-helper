@@ -385,7 +385,9 @@ class ApiDocsTest {
     @Test
     void 프로필_요청은_범위_안의_항목만_받고_허용_값을_알린다() {
         assertThat(names(schema("ProfileRequest").path("properties"))).containsExactlyInAnyOrder("birthDate", "gender",
-                "sidoCode", "sigunguCode", "lifeAttributes", "householdAttributes");
+                "sidoCode", "sigunguCode", "lifeAttributes", "householdAttributes", "sensitiveAttributeConsent");
+        assertThat(property("ProfileRequest", "sensitiveAttributeConsent").path("type").asString())
+                .isEqualTo("boolean");
         assertThat(texts(property("ProfileRequest", "gender").path("enum"))).containsExactly("MALE", "FEMALE");
         assertThat(texts(property("ProfileRequest", "lifeAttributes").path("items").path("enum")))
                 .containsExactlyElementsOf(Arrays.stream(LifeAttribute.values()).map(Enum::name).toList());

@@ -56,6 +56,7 @@ public class ProfileValidator {
                 request.sigunguCode(), errors);
         checkAttributes("lifeAttributes", request.lifeAttributes(), LIFE_VALUES, errors);
         checkAttributes("householdAttributes", request.householdAttributes(), HOUSEHOLD_VALUES, errors);
+        checkSensitiveConsent(request.lifeAttributes(), request.sensitiveAttributeConsent(), errors);
         if (!errors.isEmpty()) {
             throw new InvalidInputException(errors);
         }
@@ -122,6 +123,23 @@ public class ProfileValidator {
         if (seen.contains("NONE") && seen.size() > 1) {
             errors.add(new InputError(field, String.join(",", values),
                     "해당 없음(NONE)은 다른 값과 함께 고를 수 없습니다."));
+        }
+    }
+
+    /**
+     * 건강 관련 생애 속성은 요청마다 별도 동의가 있어야 받는다(#110, DEC-PROFILE). 저장된 동의 기록은 보지 않으므로 회원 저장과 비회원
+     * 조건 비교의 검증이 같다. 지원하지 않는 값은 {@link #checkAttributes}가 거절하므로 건너뛴다.
+     */
+    private static void checkSensitiveConsent(List<String> lifeAttributes, Boolean consent, List<InputError> errors) {
+        if (lifeAttributes == null || Boolean.TRUE.equals(consent)) {
+            return;
+        }
+        boolean sensitive = lifeAttributes.stream()
+                .filter(value -> value != null && LIFE_VALUES.contains(value))
+                .anyMatch(value -> LifeAttribute.valueOf(value).sensitive());
+        if (sensitive) {
+            errors.add(new InputError("sensitiveAttributeConsent", consent == null ? null : consent.toString(),
+                    "장애인·질병/질환자·임산부·예비부모/난임을 고르려면 건강 정보 처리에 동의해야 합니다."));
         }
     }
 

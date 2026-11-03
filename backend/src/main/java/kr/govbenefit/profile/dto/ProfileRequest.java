@@ -39,10 +39,15 @@ public record ProfileRequest(
                 schema = @Schema(allowableValues = {"MULTICULTURAL_FAMILY", "NORTH_KOREAN_DEFECTOR",
                         "SINGLE_PARENT_OR_GRANDPARENT_FAMILY", "SINGLE_PERSON_HOUSEHOLD", "MULTI_CHILD_HOUSEHOLD",
                         "NON_HOMEOWNER_HOUSEHOLD", "NEW_RESIDENT", "EXTENDED_FAMILY", "NONE"}))
-        List<String> householdAttributes) {
+        List<String> householdAttributes,
+        @Schema(description = """
+                건강 관련 생애 속성 처리에 동의하는지(#110). `lifeAttributes`에 장애인(`DISABLED`)·질병/질환자(`PATIENT`)·\
+                임산부(`PREGNANT`)·예비부모/난임(`PROSPECTIVE_PARENT`) 중 하나라도 있으면 `true`여야 하며, 저장된 동의가 \
+                있어도 요청마다 보낸다. 이 속성이 없으면 보지 않는다.""")
+        Boolean sensitiveAttributeConsent) {
 
     /** 모든 항목이 미입력인 요청. 본문 없이 온 비회원 조건 비교에 쓴다. */
     public static ProfileRequest empty() {
-        return new ProfileRequest(null, null, null, null, null, null);
+        return new ProfileRequest(null, null, null, null, null, null, null);
     }
 }
