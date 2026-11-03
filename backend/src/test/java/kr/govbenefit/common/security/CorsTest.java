@@ -71,6 +71,14 @@ class CorsTest {
     }
 
     @Test
+    void 알림_설정_변경의_PATCH_사전_요청은_토큰_없이_통과한다() throws Exception {
+        mockMvc.perform(preflight(ALLOWED, "/api/me/notification-settings", "PATCH", "authorization, content-type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PUT,PATCH,DELETE"));
+    }
+
+    @Test
     void 허용하지_않은_출처의_요청과_사전_요청은_403이다() throws Exception {
         mockMvc.perform(get(PATH).header(HttpHeaders.ORIGIN, OTHER))
                 .andExpect(status().isForbidden())

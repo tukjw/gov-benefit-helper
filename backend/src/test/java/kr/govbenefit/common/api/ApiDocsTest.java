@@ -430,6 +430,28 @@ class ApiDocsTest {
     }
 
     @Test
+    void 알림_설정_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
+        JsonNode get = spec.path("paths").path("/api/me/notification-settings").path("get");
+        JsonNode patch = spec.path("paths").path("/api/me/notification-settings").path("patch");
+
+        for (JsonNode operation : List.of(get, patch)) {
+            assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
+            assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
+            assertThat(schemaRef(operation.path("responses"), "401")).isEqualTo(ERROR_REF);
+        }
+        assertThat(names(get.path("responses"))).containsExactlyInAnyOrder("200", "401", "500");
+        assertThat(schemaRef(get.path("responses"), "200"))
+                .isEqualTo("#/components/schemas/NotificationSettingResponse");
+        assertThat(names(patch.path("responses"))).containsExactlyInAnyOrder("204", "400", "401", "500");
+        assertThat(patch.path("responses").path("204").path("content").isMissingNode()).isTrue();
+        assertThat(schemaRef(patch.path("responses"), "400")).isEqualTo(ERROR_REF);
+        assertThat(requestRef(patch)).isEqualTo("#/components/schemas/NotificationSettingRequest");
+        assertThat(names(schema("NotificationSettingRequest").path("properties"))).containsExactly("newBenefit");
+        assertThat(texts(schema("NotificationSettingRequest").path("required"))).containsExactly("newBenefit");
+        assertThat(names(schema("NotificationSettingResponse").path("properties"))).containsExactly("newBenefit");
+    }
+
+    @Test
     void 조건_비교_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
         JsonNode match = spec.path("paths").path("/api/me/matches/{serviceId}").path("get");
 
