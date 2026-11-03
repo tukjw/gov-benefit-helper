@@ -384,9 +384,12 @@ class ProfileApiTest {
         assertThat(life.get(16).get("label").asString()).isEqualTo("해당사항없음");
         assertThat(life.get(1).get("value").asString()).isEqualTo("PREGNANT");
         assertThat(life.get(1).get("label").asString()).isEqualTo("임산부");
+        // 건강 관련 민감정보만 동의가 필요하다고 알린다(#110).
+        assertThat(sensitiveValues(life)).containsExactly("PROSPECTIVE_PARENT", "PREGNANT", "DISABLED", "PATIENT");
         JsonNode household = body.get("householdAttributes");
         assertThat(household).hasSize(9);
         assertThat(household.get(8).get("value").asString()).isEqualTo("NONE");
+        assertThat(sensitiveValues(household)).isEmpty();
 
         // 선택지에서 고른 값으로 저장된다.
         JsonNode sido = sidos.get(12);
@@ -394,6 +397,16 @@ class ProfileApiTest {
                 "sigunguCode", sido.get("sigungus").get(0).get("code").asString(),
                 "lifeAttributes", List.of(life.get(0).get("value").asString()),
                 "householdAttributes", List.of(household.get(0).get("value").asString()))).andExpect(status().isOk());
+    }
+
+    private static List<String> sensitiveValues(JsonNode options) {
+        List<String> values = new ArrayList<>();
+        options.forEach(option -> {
+            if (option.get("sensitive").asBoolean()) {
+                values.add(option.get("value").asString());
+            }
+        });
+        return values;
     }
 
     private void assertRejected(Map<String, Object> request, String field) throws Exception {

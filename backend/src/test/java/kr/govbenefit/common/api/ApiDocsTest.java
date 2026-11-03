@@ -395,6 +395,8 @@ class ApiDocsTest {
                 "gender", "sido", "sigungu", "lifeAttributes", "householdAttributes", "updatedAt");
         assertThat(names(schema("ProfileOptionsResponse").path("properties")))
                 .containsExactlyInAnyOrder("sidos", "lifeAttributes", "householdAttributes");
+        assertThat(names(schema("AttributeOption").path("properties")))
+                .containsExactlyInAnyOrder("value", "label", "sensitive");
     }
 
     @Test

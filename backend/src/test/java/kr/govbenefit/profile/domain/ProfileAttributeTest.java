@@ -35,6 +35,14 @@ class ProfileAttributeTest {
     }
 
     @Test
+    void 건강_관련_민감정보는_생애_속성의_4개이고_가구_속성에는_없다() {
+        assertThat(Arrays.stream(LifeAttribute.values()).filter(ProfileAttribute::sensitive))
+                .containsExactly(LifeAttribute.PROSPECTIVE_PARENT, LifeAttribute.PREGNANT, LifeAttribute.DISABLED,
+                        LifeAttribute.PATIENT);
+        assertThat(Arrays.stream(HouseholdAttribute.values()).filter(ProfileAttribute::sensitive)).isEmpty();
+    }
+
+    @Test
     void NONE은_선언_순서의_마지막이다() {
         assertThat(LifeAttribute.values()[LifeAttribute.values().length - 1]).isEqualTo(LifeAttribute.NONE);
         assertThat(HouseholdAttribute.values()[HouseholdAttribute.values().length - 1]).isEqualTo(HouseholdAttribute.NONE);
