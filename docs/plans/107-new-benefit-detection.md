@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #107 수집에서 새로 등록된 혜택을 감지해 기록
 
