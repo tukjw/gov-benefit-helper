@@ -1,6 +1,6 @@
 # 0029. 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용)
 
-- 상태: 채택
+- 상태: 대체됨 → [0040](0040-frontend-static-spa-cors-methods.md)
 - 날짜: 2026-10-26
 - 출처: #76, [플랜](../plans/76-vite-static-frontend.md). 쿠키 전송·폼 제출은 #73, [플랜](../plans/73-account-pages.md)
 - 대체: [0027](0027-frontend-static-spa.md)
