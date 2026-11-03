@@ -1,6 +1,6 @@
 # 0019. 가입 전 이메일 인증과 비밀번호 재설정
 
-- 상태: 채택
+- 상태: 대체됨 → [0041](0041-email-verification-retention.md)
 - 날짜: 2026-10-16
 - 출처: #47, [플랜](../plans/47-email-verification-password-reset.md)
 
