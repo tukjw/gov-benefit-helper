@@ -105,6 +105,7 @@ class ProfileApiTest {
         // 선언 순서로 정렬한다.
         assertThat(texts(body.get("lifeAttributes"))).containsExactly("PREGNANT", "EMPLOYEE");
         assertThat(texts(body.get("householdAttributes"))).containsExactly("NONE");
+        assertThat(body.get("sensitiveAttributeConsentedAt").asString()).isEqualTo("2026-10-17T10:00:00+09:00");
         assertThat(body.get("updatedAt").asString()).isEqualTo("2026-10-17T10:00:00+09:00");
         assertThat(names(body)).doesNotContain("userId", "id");
 
@@ -119,6 +120,8 @@ class ProfileApiTest {
         assertThat(changed.get("sigungu").get("name").asString()).isEqualTo("동구");
         assertThat(changed.get("lifeAttributes").isNull()).isTrue();
         assertThat(texts(changed.get("householdAttributes"))).containsExactly("SINGLE_PERSON_HOUSEHOLD");
+        // 건강 관련 속성을 모두 빼면 동의를 철회한 것으로 본다.
+        assertThat(changed.get("sensitiveAttributeConsentedAt").isNull()).isTrue();
         assertThat(changed.get("updatedAt").asString()).isEqualTo("2026-10-17T11:00:00+09:00");
         assertThat(jdbcTemplate.queryForList(
                 "SELECT condition_code FROM user_profile_attribute WHERE user_id = ?", String.class, aliceId))
@@ -285,6 +288,37 @@ class ProfileApiTest {
     }
 
     @Test
+    void 동의_시각은_처음_동의한_시각이고_건강_관련_속성을_모두_빼면_지운다() throws Exception {
+        Map<String, Object> sensitive = body("lifeAttributes", List.of("PATIENT", "EMPLOYEE"),
+                "sensitiveAttributeConsent", true);
+        JsonNode first = json(putProfile(aliceId, sensitive).andExpect(status().isOk()));
+        assertThat(first.get("sensitiveAttributeConsentedAt").asString()).isEqualTo("2026-10-17T10:00:00+09:00");
+        assertThat(consentedAt()).isEqualTo(LocalDateTime.of(2026, 10, 17, 10, 0));
+
+        // 다시 동의하고 저장해도 처음 시각이다. 다른 건강 관련 속성으로 바꿔도 같다.
+        clock.advance(Duration.ofHours(1));
+        JsonNode again = json(putProfile(aliceId, body("lifeAttributes", List.of("DISABLED"),
+                "sensitiveAttributeConsent", true)).andExpect(status().isOk()));
+        assertThat(again.get("sensitiveAttributeConsentedAt").asString()).isEqualTo("2026-10-17T10:00:00+09:00");
+        assertThat(again.get("updatedAt").asString()).isEqualTo("2026-10-17T11:00:00+09:00");
+
+        // 모두 빼면 철회다. 속성과 동의 기록이 남지 않는다.
+        clock.advance(Duration.ofHours(1));
+        JsonNode withdrawn = json(putProfile(aliceId, body("lifeAttributes", List.of("EMPLOYEE")))
+                .andExpect(status().isOk()));
+        assertThat(withdrawn.get("sensitiveAttributeConsentedAt").isNull()).isTrue();
+        assertThat(consentedAt()).isNull();
+        assertThat(jdbcTemplate.queryForList(
+                "SELECT condition_code FROM user_profile_attribute WHERE user_id = ?", String.class, aliceId))
+                .containsExactly("JA0326");
+
+        // 철회 뒤 다시 동의하면 새 시각이다.
+        clock.advance(Duration.ofHours(1));
+        JsonNode renewed = json(putProfile(aliceId, sensitive).andExpect(status().isOk()));
+        assertThat(renewed.get("sensitiveAttributeConsentedAt").asString()).isEqualTo("2026-10-17T13:00:00+09:00");
+    }
+
+    @Test
     void 건강_관련_속성이_없으면_동의_없이_저장한다() throws Exception {
         List<Map<String, Object>> requests = List.of(
                 body("lifeAttributes", List.of("EMPLOYEE", "VETERAN"), "householdAttributes", List.of("NONE")),
@@ -295,7 +329,11 @@ class ProfileApiTest {
         for (Map<String, Object> request : requests) {
             putProfile(aliceId, request).andExpect(status().isOk());
         }
-        assertThat(texts(json(getProfile(aliceId)).get("lifeAttributes"))).containsExactly("FARMER");
+        JsonNode body = json(getProfile(aliceId));
+        assertThat(texts(body.get("lifeAttributes"))).containsExactly("FARMER");
+        // 동의를 보내도 건강 관련 속성이 없으면 기록하지 않는다.
+        assertThat(body.get("sensitiveAttributeConsentedAt").isNull()).isTrue();
+        assertThat(consentedAt()).isNull();
     }
 
     @Test
@@ -350,7 +388,7 @@ class ProfileApiTest {
         JsonNode saved = json(putProfile(aliceId, request).andExpect(status().isOk()));
 
         assertThat(names(saved)).containsExactlyInAnyOrder("birthDate", "age", "gender", "sido", "sigungu",
-                "lifeAttributes", "householdAttributes", "updatedAt");
+                "lifeAttributes", "householdAttributes", "sensitiveAttributeConsentedAt", "updatedAt");
         assertThat(jdbcTemplate.queryForList("""
                 SELECT column_name FROM information_schema.columns
                 WHERE table_schema = DATABASE() AND table_name IN ('user_profile', 'user_profile_attribute')""",
@@ -474,9 +512,14 @@ class ProfileApiTest {
 
     private static void assertAllNull(JsonNode body) {
         for (String field : List.of("birthDate", "age", "gender", "sido", "sigungu", "lifeAttributes",
-                "householdAttributes")) {
+                "householdAttributes", "sensitiveAttributeConsentedAt")) {
             assertThat(body.get(field).isNull()).as(field).isTrue();
         }
+    }
+
+    private LocalDateTime consentedAt() {
+        return jdbcTemplate.queryForObject(
+                "SELECT sensitive_attribute_consented_at FROM user_profile WHERE user_id = ?", LocalDateTime.class, aliceId);
     }
 
     private int profileRows() {

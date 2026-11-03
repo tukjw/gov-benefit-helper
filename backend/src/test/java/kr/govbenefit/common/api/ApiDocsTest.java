@@ -394,7 +394,8 @@ class ApiDocsTest {
         assertThat(texts(property("ProfileRequest", "householdAttributes").path("items").path("enum")))
                 .containsExactlyElementsOf(Arrays.stream(HouseholdAttribute.values()).map(Enum::name).toList());
         assertThat(names(schema("ProfileResponse").path("properties"))).containsExactlyInAnyOrder("birthDate", "age",
-                "gender", "sido", "sigungu", "lifeAttributes", "householdAttributes", "updatedAt");
+                "gender", "sido", "sigungu", "lifeAttributes", "householdAttributes", "sensitiveAttributeConsentedAt",
+                "updatedAt");
         assertThat(names(schema("ProfileOptionsResponse").path("properties")))
                 .containsExactlyInAnyOrder("sidos", "lifeAttributes", "householdAttributes");
         assertThat(names(schema("AttributeOption").path("properties")))

@@ -84,7 +84,21 @@ public class UserProfile {
         // 컬렉션을 바꿔 끼우지 않고 내용만 바꿔야 바뀐 코드만 지우고 넣는다.
         conditionCodes.retainAll(codes);
         conditionCodes.addAll(codes);
+        recordSensitiveConsent(values, now);
         updatedAt = now;
+    }
+
+    /**
+     * 동의 여부는 검증기가 확인했다. 건강 관련 속성이 있으면 처음 동의한 시각을 유지하고, 없으면 철회로 보고 비운다(#110).
+     */
+    private void recordSensitiveConsent(ProfileValues values, LocalDateTime now) {
+        boolean sensitive = values.lifeAttributes() != null
+                && values.lifeAttributes().stream().anyMatch(LifeAttribute::sensitive);
+        if (!sensitive) {
+            sensitiveAttributeConsentedAt = null;
+        } else if (sensitiveAttributeConsentedAt == null) {
+            sensitiveAttributeConsentedAt = now;
+        }
     }
 
     /** 생애·직업·건강 속성. 선언 순서이며 미입력이면 null이다. */

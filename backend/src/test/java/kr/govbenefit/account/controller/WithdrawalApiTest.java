@@ -109,6 +109,10 @@ class WithdrawalApiTest {
         for (String table : USER_TABLES) {
             assertThat(count(table, aliceId)).as(table).isPositive();
         }
+        // 건강 관련 속성의 동의 기록은 프로필 행에 있어 함께 지워진다(#110).
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT sensitive_attribute_consented_at FROM user_profile WHERE user_id = ?", Object.class, aliceId))
+                .isNotNull();
 
         withdraw(alice.accessToken(), PASSWORD).andExpect(status().isNoContent());
 
@@ -161,6 +165,7 @@ class WithdrawalApiTest {
                 .header(HttpHeaders.AUTHORIZATION, after.accessToken())).andExpect(status().isOk()));
         assertThat(profile.get("sido").isNull()).isTrue();
         assertThat(profile.get("lifeAttributes").isNull()).isTrue();
+        assertThat(profile.get("sensitiveAttributeConsentedAt").isNull()).isTrue();
         assertThat(profile.get("updatedAt").isNull()).isTrue();
         JsonNode setting = json(mockMvc.perform(get("/api/me/notification-settings")
                 .header(HttpHeaders.AUTHORIZATION, after.accessToken())).andExpect(status().isOk()));
@@ -255,7 +260,8 @@ class WithdrawalApiTest {
                 .header(HttpHeaders.AUTHORIZATION, accessToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"birthDate": "1995-03-01", "sidoCode": "6110000", "lifeAttributes": ["EMPLOYEE"]}"""));
+                        {"birthDate": "1995-03-01", "sidoCode": "6110000", "lifeAttributes": ["EMPLOYEE", "DISABLED"],
+                         "sensitiveAttributeConsent": true}"""));
     }
 
     private ResultActions changeNewBenefitNotify(String accessToken, boolean enabled) throws Exception {
