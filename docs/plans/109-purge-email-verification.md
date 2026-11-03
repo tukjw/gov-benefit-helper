@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #109 이메일 인증 기록을 발송 24시간 뒤 파기
 
