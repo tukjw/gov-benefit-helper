@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * 비밀번호 재설정(결정 0019). 새 비밀번호는 가입과 같은 규칙이다.
+ * 비밀번호 재설정(결정 0041). 새 비밀번호는 가입과 같은 규칙이다.
  */
 @Schema(description = "비밀번호 재설정")
 public record PasswordResetConfirmRequest(

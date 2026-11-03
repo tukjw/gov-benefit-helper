@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface EmailVerificationRepository extends JpaRepository<EmailVerification, Long> {
 
-    /** 같은 이메일의 가장 최근 발송. 확인할 수 있는 유일한 행이다(결정 0019). */
+    /** 같은 이메일의 가장 최근 발송. 확인할 수 있는 유일한 행이다(결정 0041). */
     Optional<EmailVerification> findFirstByEmailOrderByCreatedAtDescIdDesc(String email);
 
     Optional<EmailVerification> findByTicketHash(String ticketHash);
@@ -22,7 +22,7 @@ public interface EmailVerificationRepository extends JpaRepository<EmailVerifica
 
     /**
      * 인증번호를 비교하기 전에 시도 한 번을 예약한다. 행을 잠그고 최신 값을 보므로 동시 요청이 몇 개든 1을 받는 요청은
-     * {@code maxAttempts}개까지다(결정 0019).
+     * {@code maxAttempts}개까지다(결정 0041).
      *
      * @return 바꾼 행 수(0 또는 1). 0이면 횟수를 다 썼거나 이미 확인된 번호다.
      */

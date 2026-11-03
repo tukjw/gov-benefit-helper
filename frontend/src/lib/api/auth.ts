@@ -28,7 +28,7 @@ export function logout(): Promise<void> {
   return apiRequest("POST", "/api/auth/logout");
 }
 
-// 가입 여부·발송 제한과 관계없이 같은 204다(결정 0019).
+// 가입 여부·발송 제한과 관계없이 같은 204다(결정 0041).
 export function requestPasswordReset(email: string): Promise<void> {
   return apiRequest("POST", "/api/auth/password-reset", { body: { email } });
 }

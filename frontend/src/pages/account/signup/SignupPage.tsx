@@ -16,7 +16,7 @@ const STEPS: { step: SignupStep; label: string }[] = [
 
 const INITIAL: SignupState = { step: "email", email: "" };
 
-// 이메일 → 인증번호 확인 → 비밀번호(확인 후 가입, 결정 0019). 새로고침하면 처음부터 다시 한다.
+// 이메일 → 인증번호 확인 → 비밀번호(확인 후 가입, 결정 0041). 새로고침하면 처음부터 다시 한다.
 export function SignupPage() {
   usePageTitle("회원가입");
   const state = (useActionData() as SignupState | undefined) ?? INITIAL;

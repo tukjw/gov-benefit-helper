@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 가입 전 이메일 인증번호 요청(결정 0019).
+ * 가입 전 이메일 인증번호 요청(결정 0041).
  */
 @Schema(description = "인증번호 요청")
 public record EmailVerificationRequest(

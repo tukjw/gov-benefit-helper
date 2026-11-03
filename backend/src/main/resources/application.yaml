@@ -98,12 +98,12 @@ auth:
   # 재발급 요청에 Origin 헤더가 있으면 이 목록에 있어야 한다(결정 0017). 프론트 주소다(DEC-APP).
   csrf:
     allowed-origins: https://govbenefit.kr
-  # 가입 전 이메일 인증(결정 0019). 인증번호는 max-attempts번까지 비교하고, 맞히면 ticket-ttl 동안 쓸 가입 티켓을 준다.
+  # 가입 전 이메일 인증(결정 0041). 인증번호는 max-attempts번까지 비교하고, 맞히면 ticket-ttl 동안 쓸 가입 티켓을 준다.
   email-verification:
     code-ttl: 10m
     max-attempts: 5
     ticket-ttl: 30m
-  # 비밀번호 재설정(결정 0019). 메일의 링크는 url#token=<토큰>이다. url은 프론트의 재설정 화면이다(DEC-APP).
+  # 비밀번호 재설정(결정 0041). 메일의 링크는 url#token=<토큰>이다. url은 프론트의 재설정 화면이다(DEC-APP).
   password-reset:
     token-ttl: 30m
     url: https://govbenefit.kr/reset-password
@@ -113,7 +113,7 @@ auth:
     window: 15m
     max-failures-per-email-and-ip: 5
     max-failures-per-ip: 30
-  # 인증·재설정 메일 발송 제한(결정 0019). 같은 이메일에 cooldown 간격, 최근 window 안에 max-per-window번까지 보낸다.
+  # 인증·재설정 메일 발송 제한(결정 0041). 같은 이메일에 cooldown 간격, 최근 window 안에 max-per-window번까지 보낸다.
   mail:
     cooldown: 60s
     window: 24h

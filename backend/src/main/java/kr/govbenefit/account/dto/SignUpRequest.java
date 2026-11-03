@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * 가입 요청. 이메일은 대소문자를 구분하지 않는다. 먼저 이메일 인증으로 가입 티켓을 받아야 한다(결정 0019).
+ * 가입 요청. 이메일은 대소문자를 구분하지 않는다. 먼저 이메일 인증으로 가입 티켓을 받아야 한다(결정 0041).
  */
 @Schema(description = "가입 요청")
 public record SignUpRequest(

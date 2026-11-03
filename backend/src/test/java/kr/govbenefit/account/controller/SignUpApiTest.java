@@ -35,7 +35,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 가입 API를 Testcontainers MySQL로 검증한다. 이메일 중복은 실제 unique 제약과 정렬 규칙(결정 0001)을 따른다.
- * 가입은 이메일 인증으로 받은 가입 티켓이 있어야 한다(결정 0019). 시각은 고정한 시계로 옮긴다.
+ * 가입은 이메일 인증으로 받은 가입 티켓이 있어야 한다(결정 0041). 시각은 고정한 시계로 옮긴다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc

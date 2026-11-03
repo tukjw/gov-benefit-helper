@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 가입 전 이메일 인증(REQ-ACCOUNT-01, DEC-AUTH, 결정 0019). 인증번호를 맞히면 가입 티켓을 준다.
+ * 가입 전 이메일 인증(REQ-ACCOUNT-01, DEC-AUTH, 결정 0041). 인증번호를 맞히면 가입 티켓을 준다.
  */
 @Tag(name = "계정")
 @RestController

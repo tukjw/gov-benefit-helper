@@ -97,7 +97,7 @@ public class RefreshTokenService {
     }
 
     /**
-     * 계정의 모든 로그인에서 받은 토큰을 폐기한다. 비밀번호를 재설정할 때 쓴다(결정 0019).
+     * 계정의 모든 로그인에서 받은 토큰을 폐기한다. 비밀번호를 재설정할 때 쓴다(결정 0041).
      */
     @Transactional
     public void revokeAllOf(Long userId) {

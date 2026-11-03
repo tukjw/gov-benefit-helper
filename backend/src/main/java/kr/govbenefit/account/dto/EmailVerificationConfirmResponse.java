@@ -6,7 +6,7 @@ import kr.govbenefit.account.service.ConfirmOutcome.Confirmed;
 import kr.govbenefit.common.api.ApiTimes;
 
 /**
- * 인증번호 확인 결과. 가입 요청에 티켓을 넣는다(결정 0019).
+ * 인증번호 확인 결과. 가입 요청에 티켓을 넣는다(결정 0041).
  */
 @Schema(description = "인증번호 확인 결과")
 public record EmailVerificationConfirmResponse(
