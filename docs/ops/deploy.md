@@ -128,7 +128,7 @@ Cloudflare 대시보드 → `govbenefit.kr` → Security → WAF → Rate limiti
 4. Settings → Builds → Branch control에서 미리보기 배포(Preview branches)를 끈다. `*.pages.dev`에서는 쿠키와 CORS가 맞지 않아 쓸 수 없다.
 5. Custom domains에 `govbenefit.kr`을 추가한다.
 
-`frontend/public/`에 `404.html`이 없으므로 Pages는 없는 경로에 `index.html`을 돌려준다(결정 0029). `404.html`을 추가하지 않는다.
+`frontend/public/`에 `404.html`이 없으므로 Pages는 없는 경로에 `index.html`을 돌려준다(결정 0040). `404.html`을 추가하지 않는다.
 
 ### 9. 확인
 

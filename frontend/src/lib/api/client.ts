@@ -24,12 +24,12 @@ export type RequestOptions = {
   signal?: AbortSignal;
 };
 
-// 경로의 loader에서 부른다(결정 0029). 다른 화면으로 이동해 loader가 취소되면 signal로 요청도 끊는다.
+// 경로의 loader에서 부른다(결정 0040). 다른 화면으로 이동해 loader가 취소되면 signal로 요청도 끊는다.
 export function apiGet<T>(path: string, options: Pick<RequestOptions, "query" | "signal"> = {}): Promise<T> {
   return apiRequest<T>("GET", path, options);
 }
 
-// 리프레시 토큰 쿠키를 주고받도록 쿠키를 싣는다(결정 0029). 쿠키 경로가 /api/auth라 다른 API에는 실리지 않는다.
+// 리프레시 토큰 쿠키를 주고받도록 쿠키를 싣는다(결정 0040). 쿠키 경로가 /api/auth라 다른 API에는 실리지 않는다.
 // 본문이 없는 응답(204)은 undefined다.
 export async function apiRequest<T>(method: HttpMethod, path: string, options: RequestOptions = {}): Promise<T> {
   const { query, body, headers, signal } = options;

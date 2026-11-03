@@ -71,7 +71,7 @@
 | [0026](0026-frontend-styling-and-preferences.md) | 웹 화면 스타일과 화면 설정 저장 | 대체됨 → [0028](0028-frontend-styling-and-preferences-spa.md) | #72 |
 | [0027](0027-frontend-static-spa.md) | 웹 프론트 정적 SPA 구조와 API 호출 | 대체됨 → [0029](0029-frontend-static-spa-credentials.md) | #76 |
 | [0028](0028-frontend-styling-and-preferences-spa.md) | 웹 화면 스타일과 화면 설정 저장(정적 SPA) | 채택 | #76 |
-| [0029](0029-frontend-static-spa-credentials.md) | 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용) | 채택 | #76, #73 |
+| [0029](0029-frontend-static-spa-credentials.md) | 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용) | 대체됨 → [0040](0040-frontend-static-spa-cors-methods.md) | #76, #73 |
 | [0030](0030-frontend-auth-session.md) | 웹 프론트 로그인 상태와 인증 요청 | 채택 | #73 |
 | [0031](0031-guest-profile-storage.md) | 비회원 프로필 값의 브라우저 보관 | 채택 | #74 |
 | [0032](0032-account-mail-resend.md) | 계정 메일 Resend 비동기 발송 | 채택 | #78 |
@@ -82,3 +82,4 @@
 | [0037](0037-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 대체됨 → [0039](0039-proxmox-deploy-metrics-and-load-test.md) | #96 |
 | [0038](0038-match-list-snapshot.md) | 조건 비교 목록의 메모리 판정 입력 | 채택 | #98 |
 | [0039](0039-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 채택 | #101 |
+| [0040](0040-frontend-static-spa-cors-methods.md) | 웹 프론트 정적 SPA 구조와 API 호출(PATCH 허용) | 채택 | #106 |

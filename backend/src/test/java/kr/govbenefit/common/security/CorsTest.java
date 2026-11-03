@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 /**
- * 브라우저가 프론트 출처에서 API를 직접 부를 때의 CORS(결정 0029). 허용 출처는 {@code auth.csrf.allowed-origins}다.
+ * 브라우저가 프론트 출처에서 API를 직접 부를 때의 CORS(결정 0040). 허용 출처는 {@code auth.csrf.allowed-origins}다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc
@@ -59,7 +59,7 @@ class CorsTest {
         mockMvc.perform(preflight(ALLOWED, "/api/auth/login", "POST", "content-type"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED))
-                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PUT,DELETE"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PUT,PATCH,DELETE"))
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "content-type"));
     }
 
@@ -68,6 +68,14 @@ class CorsTest {
         mockMvc.perform(preflight(ALLOWED, "/api/me/profile", "PUT", "authorization, content-type"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED));
+    }
+
+    @Test
+    void 알림_설정_변경의_PATCH_사전_요청은_토큰_없이_통과한다() throws Exception {
+        mockMvc.perform(preflight(ALLOWED, "/api/me/notification-settings", "PATCH", "authorization, content-type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ALLOWED))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PUT,PATCH,DELETE"));
     }
 
     @Test
