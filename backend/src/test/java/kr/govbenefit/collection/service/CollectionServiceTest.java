@@ -4,6 +4,7 @@ import static kr.govbenefit.collection.domain.SourceEndpoint.SERVICE_DETAIL;
 import static kr.govbenefit.collection.domain.SourceEndpoint.SERVICE_LIST;
 import static kr.govbenefit.collection.domain.SourceEndpoint.SUPPORT_CONDITIONS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -21,6 +22,8 @@ import kr.govbenefit.collection.domain.CollectionQuarantine;
 import kr.govbenefit.collection.domain.CollectionRun;
 import kr.govbenefit.collection.domain.CollectionRunStep;
 import kr.govbenefit.collection.domain.CollectionStatus;
+import kr.govbenefit.collection.domain.NewBenefit;
+import kr.govbenefit.collection.domain.NewBenefitStatus;
 import kr.govbenefit.collection.domain.QuarantineReason;
 import kr.govbenefit.collection.domain.SourceEndpoint;
 import kr.govbenefit.collection.domain.SourceRecord;
@@ -29,6 +32,7 @@ import kr.govbenefit.collection.repository.CollectionFailureRepository;
 import kr.govbenefit.collection.repository.CollectionQuarantineRepository;
 import kr.govbenefit.collection.repository.CollectionRunRepository;
 import kr.govbenefit.collection.repository.CollectionRunStepRepository;
+import kr.govbenefit.collection.repository.NewBenefitRepository;
 import kr.govbenefit.collection.repository.SourceRecordHistoryRepository;
 import kr.govbenefit.collection.repository.SourceRecordRepository;
 import org.junit.jupiter.api.AfterAll;
@@ -66,6 +70,7 @@ class CollectionServiceTest {
     private static final String B = "403000000173";
     private static final String C = "O00024000031";
     private static final String NOT_FOUND = "{\"code\":0,\"msg\":\"정상\"}";
+    private static final String AUTH_FAILURE = "{\"code\":-4,\"msg\":\"등록되지 않은 인증키 입니다.\"}";
 
     private static final Gov24StubServer stub = Gov24StubServer.start();
 
@@ -99,6 +104,8 @@ class CollectionServiceTest {
     private CollectionQuarantineRepository quarantineRepository;
     @Autowired
     private CollectionFailureRepository failureRepository;
+    @Autowired
+    private NewBenefitRepository newBenefitRepository;
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
@@ -336,6 +343,117 @@ class CollectionServiceTest {
         assertThat(failed.getErrorType()).isEqualTo(CollectionErrorType.API_AUTH);
         assertThat(failed.getErrorMessage()).contains("HTTP 401", "code=-4").doesNotContain(SERVICE_KEY);
         assertThat(output.getAll()).contains("수집 실패").doesNotContain(SERVICE_KEY);
+    }
+
+    @Test
+    void 빈_DB에서_시작한_첫_수집으로_저장한_혜택은_새_혜택으로_기록하지_않는다() {
+        Long runId = collectionService.collectAll();
+
+        assertThat(benefitRepository.count()).isEqualTo(3);
+        assertThat(newBenefitRepository.count()).isZero();
+        assertThat(stepRepository.findAllByRunIdOrderById(runId))
+                .extracting(CollectionRunStep::getEndpoint, CollectionRunStep::getStatus)
+                .contains(tuple(SERVICE_LIST, CollectionStatus.SUCCEEDED));
+    }
+
+    @Test
+    void 첫_수집_뒤에_처음_나타난_혜택은_새_혜택으로_한_번만_기록한다() {
+        collectWithoutC();
+        stub.reset();
+
+        Long detectedRunId = collectionService.collectAll();
+        collectionService.collectAll();
+
+        assertThat(newBenefitRepository.findAll())
+                .extracting(NewBenefit::getBenefitId, NewBenefit::getDetectedRunId, NewBenefit::getStatus)
+                .containsExactly(tuple(benefitId(C), detectedRunId, NewBenefitStatus.READY));
+    }
+
+    @Test
+    void 정규화_값이_달라져도_기존_혜택은_새_혜택으로_기록하지_않는다() {
+        collectionService.collectAll();
+        LocalDateTime modifiedAt = benefitRepository.findByServiceId(B).orElseThrow().getSourceModifiedAt();
+        // 이전 규칙이 다르게 해석해 둔 값을 흉내 낸다.
+        jdbcTemplate.update("UPDATE benefit SET source_modified_at = '2000-01-01 00:00:00' WHERE service_id = ?", B);
+
+        collectionService.collectAll();
+
+        assertThat(benefitRepository.findByServiceId(B).orElseThrow().getSourceModifiedAt()).isEqualTo(modifiedAt);
+        assertThat(newBenefitRepository.count()).isZero();
+    }
+
+    @Test
+    void 목록에서_빠졌다가_다시_나타난_혜택은_새_혜택으로_기록하지_않는다() {
+        collectionService.collectAll();
+        stub.removeService(B);
+        collectionService.collectAll();
+        stub.reset();
+
+        collectionService.collectAll();
+
+        assertThat(benefitRepository.count()).isEqualTo(3);
+        assertThat(newBenefitRepository.count()).isZero();
+    }
+
+    @Test
+    void 수집이_도중에_중단돼도_처음_저장한_혜택은_새_혜택으로_기록한다() {
+        collectWithoutC();
+        stub.reset();
+        stub.override(SERVICE_DETAIL, 1, 401, AUTH_FAILURE);
+
+        Long runId = collectionService.collectAll();
+
+        assertThat(runRepository.findById(runId).orElseThrow().getStatus()).isEqualTo(CollectionStatus.PARTIAL);
+        assertThat(newBenefitRepository.findAll())
+                .extracting(NewBenefit::getBenefitId, NewBenefit::getDetectedRunId, NewBenefit::getStatus)
+                .containsExactly(tuple(benefitId(C), runId, NewBenefitStatus.WAITING_CONDITIONS));
+    }
+
+    @Test
+    void 지원조건_없이_저장된_새_혜택은_대기로_남고_지원조건을_받으면_판단_가능으로_바뀐다() {
+        collectWithoutC();
+        stub.reset();
+        stub.override(SUPPORT_CONDITIONS, 2, 401, AUTH_FAILURE);
+        Long detectedRunId = collectionService.collectAll();
+        assertThat(newBenefitRepository.findAll()).extracting(NewBenefit::getStatus)
+                .containsExactly(NewBenefitStatus.WAITING_CONDITIONS);
+        stub.reset();
+
+        collectionService.collectAll();
+
+        assertThat(newBenefitRepository.findAll())
+                .extracting(NewBenefit::getBenefitId, NewBenefit::getDetectedRunId, NewBenefit::getStatus)
+                .containsExactly(tuple(benefitId(C), detectedRunId, NewBenefitStatus.READY));
+    }
+
+    @Test
+    void 목록을_끝까지_받지_못한_첫_수집_뒤에는_처음_저장한_혜택도_새_혜택으로_기록하지_않는다() {
+        stub.override(SERVICE_LIST, 2, 200,
+                "{\"currentCount\":0,\"data\":[],\"matchCount\":4,\"page\":2,\"perPage\":2,\"totalCount\":4}");
+        Long firstRunId = collectionService.collectAll();
+        assertThat(stepRepository.findAllByRunIdOrderById(firstRunId))
+                .extracting(CollectionRunStep::getEndpoint, CollectionRunStep::getStatus)
+                .contains(tuple(SERVICE_LIST, CollectionStatus.PARTIAL));
+        assertThat(benefitRepository.findByServiceId(C)).isEmpty();
+        stub.reset();
+
+        collectionService.collectAll();
+
+        assertThat(benefitRepository.findByServiceId(C)).isPresent();
+        assertThat(newBenefitRepository.count()).isZero();
+    }
+
+    /**
+     * C 없이 최초 전체 수집을 한다. 목록 경로가 끝까지 성공해 이후 수집부터 새 혜택을 기록한다.
+     */
+    private void collectWithoutC() {
+        stub.removeService(C);
+        collectionService.collectAll();
+        assertThat(newBenefitRepository.count()).isZero();
+    }
+
+    private Long benefitId(String serviceId) {
+        return benefitRepository.findByServiceId(serviceId).orElseThrow().getId();
     }
 
     /**
