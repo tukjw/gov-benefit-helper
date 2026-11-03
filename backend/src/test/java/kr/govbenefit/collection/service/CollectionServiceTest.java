@@ -23,6 +23,7 @@ import kr.govbenefit.collection.domain.CollectionRun;
 import kr.govbenefit.collection.domain.CollectionRunStep;
 import kr.govbenefit.collection.domain.CollectionStatus;
 import kr.govbenefit.collection.domain.NewBenefit;
+import kr.govbenefit.collection.domain.NewBenefitStatus;
 import kr.govbenefit.collection.domain.QuarantineReason;
 import kr.govbenefit.collection.domain.SourceEndpoint;
 import kr.govbenefit.collection.domain.SourceRecord;
@@ -364,8 +365,8 @@ class CollectionServiceTest {
         collectionService.collectAll();
 
         assertThat(newBenefitRepository.findAll())
-                .extracting(NewBenefit::getBenefitId, NewBenefit::getDetectedRunId)
-                .containsExactly(tuple(benefitId(C), detectedRunId));
+                .extracting(NewBenefit::getBenefitId, NewBenefit::getDetectedRunId, NewBenefit::getStatus)
+                .containsExactly(tuple(benefitId(C), detectedRunId, NewBenefitStatus.READY));
     }
 
     @Test
@@ -404,8 +405,25 @@ class CollectionServiceTest {
 
         assertThat(runRepository.findById(runId).orElseThrow().getStatus()).isEqualTo(CollectionStatus.PARTIAL);
         assertThat(newBenefitRepository.findAll())
-                .extracting(NewBenefit::getBenefitId, NewBenefit::getDetectedRunId)
-                .containsExactly(tuple(benefitId(C), runId));
+                .extracting(NewBenefit::getBenefitId, NewBenefit::getDetectedRunId, NewBenefit::getStatus)
+                .containsExactly(tuple(benefitId(C), runId, NewBenefitStatus.WAITING_CONDITIONS));
+    }
+
+    @Test
+    void 지원조건_없이_저장된_새_혜택은_대기로_남고_지원조건을_받으면_판단_가능으로_바뀐다() {
+        collectWithoutC();
+        stub.reset();
+        stub.override(SUPPORT_CONDITIONS, 2, 401, AUTH_FAILURE);
+        Long detectedRunId = collectionService.collectAll();
+        assertThat(newBenefitRepository.findAll()).extracting(NewBenefit::getStatus)
+                .containsExactly(NewBenefitStatus.WAITING_CONDITIONS);
+        stub.reset();
+
+        collectionService.collectAll();
+
+        assertThat(newBenefitRepository.findAll())
+                .extracting(NewBenefit::getBenefitId, NewBenefit::getDetectedRunId, NewBenefit::getStatus)
+                .containsExactly(tuple(benefitId(C), detectedRunId, NewBenefitStatus.READY));
     }
 
     @Test

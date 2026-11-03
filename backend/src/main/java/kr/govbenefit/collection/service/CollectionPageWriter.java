@@ -16,6 +16,7 @@ import kr.govbenefit.benefit.repository.BenefitRepository;
 import kr.govbenefit.collection.domain.CollectionQuarantine;
 import kr.govbenefit.collection.domain.CollectionStatus;
 import kr.govbenefit.collection.domain.NewBenefit;
+import kr.govbenefit.collection.domain.NewBenefitStatus;
 import kr.govbenefit.collection.domain.PageResult;
 import kr.govbenefit.collection.domain.QuarantineReason;
 import kr.govbenefit.collection.domain.SourceEndpoint;
@@ -33,7 +34,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 받은 한 쪽을 한 트랜잭션으로 저장한다. 같은 쪽을 다시 저장해도 행이 늘거나 내용이 바뀌지 않는다.
- * 목록에 처음 나온 혜택은 같은 트랜잭션에서 새 혜택으로 기록한다(결정 0042).
+ * 목록에 처음 나온 혜택은 같은 트랜잭션에서 새 혜택으로 기록하고, 지원조건을 받으면 판단 가능으로 바꾼다(결정 0042).
  */
 @Component
 @RequiredArgsConstructor
@@ -70,7 +71,7 @@ public class CollectionPageWriter {
         int unlinked = switch (endpoint) {
             case SERVICE_LIST -> saveBenefits(runId, byServiceId, now);
             case SERVICE_DETAIL -> saveBenefitDetails(byServiceId, now);
-            case SUPPORT_CONDITIONS -> countUnlinked(byServiceId);
+            case SUPPORT_CONDITIONS -> linkConditions(byServiceId, now);
         };
         return new PageResult(records.size(), counts.created, counts.changed, counts.unchanged, quarantined,
                 unlinked);
@@ -160,10 +161,14 @@ public class CollectionPageWriter {
     }
 
     /**
-     * 지원조건은 원문으로만 저장한다. 목록에 없는 서비스ID만 센다.
+     * 지원조건은 원문으로만 저장한다. 조건을 기다리던 새 혜택을 판단 가능으로 바꾸고, 목록에 없는 서비스ID를 센다.
      */
-    private int countUnlinked(Map<String, JsonNode> records) {
-        return records.size() - findBenefits(records).size();
+    private int linkConditions(Map<String, JsonNode> records, LocalDateTime now) {
+        Map<String, Benefit> benefits = findBenefits(records);
+        newBenefitRepository.findAllByBenefitIdInAndStatus(benefits.values().stream().map(Benefit::getId).toList(),
+                        NewBenefitStatus.WAITING_CONDITIONS)
+                .forEach(newBenefit -> newBenefit.markReady(now));
+        return records.size() - benefits.size();
     }
 
     private Map<String, Benefit> findBenefits(Map<String, JsonNode> records) {
