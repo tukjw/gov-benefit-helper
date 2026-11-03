@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #113 테스트 컨텍스트가 늘어도 테스트 MySQL 연결 한도를 넘지 않게 조정
 
