@@ -30,6 +30,9 @@ public class NewBenefit {
     @Column(columnDefinition = "varchar(20)")
     private NewBenefitStatus status;
 
+    /** 알림 대상을 고른 시각(#117). 비어 있으면 아직 고르지 않았다. */
+    private LocalDateTime targetsSelectedAt;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -46,6 +49,11 @@ public class NewBenefit {
 
     public void markReady(LocalDateTime now) {
         this.status = NewBenefitStatus.READY;
+        this.updatedAt = now;
+    }
+
+    public void markTargetsSelected(LocalDateTime now) {
+        this.targetsSelectedAt = now;
         this.updatedAt = now;
     }
 }
