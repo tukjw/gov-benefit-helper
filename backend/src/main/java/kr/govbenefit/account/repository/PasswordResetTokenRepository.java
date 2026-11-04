@@ -12,7 +12,7 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     Optional<PasswordResetToken> findByTokenHash(String tokenHash);
 
-    /** 같은 계정에 더 나중에 보낸 토큰이 있으면 이 토큰은 무효다(결정 0019). */
+    /** 같은 계정에 더 나중에 보낸 토큰이 있으면 이 토큰은 무효다(결정 0041). */
     boolean existsByUserIdAndIdGreaterThan(Long userId, Long id);
 
     Optional<PasswordResetToken> findFirstByUserIdOrderByCreatedAtDescIdDesc(Long userId);

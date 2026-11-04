@@ -1,6 +1,6 @@
 # Proxmox VM 만들기
 
-운영 app VM, db VM, 지표 VM, 부하 생성 VM을 만드는 절차다. 구조는 [결정 0037](../decisions/0037-proxmox-deploy-metrics-and-load-test.md), 선택 이유는 [`DEC-OPS(배포)`](../product/development.md#결정한-사항)에 있다. VM이 망가지면 이 문서대로 다시 만들고, app·db VM은 [배포 절차](deploy.md)의 "처음 한 번"을, 지표 VM은 [지표 절차](metrics.md)를 따른다. 부하 생성 VM은 이 문서의 5(도구와 저장소)와 6(전용 SSH 키)까지 하면 된다. 다시 만들면 6의 키도 새로 등록한다.
+운영 app VM, db VM, 지표 VM, 부하 생성 VM을 만드는 절차다. 구조는 [결정 0039](../decisions/0039-proxmox-deploy-metrics-and-load-test.md), 선택 이유는 [`DEC-OPS(배포)`](../product/development.md#결정한-사항)에 있다. VM이 망가지면 이 문서대로 다시 만들고, app·db VM은 [배포 절차](deploy.md)의 "처음 한 번"을, 지표 VM은 [지표 절차](metrics.md)를 따른다. 부하 생성 VM은 이 문서의 5(도구와 저장소)와 6(전용 SSH 키)까지 하면 된다. 다시 만들면 6의 키도 새로 등록한다.
 
 명령의 `<...>`는 호스트마다 다른 값이다. 스토리지 이름(`local-lvm`)도 호스트에 맞게 바꾼다.
 
@@ -177,7 +177,7 @@ Host govbenefit-loadgen
 
 ### 부하 생성 VM
 
-부하 테스트 스크립트는 부하 생성 VM에서 app·db·지표 VM에 SSH로 접속한다(결정 0037). 이 VM 전용 키를 만들어 세 VM에 등록하고, 내부 브리지 주소(`10.10.0.14`)에서만 쓰이게 `from=`을 붙인다. 키가 VM 밖으로 새어도 다른 기기에서는 쓸 수 없다. 측정이 사람 없이 이어지도록 키에 암호는 걸지 않는다.
+부하 테스트 스크립트는 부하 생성 VM에서 app·db·지표 VM에 SSH로 접속한다(결정 0039). 이 VM 전용 키를 만들어 세 VM에 등록하고, 내부 브리지 주소(`10.10.0.14`)에서만 쓰이게 `from=`을 붙인다. 키가 VM 밖으로 새어도 다른 기기에서는 쓸 수 없다. 측정이 사람 없이 이어지도록 키에 암호는 걸지 않는다.
 
 내 PC에서:
 
@@ -228,4 +228,4 @@ done
 - LAN의 다른 기기에서는 db VM의 LAN 주소로 3306에, app VM의 LAN 주소로 8080에 닿지 않는다.
 - 지표 VM에서 수집 대상에 닿는다(앱 배포와 [지표 절차](metrics.md) 뒤): `nc -zv 10.10.0.11 8081`, `nc -zv 10.10.0.11 9100`, `nc -zv 10.10.0.12 9100`, `nc -zv 10.10.0.12 9104`
 - LAN의 다른 기기에서는 app·db VM의 LAN 주소로 8081·9100·9104에, 지표 VM의 LAN 주소로 9090에 닿지 않는다. 지표 VM의 3000(Grafana)에는 닿는다.
-- 부하 생성 VM에서 앱 API에 닿는다(앱 포트를 내부 브리지에 여는 실행 구성 뒤, 결정 0037): `curl -s -o /dev/null -w '%{http_code}\n' http://10.10.0.11:8080/api/profile/options`가 `200`
+- 부하 생성 VM에서 앱 API에 닿는다(앱 포트를 내부 브리지에 여는 실행 구성 뒤, 결정 0039): `curl -s -o /dev/null -w '%{http_code}\n' http://10.10.0.11:8080/api/profile/options`가 `200`

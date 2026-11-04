@@ -2,6 +2,7 @@ package kr.govbenefit.account.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -108,6 +109,10 @@ class WithdrawalApiTest {
         for (String table : USER_TABLES) {
             assertThat(count(table, aliceId)).as(table).isPositive();
         }
+        // 건강 관련 속성의 동의 기록은 프로필 행에 있어 함께 지워진다(#110).
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT sensitive_attribute_consented_at FROM user_profile WHERE user_id = ?", Object.class, aliceId))
+                .isNotNull();
 
         withdraw(alice.accessToken(), PASSWORD).andExpect(status().isNoContent());
 
@@ -129,6 +134,9 @@ class WithdrawalApiTest {
         assertUnauthenticated(mockMvc.perform(get("/api/me/profile")
                 .header(HttpHeaders.AUTHORIZATION, alice.accessToken())));
         assertUnauthenticated(saveProfile(alice.accessToken()));
+        assertUnauthenticated(mockMvc.perform(get("/api/me/notification-settings")
+                .header(HttpHeaders.AUTHORIZATION, alice.accessToken())));
+        assertUnauthenticated(changeNewBenefitNotify(alice.accessToken(), true));
         assertUnauthenticated(withdraw(alice.accessToken(), PASSWORD));
     }
 
@@ -142,10 +150,11 @@ class WithdrawalApiTest {
     }
 
     @Test
-    void 같은_이메일로_다시_가입하면_이전_프로필이_없는_새_사용자다() throws Exception {
+    void 같은_이메일로_다시_가입하면_이전_프로필과_알림_설정이_없는_새_사용자다() throws Exception {
         Session before = signUpAndLogin(ALICE, PASSWORD);
         Long beforeId = userId(ALICE);
         saveProfile(before.accessToken()).andExpect(status().isOk());
+        changeNewBenefitNotify(before.accessToken(), true).andExpect(status().isNoContent());
         withdraw(before.accessToken(), PASSWORD).andExpect(status().isNoContent());
         clock.advance(COOLDOWN);
 
@@ -156,7 +165,11 @@ class WithdrawalApiTest {
                 .header(HttpHeaders.AUTHORIZATION, after.accessToken())).andExpect(status().isOk()));
         assertThat(profile.get("sido").isNull()).isTrue();
         assertThat(profile.get("lifeAttributes").isNull()).isTrue();
+        assertThat(profile.get("sensitiveAttributeConsentedAt").isNull()).isTrue();
         assertThat(profile.get("updatedAt").isNull()).isTrue();
+        JsonNode setting = json(mockMvc.perform(get("/api/me/notification-settings")
+                .header(HttpHeaders.AUTHORIZATION, after.accessToken())).andExpect(status().isOk()));
+        assertThat(setting.get("newBenefit").asBoolean()).isFalse();
         // 탈퇴 전 토큰의 sub는 새 계정을 가리키지 않는다(결정 0014).
         assertUnauthenticated(mockMvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, before.accessToken())));
         assertUnauthenticated(refresh(before.refreshToken()));
@@ -247,7 +260,15 @@ class WithdrawalApiTest {
                 .header(HttpHeaders.AUTHORIZATION, accessToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"birthDate": "1995-03-01", "sidoCode": "6110000", "lifeAttributes": ["EMPLOYEE"]}"""));
+                        {"birthDate": "1995-03-01", "sidoCode": "6110000", "lifeAttributes": ["EMPLOYEE", "DISABLED"],
+                         "sensitiveAttributeConsent": true}"""));
+    }
+
+    private ResultActions changeNewBenefitNotify(String accessToken, boolean enabled) throws Exception {
+        return mockMvc.perform(patch("/api/me/notification-settings")
+                .header(HttpHeaders.AUTHORIZATION, accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsString(Map.of("newBenefit", enabled))));
     }
 
     private ResultActions saveBookmark(String accessToken) throws Exception {

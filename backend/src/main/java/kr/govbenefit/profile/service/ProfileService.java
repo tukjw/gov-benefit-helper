@@ -77,6 +77,7 @@ public class ProfileService {
         Integer age = birthDate == null ? null : Ages.fullAge(birthDate, LocalDate.now(clock));
         return new ProfileResponse(birthDate, age, profile.getGender(), region(profile.getSidoCode()),
                 region(profile.getSigunguCode()), profile.lifeAttributes(), profile.householdAttributes(),
+                ApiTimes.toOffset(profile.getSensitiveAttributeConsentedAt()),
                 ApiTimes.toOffset(profile.getUpdatedAt()));
     }
 

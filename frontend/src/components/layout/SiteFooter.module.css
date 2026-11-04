@@ -17,6 +17,21 @@
   margin-top: 0.25rem;
 }
 
+.policy {
+  margin-top: 1rem;
+}
+
+.policyLink {
+  color: var(--color-primary-strong);
+  font-size: var(--text-sub);
+  font-weight: 700;
+}
+
+.policyLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 /* 항목마다 이름과 값을 한 줄로 이어 쓰고, 좁으면 값이 이름 뒤에서 자연스럽게 줄바꿈된다. */
 .info {
   display: flex;

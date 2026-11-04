@@ -184,7 +184,8 @@ class ApiDocsTest {
         assertThat(operation.path("requestBody").path("content").path("application/json").path("schema").path("$ref")
                 .asString()).isEqualTo("#/components/schemas/SignUpRequest");
         assertThat(texts(schema("SignUpRequest").path("required")))
-                .containsExactlyInAnyOrder("email", "password", "verificationToken");
+                .containsExactlyInAnyOrder("email", "password", "verificationToken", "ageConfirmed");
+        assertThat(property("SignUpRequest", "ageConfirmed").path("description").asString()).contains("만 14세");
         assertThat(property("SignUpRequest", "password").path("description").asString()).contains("72바이트");
         assertThat(property("SignUpRequest", "verificationToken").path("description").asString())
                 .contains("verificationToken");
@@ -203,7 +204,9 @@ class ApiDocsTest {
 
         assertThat(operation.path("security").isMissingNode()).isTrue();
         assertThat(requestRef(operation)).isEqualTo("#/components/schemas/EmailVerificationRequest");
-        assertThat(texts(schema("EmailVerificationRequest").path("required"))).containsExactly("email");
+        assertThat(texts(schema("EmailVerificationRequest").path("required")))
+                .containsExactlyInAnyOrder("email", "ageConfirmed");
+        assertThat(property("EmailVerificationRequest", "ageConfirmed").path("description").asString()).contains("만 14세");
 
         JsonNode responses = operation.path("responses");
         assertThat(names(responses)).containsExactlyInAnyOrder("204", "400", "429", "500");
@@ -385,16 +388,21 @@ class ApiDocsTest {
     @Test
     void 프로필_요청은_범위_안의_항목만_받고_허용_값을_알린다() {
         assertThat(names(schema("ProfileRequest").path("properties"))).containsExactlyInAnyOrder("birthDate", "gender",
-                "sidoCode", "sigunguCode", "lifeAttributes", "householdAttributes");
+                "sidoCode", "sigunguCode", "lifeAttributes", "householdAttributes", "sensitiveAttributeConsent");
+        assertThat(property("ProfileRequest", "sensitiveAttributeConsent").path("type").asString())
+                .isEqualTo("boolean");
         assertThat(texts(property("ProfileRequest", "gender").path("enum"))).containsExactly("MALE", "FEMALE");
         assertThat(texts(property("ProfileRequest", "lifeAttributes").path("items").path("enum")))
                 .containsExactlyElementsOf(Arrays.stream(LifeAttribute.values()).map(Enum::name).toList());
         assertThat(texts(property("ProfileRequest", "householdAttributes").path("items").path("enum")))
                 .containsExactlyElementsOf(Arrays.stream(HouseholdAttribute.values()).map(Enum::name).toList());
         assertThat(names(schema("ProfileResponse").path("properties"))).containsExactlyInAnyOrder("birthDate", "age",
-                "gender", "sido", "sigungu", "lifeAttributes", "householdAttributes", "updatedAt");
+                "gender", "sido", "sigungu", "lifeAttributes", "householdAttributes", "sensitiveAttributeConsentedAt",
+                "updatedAt");
         assertThat(names(schema("ProfileOptionsResponse").path("properties")))
                 .containsExactlyInAnyOrder("sidos", "lifeAttributes", "householdAttributes");
+        assertThat(names(schema("AttributeOption").path("properties")))
+                .containsExactlyInAnyOrder("value", "label", "sensitive");
     }
 
     @Test
@@ -427,6 +435,28 @@ class ApiDocsTest {
         assertThat(names(schema("BookmarkListResponse").path("properties")))
                 .containsExactlyInAnyOrder("totalCount", "page", "size", "items");
         assertThat(names(schema("BookmarkItem").path("properties"))).containsExactlyInAnyOrder("bookmarkedAt", "benefit");
+    }
+
+    @Test
+    void 알림_설정_API는_액세스_토큰을_요구하고_사용자_ID를_받지_않는다() {
+        JsonNode get = spec.path("paths").path("/api/me/notification-settings").path("get");
+        JsonNode patch = spec.path("paths").path("/api/me/notification-settings").path("patch");
+
+        for (JsonNode operation : List.of(get, patch)) {
+            assertThat(operation.path("parameters").isMissingNode() || operation.path("parameters").isEmpty()).isTrue();
+            assertThat(operation.path("security").get(0).has("bearerAuth")).isTrue();
+            assertThat(schemaRef(operation.path("responses"), "401")).isEqualTo(ERROR_REF);
+        }
+        assertThat(names(get.path("responses"))).containsExactlyInAnyOrder("200", "401", "500");
+        assertThat(schemaRef(get.path("responses"), "200"))
+                .isEqualTo("#/components/schemas/NotificationSettingResponse");
+        assertThat(names(patch.path("responses"))).containsExactlyInAnyOrder("204", "400", "401", "500");
+        assertThat(patch.path("responses").path("204").path("content").isMissingNode()).isTrue();
+        assertThat(schemaRef(patch.path("responses"), "400")).isEqualTo(ERROR_REF);
+        assertThat(requestRef(patch)).isEqualTo("#/components/schemas/NotificationSettingRequest");
+        assertThat(names(schema("NotificationSettingRequest").path("properties"))).containsExactly("newBenefit");
+        assertThat(texts(schema("NotificationSettingRequest").path("required"))).containsExactly("newBenefit");
+        assertThat(names(schema("NotificationSettingResponse").path("properties"))).containsExactly("newBenefit");
     }
 
     @Test

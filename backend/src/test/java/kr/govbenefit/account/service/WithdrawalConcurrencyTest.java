@@ -47,7 +47,7 @@ class WithdrawalConcurrencyTest {
     void setUp() {
         mailSender.clear();
         String ticket = SignUpSteps.verify(emailVerificationService, mailSender, "race@example.com");
-        accountService.signUp(new SignUpRequest("race@example.com", "correct-horse", ticket));
+        accountService.signUp(new SignUpRequest("race@example.com", "correct-horse", ticket, true));
         userId = jdbcTemplate.queryForObject("SELECT id FROM user_account", Long.class);
     }
 

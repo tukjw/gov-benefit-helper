@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 가입 전 이메일 인증(REQ-ACCOUNT-01, DEC-AUTH, 결정 0019). 인증번호를 맞히면 가입 티켓을 주고, 가입은 그 티켓으로만 한다.
+ * 가입 전 이메일 인증(REQ-ACCOUNT-01, DEC-AUTH, 결정 0041). 인증번호를 맞히면 가입 티켓을 주고, 가입은 그 티켓으로만 한다.
  */
 @Service
 @RequiredArgsConstructor

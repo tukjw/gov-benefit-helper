@@ -29,6 +29,9 @@ public class UserAccount {
     /** 접두사를 포함한 해시. 원문은 저장하지 않는다(결정 0013). */
     private String passwordHash;
 
+    /** 새 혜택 알림을 켰는지(DEC-NOTIFY). 가입하면 꺼짐이다. */
+    private boolean newBenefitNotify;
+
     private LocalDateTime createdAt;
 
     public static UserAccount create(String email, String passwordHash, LocalDateTime now) {
@@ -40,9 +43,13 @@ public class UserAccount {
     }
 
     /**
-     * 비밀번호 재설정(결정 0019). 그 계정의 리프레시 토큰 폐기는 호출한 쪽이 한다.
+     * 비밀번호 재설정(결정 0041). 그 계정의 리프레시 토큰 폐기는 호출한 쪽이 한다.
      */
     public void changePassword(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public void changeNewBenefitNotify(boolean enabled) {
+        this.newBenefitNotify = enabled;
     }
 }

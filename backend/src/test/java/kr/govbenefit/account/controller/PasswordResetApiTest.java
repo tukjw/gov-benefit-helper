@@ -33,7 +33,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 비밀번호 재설정(결정 0019). 요청은 가입 여부를 드러내지 않고, 재설정하면 그 계정의 리프레시 토큰을 모두 폐기한다.
+ * 비밀번호 재설정(결정 0041). 요청은 가입 여부를 드러내지 않고, 재설정하면 그 계정의 리프레시 토큰을 모두 폐기한다.
  * 메일은 가짜 발송에 기록만 하고, 시각은 고정한 시계로 옮긴다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")

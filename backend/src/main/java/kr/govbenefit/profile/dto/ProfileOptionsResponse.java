@@ -18,11 +18,15 @@ public record ProfileOptionsResponse(
     @Schema(description = "속성 선택지")
     public record AttributeOption(
             @Schema(description = "요청·응답에 쓰는 값", example = "PREGNANT") String value,
-            @Schema(description = "이름", example = "임산부") String label) {
+            @Schema(description = "이름", example = "임산부") String label,
+            @Schema(description = """
+                    건강에 관한 민감정보인지. `true`인 값을 고르면 요청에 `sensitiveAttributeConsent: true`를 함께 \
+                    보내야 한다.""")
+            boolean sensitive) {
 
         public static <E extends Enum<E> & ProfileAttribute> List<AttributeOption> of(Class<E> type) {
             return Arrays.stream(type.getEnumConstants())
-                    .map(attribute -> new AttributeOption(attribute.name(), attribute.label()))
+                    .map(attribute -> new AttributeOption(attribute.name(), attribute.label(), attribute.sensitive()))
                     .toList();
         }
     }

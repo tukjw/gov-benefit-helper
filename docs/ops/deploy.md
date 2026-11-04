@@ -1,6 +1,6 @@
 # 운영 배포와 되돌리기
 
-API를 app VM에 배포하고 되돌리는 절차, 처음 한 번 하는 Cloudflare·DB 설정, 첫 수집 방법이다. 구조는 [결정 0037](../decisions/0037-proxmox-deploy-metrics-and-load-test.md)에 있다. VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
+API를 app VM에 배포하고 되돌리는 절차, 처음 한 번 하는 Cloudflare·DB 설정, 첫 수집 방법이다. 구조는 [결정 0039](../decisions/0039-proxmox-deploy-metrics-and-load-test.md)에 있다. VM은 [Proxmox VM 만들기](proxmox-vm.md)로 먼저 만든다.
 
 Cloudflare 대시보드 화면은 2026-10-28 기준이다. 화면이 바뀌었으면 Cloudflare 문서를 따른다. 토큰, API 키, 비밀번호는 이 문서와 저장소에 적지 않는다.
 
@@ -8,7 +8,7 @@ Cloudflare 대시보드 화면은 2026-10-28 기준이다. 화면이 바뀌었�
 
 | 무엇 | 어디에 | 어떻게 바뀌나 |
 | --- | --- | --- |
-| API | app VM의 `app` 컨테이너 (`ghcr.io/tukjw/gov-benefit-helper:<태그>`) | `scripts/deploy.sh <태그>` |
+| API | app VM의 `app` 컨테이너 (`ghcr.io/tukjw/gov-benefit-helper:<태그>`) | 릴리스는 `scripts/release.sh <태그>`, 되돌리기는 `scripts/deploy.sh <태그>` |
 | 외부 노출 | app VM의 `cloudflared` → `api.govbenefit.kr` | Cloudflare 대시보드 |
 | DB | db VM의 `mysql` 컨테이너 | 아래 "DB 구성 바꾸기" |
 | 프론트 | Cloudflare Pages → `govbenefit.kr` | `main`에 머지되면 자동 빌드 |
@@ -55,7 +55,7 @@ gh run watch   # 끝나면 요약에 이미지 태그(sha-<7자리>)가 나온�
 3. Public hostname을 추가한다.
    - Subdomain `api`, Domain `govbenefit.kr`, Path 비움
    - Service: Type `HTTP`, URL `app:8080`
-   - 관리 포트(8081)는 Tunnel에 더하지 않는다. 상태 확인과 지표가 외부에 열린다(결정 0037).
+   - 관리 포트(8081)는 Tunnel에 더하지 않는다. 상태 확인과 지표가 외부에 열린다(결정 0039).
 
 ### 4. 앱 비밀값 채우기
 
@@ -128,7 +128,7 @@ Cloudflare 대시보드 → `govbenefit.kr` → Security → WAF → Rate limiti
 4. Settings → Builds → Branch control에서 미리보기 배포(Preview branches)를 끈다. `*.pages.dev`에서는 쿠키와 CORS가 맞지 않아 쓸 수 없다.
 5. Custom domains에 `govbenefit.kr`을 추가한다.
 
-`frontend/public/`에 `404.html`이 없으므로 Pages는 없는 경로에 `index.html`을 돌려준다(결정 0029). `404.html`을 추가하지 않는다.
+`frontend/public/`에 `404.html`이 없으므로 Pages는 없는 경로에 `index.html`을 돌려준다(결정 0040). `404.html`을 추가하지 않는다.
 
 ### 9. 확인
 
@@ -140,19 +140,57 @@ Cloudflare 대시보드 → `govbenefit.kr` → Security → WAF → Rate limiti
 
 ## 릴리스할 때
 
-AGENTS.md의 릴리스 절차로 `develop → main` PR을 머지하고 태그를 push한 뒤:
+내 PC의 저장소 루트에서 실행한다. 규칙은 AGENTS.md의 릴리스 절을 따른다.
 
-1. GitHub Actions의 Image 워크플로가 성공했는지 본다. `backend/build.gradle`의 `version`과 태그가 다르면 실패한다.
-2. 내 PC에서 배포한다.
+```bash
+scripts/release.sh vX.Y.Z               # 릴리스 PR이 열려 있을 때
+scripts/release.sh vX.Y.Z release.md    # 릴리스 PR을 이 설명으로 만들 때
+```
+
+릴리스 PR 설명에는 포함된 변경, 마이그레이션 유무, 되돌릴 태그를 적는다. 저장소 설정상 이 설명이 `main` 머지 커밋의 메시지 본문이 된다.
+
+스크립트는 시작할 때 버전, 직전 릴리스, 릴리스 PR, 시작 단계, 포함 커밋, 추가된 마이그레이션을 보여 주고 `y`를 받은 뒤 다음을 차례로 한다.
+
+1. 릴리스 PR(`develop → main`, `release: vX.Y.Z`)이 없으면 설명 파일로 만든다.
+2. 필수 체크(`test`·`frontend`)가 통과하면 확인 화면에서 본 head 그대로 merge commit으로 머지한다.
+3. 머지 커밋의 Pages 빌드(체크 `Cloudflare Pages`)가 성공할 때까지 기다린다.
+4. 머지 커밋에 태그 `vX.Y.Z`를 붙여 push한다.
+5. 태그로 시작한 Image 워크플로가 성공해 이미지(`ghcr.io/tukjw/gov-benefit-helper:vX.Y.Z`)가 올라갈 때까지 기다린다.
+6. `scripts/deploy.sh vX.Y.Z`로 배포하고, Tunnel을 거친 공개 API(`/api/profile/options`)가 200인지 본다.
+
+버전 형식이 `vX.Y.Z`가 아니거나 가장 최근 릴리스 태그보다 크지 않으면 아무것도 하지 않고 멈춘다. 이미 있는 태그는 가장 최근 릴리스를 이어 갈 때만 받는다. 이전 버전으로 돌아갈 때는 아래 "되돌리기"를 쓴다.
+
+프론트가 API보다 몇 분 먼저 나간다. 스크립트는 Pages 빌드가 성공한 뒤에 API를 배포한다. 새 API가 있어야 동작하는 화면 변경은 API를 먼저 릴리스한 뒤 다음 릴리스에 넣는다.
+
+### 멈췄을 때
+
+할 일을 한 뒤 같은 명령을 다시 실행한다. 끝난 단계는 GitHub과 git 상태를 보고 건너뛴다. 기다리는 시간을 넘기면 실패가 아니라 끝나지 않았다고 알리고 멈추므로, 끝난 것을 본 뒤 다시 실행한다.
+
+| 멈춘 단계 | 할 일 |
+| --- | --- |
+| 필수 체크 실패 | 고칠 것은 `develop`에 머지한다. 일시적인 실패면 GitHub에서 체크를 다시 실행한다 |
+| 머지 | 확인한 뒤 `develop`이 바뀌었으면 그대로 다시 실행해 바뀐 커밋을 확인한다 |
+| Pages 빌드 실패 | 대시보드 → Deployments에서 다시 빌드한다. 태그는 아직 없고 운영 API는 그대로다 |
+| 이미지 빌드 실패 | 출력된 실행 번호로 `gh run rerun <실행 번호>` |
+| 운영 배포 실패 | 아래 "되돌리기"를 보고 판단한다. 원인을 고쳐 같은 버전으로 다시 배포하려면 그대로 다시 실행한다 |
+| 공개 API 확인 실패 | app VM에서 `docker compose logs cloudflared`로 Tunnel을 확인한다 |
+
+### 스크립트 없이 릴리스할 때
+
+Pages를 다시 빌드해도 머지 커밋의 체크가 바뀌지 않을 때처럼 스크립트로 이어 갈 수 없을 때 쓴다. 이미 끝난 단계는 건너뛴다.
+
+1. `develop → main` 릴리스 PR을 merge commit으로 머지한다.
+2. Pages 대시보드에서 머지 커밋의 빌드 성공을 확인한다.
+3. 머지 커밋에 태그를 붙여 push한다.
 
    ```bash
    git fetch --tags origin
-   scripts/deploy.sh vX.Y.Z
+   git tag -a vX.Y.Z <머지 커밋> -m "vX.Y.Z"
+   git push origin vX.Y.Z
    ```
 
-3. Pages는 `main` 머지로 이미 빌드를 시작했다. 대시보드에서 성공을 확인한다.
-
-프론트가 API보다 몇 분 먼저 나간다. 새 API가 있어야 동작하는 화면 변경은 API를 먼저 릴리스한 뒤 다음 릴리스에 넣는다.
+4. GitHub Actions의 Image 워크플로가 성공해 이미지가 올라갔는지 본다.
+5. `scripts/deploy.sh vX.Y.Z`로 배포한다.
 
 ## 되돌리기
 

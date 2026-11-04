@@ -33,7 +33,7 @@ import org.springframework.http.HttpStatus;
 
 /**
  * 같은 이메일의 동시 가입은 실제 MySQL unique 제약으로 하나만 성공한다(#38 설계 3). 스레드마다 같은 이메일로 따로 확인한
- * 가입 티켓을 쓴다. 인증번호를 다시 받으려면 발송 간격이 지나야 하므로 고정한 시계를 옮긴다(결정 0019).
+ * 가입 티켓을 쓴다. 인증번호를 다시 받으려면 발송 간격이 지나야 하므로 고정한 시계를 옮긴다(결정 0041).
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
@@ -79,7 +79,7 @@ class SignUpConcurrencyTest {
                     ready.countDown();
                     start.await();
                     try {
-                        return accountService.signUp(new SignUpRequest(email, "correct-horse", ticket));
+                        return accountService.signUp(new SignUpRequest(email, "correct-horse", ticket, true));
                     } catch (BusinessException ex) {
                         return ex;
                     }

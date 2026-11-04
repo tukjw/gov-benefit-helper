@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 비밀번호 재설정 요청(결정 0019).
+ * 비밀번호 재설정 요청(결정 0041).
  */
 @Schema(description = "비밀번호 재설정 요청")
 public record PasswordResetRequest(

@@ -1,4 +1,4 @@
-// 시나리오가 보내는 요청(결정 0037). 메일이 나가는 경로와 수집은 보내지 않는다.
+// 시나리오가 보내는 요청(결정 0039). 메일이 나가는 경로와 수집은 보내지 않는다.
 // 입력은 prepare.py가 만든 WORK_DIR/inputs.json(서비스 ID, 시도 코드, 프로필)과 data/keywords.json이다.
 import { SharedArray } from 'k6/data';
 import exec from 'k6/execution';

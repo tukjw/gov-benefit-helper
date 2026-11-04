@@ -32,6 +32,8 @@ export function profileFromForm(form: FormData): ProfileRequest {
     sigunguCode: text("sidoCode") ? text("sigunguCode") : null,
     lifeAttributes: list("lifeAttributes"),
     householdAttributes: list("householdAttributes"),
+    // 동의 체크박스는 건강 관련 속성을 골랐을 때만 폼에 있다. 없으면 동의하지 않은 것이다.
+    sensitiveAttributeConsent: form.get("sensitiveAttributeConsent") === "true",
   };
 }
 
@@ -43,11 +45,13 @@ export function requestFromResponse(profile: ProfileResponse): ProfileRequest {
     sigunguCode: profile.sigungu?.code ?? null,
     lifeAttributes: profile.lifeAttributes,
     householdAttributes: profile.householdAttributes,
+    sensitiveAttributeConsent: profile.sensitiveAttributeConsentedAt !== null,
   };
 }
 
+// 동의 여부는 입력값이 아니므로 보지 않는다.
 export function isEmptyProfile(profile: ProfileRequest): boolean {
-  return Object.values(profile).every((value) => value === null);
+  return Object.entries(profile).every(([field, value]) => field === "sensitiveAttributeConsent" || value === null);
 }
 
 export function hasResidence(profile: ProfileRequest): boolean {

@@ -9,7 +9,7 @@ import { AccountFrame } from "../AccountFrame";
 import styles from "../AccountPage.module.css";
 import type { ResetPasswordResult } from "./passwordRoutes";
 
-// 메일의 링크는 /reset-password#token=<토큰>이다(결정 0019). 해시는 서버로 가지 않는다.
+// 메일의 링크는 /reset-password#token=<토큰>이다(결정 0041). 해시는 서버로 가지 않는다.
 function readToken(): string {
   return new URLSearchParams(window.location.hash.slice(1)).get("token") ?? "";
 }

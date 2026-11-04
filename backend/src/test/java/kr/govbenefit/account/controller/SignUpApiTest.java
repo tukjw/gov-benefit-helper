@@ -35,7 +35,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 가입 API를 Testcontainers MySQL로 검증한다. 이메일 중복은 실제 unique 제약과 정렬 규칙(결정 0001)을 따른다.
- * 가입은 이메일 인증으로 받은 가입 티켓이 있어야 한다(결정 0019). 시각은 고정한 시계로 옮긴다.
+ * 가입은 이메일 인증으로 받은 가입 티켓이 있어야 한다(결정 0041). 시각은 고정한 시계로 옮긴다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @AutoConfigureMockMvc
@@ -184,6 +184,24 @@ class SignUpApiTest {
     }
 
     @Test
+    void 만_14세_이상_확인이_없으면_항목별_오류이고_가입_티켓을_쓰지_않는다() throws Exception {
+        String ticket = steps.verify("me@example.com");
+        String reason = "만 14세 이상만 가입할 수 있습니다.";
+
+        // 빠짐, false, null(#111, 결정 0044)
+        assertInputError(signUp(signUpBody("me@example.com", PASSWORD, ticket)), "ageConfirmed", null, reason);
+        Map<String, Object> rejected = signUpBody("me@example.com", PASSWORD, ticket);
+        rejected.put("ageConfirmed", false);
+        assertInputError(signUp(rejected), "ageConfirmed", "false", reason);
+        rejected.put("ageConfirmed", null);
+        assertInputError(signUp(rejected), "ageConfirmed", null, reason);
+        assertThat(userAccountRepository.count()).isZero();
+
+        // 거절된 요청은 티켓을 쓰지 않았다.
+        steps.signUp("me@example.com", PASSWORD, ticket).andExpect(status().isCreated());
+    }
+
+    @Test
     void 형식이_잘못된_이메일은_항목별_오류다() throws Exception {
         for (String email : List.of("not-an-email", "a@", "@example.com", "a b@example.com")) {
             assertInputError(signUpUnverified(email, PASSWORD), "email", email, "이메일 형식이 올바르지 않습니다.");
@@ -260,10 +278,21 @@ class SignUpApiTest {
      * 입력 검증만 보는 요청. 티켓 항목이 오류에 섞이지 않게 형식만 맞는 티켓을 넣는다.
      */
     private ResultActions signUpUnverified(String email, String password) throws Exception {
-        Map<String, String> request = new HashMap<>();
+        Map<String, Object> request = signUpBody(email, password, OpaqueTokens.generate());
+        request.put("ageConfirmed", true);
+        return signUp(request);
+    }
+
+    /** {@code ageConfirmed}가 빠진 가입 본문. null 값도 넣을 수 있게 {@link Map#of} 대신 쓴다. */
+    private static Map<String, Object> signUpBody(String email, String password, String ticket) {
+        Map<String, Object> request = new HashMap<>();
         request.put("email", email);
         request.put("password", password);
-        request.put("verificationToken", OpaqueTokens.generate());
+        request.put("verificationToken", ticket);
+        return request;
+    }
+
+    private ResultActions signUp(Map<String, Object> request) throws Exception {
         return mockMvc.perform(post("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonMapper.writeValueAsString(request)));

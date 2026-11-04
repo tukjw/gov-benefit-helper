@@ -61,7 +61,7 @@
 | [0016](0016-controller-response.md) | 컨트롤러 응답 방식 | 채택 | #40 |
 | [0017](0017-refresh-token.md) | 리프레시 토큰 저장·교체와 CSRF 방어 | 채택 | #45 |
 | [0018](0018-api-auth-boundary.md) | API 인증 경계 | 채택 | #45 |
-| [0019](0019-email-verification-password-reset.md) | 가입 전 이메일 인증과 비밀번호 재설정 | 채택 | #47 |
+| [0019](0019-email-verification-password-reset.md) | 가입 전 이메일 인증과 비밀번호 재설정 | 대체됨 → [0041](0041-email-verification-retention.md) | #47 |
 | [0020](0020-account-mail-sender.md) | 계정 메일 발송 구현 경계 | 대체됨 → [0032](0032-account-mail-resend.md) | #47 |
 | [0021](0021-residence-region-code.md) | 거주 지역 코드 | 채택 | #49 |
 | [0022](0022-profile-attributes.md) | 프로필 속성 값과 미입력 표현 | 채택 | #49 |
@@ -71,7 +71,7 @@
 | [0026](0026-frontend-styling-and-preferences.md) | 웹 화면 스타일과 화면 설정 저장 | 대체됨 → [0028](0028-frontend-styling-and-preferences-spa.md) | #72 |
 | [0027](0027-frontend-static-spa.md) | 웹 프론트 정적 SPA 구조와 API 호출 | 대체됨 → [0029](0029-frontend-static-spa-credentials.md) | #76 |
 | [0028](0028-frontend-styling-and-preferences-spa.md) | 웹 화면 스타일과 화면 설정 저장(정적 SPA) | 채택 | #76 |
-| [0029](0029-frontend-static-spa-credentials.md) | 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용) | 채택 | #76, #73 |
+| [0029](0029-frontend-static-spa-credentials.md) | 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용) | 대체됨 → [0040](0040-frontend-static-spa-cors-methods.md) | #76, #73 |
 | [0030](0030-frontend-auth-session.md) | 웹 프론트 로그인 상태와 인증 요청 | 채택 | #73 |
 | [0031](0031-guest-profile-storage.md) | 비회원 프로필 값의 브라우저 보관 | 채택 | #74 |
 | [0032](0032-account-mail-resend.md) | 계정 메일 Resend 비동기 발송 | 채택 | #78 |
@@ -79,5 +79,11 @@
 | [0034](0034-proxmox-deploy.md) | Proxmox 단일 호스트 배포 구조 | 대체됨 → [0036](0036-proxmox-deploy-and-metrics.md) | #87 |
 | [0035](0035-login-attempt-limit.md) | 로그인·탈퇴의 비밀번호 확인 시도 제한 | 채택 | #52 |
 | [0036](0036-proxmox-deploy-and-metrics.md) | Proxmox 단일 호스트 배포와 운영 지표 | 대체됨 → [0037](0037-proxmox-deploy-metrics-and-load-test.md) | #92 |
-| [0037](0037-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 채택 | #96 |
+| [0037](0037-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 대체됨 → [0039](0039-proxmox-deploy-metrics-and-load-test.md) | #96 |
 | [0038](0038-match-list-snapshot.md) | 조건 비교 목록의 메모리 판정 입력 | 채택 | #98 |
+| [0039](0039-proxmox-deploy-metrics-and-load-test.md) | Proxmox 단일 호스트 배포·운영 지표·부하 테스트 | 채택 | #101 |
+| [0040](0040-frontend-static-spa-cors-methods.md) | 웹 프론트 정적 SPA 구조와 API 호출(PATCH 허용) | 채택 | #106 |
+| [0041](0041-email-verification-retention.md) | 가입 전 이메일 인증과 비밀번호 재설정(인증 기록 24시간 보관) | 채택 | #109 |
+| [0042](0042-new-benefit-detection.md) | 새 혜택 감지와 대상 판단 가능 상태 | 채택 | #107 |
+| [0043](0043-test-connection-pool.md) | 테스트 커넥션 풀 크기 | 채택 | #113 |
+| [0044](0044-age-confirmation-and-privacy-policy.md) | 만 14세 이상 확인과 개인정보 처리방침 유지 | 채택 | #111 |

@@ -9,7 +9,7 @@ import java.util.HexFormat;
 import java.util.regex.Pattern;
 
 /**
- * 추측할 수 없는 일회용 값의 생성과 해시. 리프레시 토큰(결정 0017), 가입 티켓과 비밀번호 재설정 토큰(결정 0019)이 쓴다.
+ * 추측할 수 없는 일회용 값의 생성과 해시. 리프레시 토큰(결정 0017), 가입 티켓과 비밀번호 재설정 토큰(결정 0041)이 쓴다.
  * 원문은 32바이트 난수의 base64url(패딩 없음, 43자)이다.
  */
 public final class OpaqueTokens {

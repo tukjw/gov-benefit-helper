@@ -2,7 +2,8 @@ import type { ProfileRequest } from "@/lib/api/types";
 
 // 비회원이 입력한 프로필 값(결정 0031). 같은 탭에서만 남도록 sessionStorage에 둔다. 서버에는 조건 비교 요청
 // 본문으로만 보내고 저장하지 않는다. 로그인하면 지우고 저장된 프로필을 쓴다.
-// 저장소 접근이 막혔거나 값이 깨졌으면 입력하지 않은 것으로 본다.
+// 저장소 접근이 막혔거나 값이 깨졌으면 입력하지 않은 것으로 본다. 동의 여부(#110)가 없는 값도 그렇다. 배포 전에 남은 값은
+// 건강 관련 속성을 동의 없이 담았을 수 있어, 그대로 보내면 조건 비교가 거절된다.
 
 const STORAGE_KEY = "gbh:guest-profile";
 
@@ -48,6 +49,7 @@ function isProfileRequest(value: unknown): value is ProfileRequest {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
   return (
+    typeof record.sensitiveAttributeConsent === "boolean" &&
     TEXT_FIELDS.every((field) => record[field] === null || typeof record[field] === "string") &&
     LIST_FIELDS.every(
       (field) =>

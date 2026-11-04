@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import kr.govbenefit.common.api.ErrorCode;
 
 /**
- * 인증번호 확인 결과. 거절도 예외가 아니라 값으로 돌려준다. 예약한 시도가 거절 응답과 함께 롤백되면 안 되기 때문이다(결정 0019).
+ * 인증번호 확인 결과. 거절도 예외가 아니라 값으로 돌려준다. 예약한 시도가 거절 응답과 함께 롤백되면 안 되기 때문이다(결정 0041).
  */
 public sealed interface ConfirmOutcome {
 

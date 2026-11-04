@@ -7,7 +7,7 @@ import { codeOf, fieldErrorsOf, formText, GENERIC_ERROR, type FieldErrors } from
 
 export type ForgotPasswordResult = { sentTo?: string; fieldErrors?: FieldErrors; formError?: string };
 
-// 가입 여부와 발송 제한을 드러내지 않도록 API는 늘 204이고, 화면도 같은 안내를 보인다(결정 0019).
+// 가입 여부와 발송 제한을 드러내지 않도록 API는 늘 204이고, 화면도 같은 안내를 보인다(결정 0041).
 export async function forgotPasswordAction({ request }: ActionFunctionArgs): Promise<ForgotPasswordResult> {
   const form = await request.formData();
   const email = formText(form, "email").trim();

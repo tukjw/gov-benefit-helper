@@ -13,7 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 비밀번호 재설정 메일 한 번(결정 0019). 같은 계정의 가장 최근 행만 쓸 수 있고, 한 번 쓰면 끝난다.
+ * 비밀번호 재설정 메일 한 번(결정 0041). 같은 계정의 가장 최근 행만 쓸 수 있고, 한 번 쓰면 끝난다.
  */
 @Entity
 @Table(name = "password_reset_token")
