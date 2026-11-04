@@ -57,7 +57,7 @@ class BookmarkConcurrencyTest {
     void setUp() {
         mailSender.clear();
         String ticket = SignUpSteps.verify(emailVerificationService, mailSender, "race@example.com");
-        accountService.signUp(new SignUpRequest("race@example.com", "correct-horse", ticket));
+        accountService.signUp(new SignUpRequest("race@example.com", "correct-horse", ticket, true));
         userId = jdbcTemplate.queryForObject("SELECT id FROM user_account WHERE email = ?", Long.class,
                 "race@example.com");
         benefitRepository.save(Benefit.create(SERVICE_ID, new BenefitContent("동시 저장 혜택", null, null, null,

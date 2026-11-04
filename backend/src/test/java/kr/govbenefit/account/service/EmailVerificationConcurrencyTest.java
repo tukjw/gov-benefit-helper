@@ -76,7 +76,7 @@ class EmailVerificationConcurrencyTest {
 
         List<Object> outcomes = concurrently(8, () -> {
             try {
-                return accountService.signUp(new SignUpRequest(EMAIL, "correct-horse", ticket));
+                return accountService.signUp(new SignUpRequest(EMAIL, "correct-horse", ticket, true));
             } catch (BusinessException ex) {
                 return ex.code();
             }

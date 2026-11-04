@@ -184,7 +184,8 @@ class ApiDocsTest {
         assertThat(operation.path("requestBody").path("content").path("application/json").path("schema").path("$ref")
                 .asString()).isEqualTo("#/components/schemas/SignUpRequest");
         assertThat(texts(schema("SignUpRequest").path("required")))
-                .containsExactlyInAnyOrder("email", "password", "verificationToken");
+                .containsExactlyInAnyOrder("email", "password", "verificationToken", "ageConfirmed");
+        assertThat(property("SignUpRequest", "ageConfirmed").path("description").asString()).contains("만 14세");
         assertThat(property("SignUpRequest", "password").path("description").asString()).contains("72바이트");
         assertThat(property("SignUpRequest", "verificationToken").path("description").asString())
                 .contains("verificationToken");
