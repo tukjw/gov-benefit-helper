@@ -130,7 +130,7 @@ auth:
     resend:
       base-url: https://api.resend.com
       api-key: ${RESEND_API_KEY:}
-      # 인증한 도메인의 주소. 예: 정부 혜택 도우미 <no-reply@govbenefit.kr>
+      # 인증한 도메인의 주소. 예: 정부 혜택 도우미 <help@mail.govbenefit.kr>
       from: ${RESEND_FROM:}
       connect-timeout: 5s
       # 응답 헤더를 받을 때까지의 시간 제한

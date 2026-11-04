@@ -7,8 +7,8 @@
 ## 1. 발신 도메인 추가
 
 1. Resend에 가입하고 대시보드의 **Domains**에서 **Add Domain**을 누른다.
-2. 발신 도메인 `govbenefit.kr`을 입력한다.
-   - Resend는 발신 평판을 분리하려고 하위 도메인(예: `notifications.govbenefit.kr`)을 권장한다. 하위 도메인을 쓰면 발신 주소(`RESEND_FROM`)도 그 도메인의 주소여야 한다.
+2. 발신 도메인 `mail.govbenefit.kr`을 입력한다.
+   - Resend가 권장하는 대로 발신 평판을 분리하려고 하위 도메인을 쓴다. 발신 주소(`RESEND_FROM`)도 이 도메인의 주소여야 한다.
 3. 발송 리전은 수신자가 많은 곳에서 가까운 리전(예: 도쿄)을 고른다.
 4. Return-Path 하위 도메인은 기본값(`send`)을 둔다.
 
@@ -38,7 +38,7 @@ API 서버의 실행 환경에 넣는다. 운영은 app VM의 `app.env`(형식�
 | --- | --- |
 | `MAIL_SENDER` | `resend` |
 | `RESEND_API_KEY` | 3에서 만든 키 |
-| `RESEND_FROM` | 인증한 도메인의 발신 주소. 예: `정부 혜택 도우미 <no-reply@govbenefit.kr>` |
+| `RESEND_FROM` | 인증한 도메인의 발신 주소. 예: `정부 혜택 도우미 <help@mail.govbenefit.kr>` |
 
 - `MAIL_SENDER`가 비어 있으면 발송 구현이 없어 기동에 실패한다. `resend`인데 `RESEND_API_KEY`나 `RESEND_FROM`이 비어 있어도 기동에 실패한다.
 - `local` 프로필은 `application-local.yaml`의 `auth.mail.sender: logging`이 `.env` 값보다 우선한다. 로컬에서 실제 발송을 확인할 때는 환경 변수 `AUTH_MAIL_SENDER=resend`로 덮는다.
