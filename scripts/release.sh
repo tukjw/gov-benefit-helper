@@ -12,9 +12,13 @@ set -euo pipefail
 # 필수 체크 이름. .github/workflows/ci.yml의 job 이름, .github/rulesets/main.json과 같아야 한다.
 # gh pr checks --required는 frontend를 빠뜨려서 쓰지 않는다.
 required_checks=(test frontend)
+pages_check="Cloudflare Pages"
 migration_dir=backend/src/main/resources/db/migration
 # 대기 제한(초)과 조회 간격. 근거는 docs/plans/121-release-script.md 설계 6.
 checks_timeout=1800
+pages_timeout=900
+image_start_timeout=180
+image_timeout=1200
 poll_interval=15
 
 usage() { echo "사용법: $0 <vX.Y.Z> [설명 파일]" >&2; exit 2; }
@@ -239,6 +243,89 @@ merge_pr() {
   echo "  머지 커밋: $pr_merge"
 }
 
+# --- Pages 빌드, 태그, 이미지 빌드 ---
+
+# 머지 커밋의 Pages 체크. 빌드가 끝날 때 생기므로 없으면 기다린다.
+pages_state() {
+  local row
+  row=$(gh api "repos/{owner}/{repo}/commits/$pr_merge/check-runs?check_name=${pages_check// /%20}" \
+    --jq '.check_runs[0] // empty | "\(.status) \(.conclusion)"')
+  case $row in
+    "completed success") echo pass ;;
+    completed*) echo fail ;;
+    *) echo pending ;;
+  esac
+}
+
+wait_pages() {
+  step "Pages 빌드 확인 (${pr_merge:0:7})"
+  local rc=0
+  poll "Pages 빌드" "$pages_timeout" pages_state || rc=$?
+  case $rc in
+    1) fail "Pages" "머지 커밋의 Pages 빌드가 실패했습니다. 태그는 아직 만들지 않았고 운영 API는 그대로입니다." \
+         "Pages 대시보드 → Deployments에서 다시 빌드한 뒤 같은 명령을 다시 실행합니다." \
+         "다시 빌드해도 체크가 바뀌지 않으면 docs/ops/deploy.md의 '스크립트 없이 릴리스할 때'로 이어 갑니다." ;;
+    2) fail "Pages" "$((pages_timeout / 60))분 안에 머지 커밋의 Pages 빌드 결과가 나오지 않았습니다. 태그는 아직 만들지 않았습니다." \
+         "Pages 대시보드에서 빌드를 확인한 뒤 같은 명령을 다시 실행합니다." ;;
+  esac
+  echo "  통과: $pages_check"
+}
+
+ensure_tag() {
+  step "태그 $version"
+  if ! git rev-parse --verify --quiet "refs/tags/$version" > /dev/null; then
+    git tag -a "$version" "$pr_merge" -m "$version"
+    echo "  만듦: $version → ${pr_merge:0:7}"
+  fi
+  if git ls-remote --exit-code --tags origin "refs/tags/$version" > /dev/null; then
+    echo "  원격에 있습니다."
+  else
+    git push origin "refs/tags/$version" \
+      || fail "태그" "태그를 push하지 못했습니다." "위 git 출력을 확인한 뒤 같은 명령을 다시 실행합니다."
+  fi
+}
+
+# 태그 push로 시작한 이미지 워크플로 실행: "<id> <status> <conclusion>". 수동 실행(sha-*)과 섞이지 않게 태그로 찾는다.
+image_run() {
+  gh run list --workflow image.yml --branch "$version" --event push --limit 1 \
+    --json databaseId,status,conclusion --jq '.[0] // empty | "\(.databaseId) \(.status) \(.conclusion)"'
+}
+
+image_started() {
+  if [[ -n $(image_run) ]]; then echo pass; else echo pending; fi
+}
+
+image_state() {
+  local id status conclusion
+  read -r id status conclusion <<< "$(image_run)"
+  if [[ -z $id || $status != completed ]]; then
+    echo pending
+  elif [[ $conclusion == success ]]; then
+    echo pass
+  else
+    echo fail
+  fi
+}
+
+wait_image() {
+  step "이미지 빌드 확인 (ghcr.io/tukjw/gov-benefit-helper:$version)"
+  local rc=0 id
+  poll "이미지 빌드 시작" "$image_start_timeout" image_started || rc=$?
+  if (( rc != 0 )); then
+    fail "이미지" "태그 push 뒤 $((image_start_timeout / 60))분 안에 이미지 워크플로가 시작되지 않았습니다." \
+      "GitHub Actions의 Image 워크플로를 확인한 뒤 같은 명령을 다시 실행합니다."
+  fi
+  poll "이미지 빌드" "$image_timeout" image_state || rc=$?
+  read -r id _ <<< "$(image_run)"
+  case $rc in
+    1) fail "이미지" "이미지 빌드가 실패했습니다 (실행 $id)." \
+         "gh run view $id --log-failed 로 원인을 보고, gh run rerun $id 뒤 같은 명령을 다시 실행합니다." ;;
+    2) fail "이미지" "$((image_timeout / 60))분 안에 이미지 빌드가 끝나지 않았습니다 (실행 $id)." \
+         "gh run watch $id 로 끝난 것을 본 뒤 같은 명령을 다시 실행합니다." ;;
+  esac
+  echo "  통과 (실행 $id)"
+}
+
 # --- 실행 ---
 
 [[ $# -ge 1 && $# -le 2 ]] || usage
@@ -263,3 +350,6 @@ if [[ $start != pages ]]; then
   wait_checks
   merge_pr
 fi
+wait_pages
+ensure_tag
+wait_image
