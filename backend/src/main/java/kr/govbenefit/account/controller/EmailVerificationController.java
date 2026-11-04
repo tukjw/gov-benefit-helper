@@ -42,9 +42,12 @@ public class EmailVerificationController {
 
             - 이미 가입된 이메일인지는 이 단계에서 알려주지 않는다. 인증을 마친 뒤 가입할 때 409 `DUPLICATE_EMAIL`이다.
             - 같은 이메일에는 60초에 한 번, 최근 24시간 동안 10번까지 보낸다. 넘으면 429이고 `Retry-After` 헤더의 초가 지나야 \
-            다시 보낼 수 있다.""")
+            다시 보낼 수 있다.
+            - 만 14세 이상이면 `ageConfirmed: true`를 보낸다. 없거나 `true`가 아니면 400 `INVALID_INPUT`이고 메일을 보내지 않는다. \
+            만 14세 미만은 가입할 수 없다.""")
     @ApiResponse(responseCode = "204", description = "인증번호를 보냈다")
-    @ApiResponse(responseCode = "400", description = "이메일 형식이 올바르지 않다. `code`는 `INVALID_INPUT`이다.",
+    @ApiResponse(responseCode = "400", description = """
+            이메일 형식이 올바르지 않거나 만 14세 이상 확인(`ageConfirmed: true`)이 없다. `code`는 `INVALID_INPUT`이다.""",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "429", description = "발송 제한에 걸렸다. `code`는 `TOO_MANY_REQUESTS`다.",
