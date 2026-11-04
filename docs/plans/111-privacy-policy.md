@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #111 개인정보 처리방침 페이지 공개와 만 14세 미만 가입 제한
 
