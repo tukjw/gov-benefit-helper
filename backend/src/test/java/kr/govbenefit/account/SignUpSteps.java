@@ -32,7 +32,7 @@ public class SignUpSteps {
     }
 
     public ResultActions requestCode(String email) throws Exception {
-        return perform("/api/auth/email-verification", body("email", email));
+        return perform("/api/auth/email-verification", body("email", email, "ageConfirmed", true));
     }
 
     public ResultActions confirm(String email, String code) throws Exception {

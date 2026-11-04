@@ -204,7 +204,9 @@ class ApiDocsTest {
 
         assertThat(operation.path("security").isMissingNode()).isTrue();
         assertThat(requestRef(operation)).isEqualTo("#/components/schemas/EmailVerificationRequest");
-        assertThat(texts(schema("EmailVerificationRequest").path("required"))).containsExactly("email");
+        assertThat(texts(schema("EmailVerificationRequest").path("required")))
+                .containsExactlyInAnyOrder("email", "ageConfirmed");
+        assertThat(property("EmailVerificationRequest", "ageConfirmed").path("description").asString()).contains("만 14세");
 
         JsonNode responses = operation.path("responses");
         assertThat(names(responses)).containsExactlyInAnyOrder("204", "400", "429", "500");
