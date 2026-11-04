@@ -1,8 +1,8 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #121 릴리스 PR 생성부터 운영 배포까지 명령 하나로 실행
 
-브랜치: `chore/121-release-script` (develop `fc98fb2` 기준)
+브랜치: `chore/121-release-script` (develop `de0826d` 기준)
 
 ## 목표 및 범위
 
