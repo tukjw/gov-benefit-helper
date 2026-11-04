@@ -26,6 +26,10 @@ import kr.govbenefit.benefit.domain.Benefit;
 import kr.govbenefit.benefit.domain.BenefitContent;
 import kr.govbenefit.benefit.domain.BenefitNormalization;
 import kr.govbenefit.benefit.repository.BenefitRepository;
+import kr.govbenefit.collection.domain.CollectionRun;
+import kr.govbenefit.collection.domain.NewBenefit;
+import kr.govbenefit.collection.repository.CollectionRunRepository;
+import kr.govbenefit.collection.repository.NewBenefitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +63,8 @@ class WithdrawalApiTest {
     private static final String COOKIE = "refresh_token";
     /** 사용자 데이터가 있는 테이블. 모두 user_id로 계정을 가리킨다. */
     private static final List<String> USER_TABLES = List.of(
-            "user_profile", "user_profile_attribute", "refresh_token", "password_reset_token", "bookmark");
+            "user_profile", "user_profile_attribute", "refresh_token", "password_reset_token", "bookmark",
+            "new_benefit_target");
     private static final String BENEFIT_ID = "WITHDRAWAL-BENEFIT";
 
     @Autowired
@@ -74,6 +79,10 @@ class WithdrawalApiTest {
     private RecordingAccountMailSender mailSender;
     @Autowired
     private BenefitRepository benefitRepository;
+    @Autowired
+    private CollectionRunRepository collectionRunRepository;
+    @Autowired
+    private NewBenefitRepository newBenefitRepository;
 
     private SignUpSteps signUpSteps;
 
@@ -100,11 +109,12 @@ class WithdrawalApiTest {
     }
 
     @Test
-    void 탈퇴하면_계정과_프로필_속성_북마크_토큰이_남지_않는다() throws Exception {
+    void 탈퇴하면_계정과_프로필_속성_북마크_알림_대상_토큰이_남지_않는다() throws Exception {
         Session alice = signUpAndLogin(ALICE, PASSWORD);
         Long aliceId = userId(ALICE);
         saveProfile(alice.accessToken()).andExpect(status().isOk());
         saveBookmark(alice.accessToken()).andExpect(status().isNoContent());
+        saveNewBenefitTarget(aliceId);
         requestPasswordReset(ALICE).andExpect(status().isNoContent());
         for (String table : USER_TABLES) {
             assertThat(count(table, aliceId)).as(table).isPositive();
@@ -213,6 +223,7 @@ class WithdrawalApiTest {
         Long bobId = userId(BOB);
         saveProfile(bob.accessToken()).andExpect(status().isOk());
         saveBookmark(bob.accessToken()).andExpect(status().isNoContent());
+        saveNewBenefitTarget(bobId);
         requestPasswordReset(BOB).andExpect(status().isNoContent());
 
         // 본문에 다른 사용자의 ID를 넣어도 토큰 주인만 탈퇴한다(결정 0018).
@@ -273,6 +284,15 @@ class WithdrawalApiTest {
 
     private ResultActions saveBookmark(String accessToken) throws Exception {
         return mockMvc.perform(put("/api/me/bookmarks/" + BENEFIT_ID).header(HttpHeaders.AUTHORIZATION, accessToken));
+    }
+
+    /** 테스트 혜택을 새 혜택으로 기록하고 사용자를 그 알림 대상으로 저장한다. 대상 선정은 수집 뒤에만 돌아 직접 넣는다. */
+    private void saveNewBenefitTarget(Long userId) {
+        LocalDateTime now = LocalDateTime.ofInstant(START, ZONE);
+        Long benefitId = benefitRepository.findByServiceId(BENEFIT_ID).orElseThrow().getId();
+        Long runId = collectionRunRepository.save(CollectionRun.start(now)).getId();
+        newBenefitRepository.save(NewBenefit.detect(benefitId, runId, now));
+        jdbcTemplate.update("INSERT INTO new_benefit_target (user_id, benefit_id) VALUES (?, ?)", userId, benefitId);
     }
 
     private ResultActions requestPasswordReset(String email) throws Exception {
