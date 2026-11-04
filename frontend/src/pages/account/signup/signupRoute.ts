@@ -11,9 +11,11 @@ export type SignupStep = "email" | "code" | "password";
 
 // 가입 화면의 상태 전체. action이 다음 단계의 상태를 돌려주고 화면은 그대로 그린다.
 // 가입 티켓은 이 결과와 숨은 입력에만 있고 URL·저장소에 남기지 않는다(#73 설계 7).
+// 만 14세 이상 확인은 이메일 단계에서 받고, 다음 단계에는 숨은 입력으로 넘겨 인증번호 요청과 가입에 보낸다(#111, 결정 0044).
 export type SignupState = {
   step: SignupStep;
   email: string;
+  ageConfirmed?: boolean;
   ticket?: string;
   notice?: string;
   fieldErrors?: FieldErrors;
@@ -23,14 +25,17 @@ export type SignupState = {
   duplicate?: boolean;
 };
 
+const AGE_ERROR = "만 14세 이상이면 체크해 주세요. 만 14세 미만은 가입할 수 없습니다.";
+
 export async function signupAction({ request }: ActionFunctionArgs): Promise<SignupState | Response> {
   const form = await request.formData();
   const email = formText(form, "email").trim();
+  const ageConfirmed = form.get("ageConfirmed") === "true";
   switch (formText(form, "intent")) {
     case "send-code":
-      return sendCode(email, formText(form, "step") === "code" ? "code" : "email");
+      return sendCode(email, ageConfirmed, formText(form, "step") === "code" ? "code" : "email");
     case "edit-email":
-      return { step: "email", email };
+      return { step: "email", email, ageConfirmed };
     case "confirm-code":
       return confirmCode(email, formText(form, "code").trim());
     case "signup":
@@ -40,22 +45,25 @@ export async function signupAction({ request }: ActionFunctionArgs): Promise<Sig
   }
 }
 
-async function sendCode(email: string, from: "email" | "code"): Promise<SignupState> {
-  if (!email) {
-    return { step: "email", email, fieldErrors: { email: "이메일을 입력해 주세요." } };
+async function sendCode(email: string, ageConfirmed: boolean, from: "email" | "code"): Promise<SignupState> {
+  const missing: FieldErrors = {};
+  if (!email) missing.email = "이메일을 입력해 주세요.";
+  if (!ageConfirmed) missing.ageConfirmed = AGE_ERROR;
+  if (Object.keys(missing).length > 0) {
+    return { step: "email", email, ageConfirmed, fieldErrors: missing };
   }
   try {
-    await requestSignupCode(email);
+    await requestSignupCode(email, ageConfirmed);
   } catch (error) {
     const limited = retryAtOf(error);
     if (limited) {
       return from === "email"
-        ? { step: "email", email, ...limited, fieldErrors: { email: limited.retryText } }
+        ? { step: "email", email, ageConfirmed, ...limited, fieldErrors: { email: limited.retryText } }
         : { step: "code", email, ...limited };
     }
     const invalid = fieldErrorsOf(error);
     if (invalid) {
-      return { step: "email", email, fieldErrors: invalid };
+      return { step: "email", email, ageConfirmed, fieldErrors: invalid };
     }
     return { step: from, email, formError: GENERIC_ERROR };
   }
@@ -97,16 +105,26 @@ async function signup(email: string, form: FormData): Promise<SignupState | Resp
   if (password !== formText(form, "passwordConfirm")) {
     return { ...state, fieldErrors: { passwordConfirm: "비밀번호가 서로 다릅니다." } };
   }
+  const ageConfirmed = form.get("ageConfirmed") === "true";
   try {
-    await signUp(email, password, ticket);
+    await signUp(email, password, ticket, ageConfirmed);
   } catch (error) {
     switch (codeOf(error)) {
       case "DUPLICATE_EMAIL":
         return { ...state, duplicate: true };
       case "EMAIL_NOT_VERIFIED":
-        return { step: "email", email, formError: "인증한 지 30분이 지났습니다. 인증번호를 다시 받아 주세요." };
+        return {
+          step: "email",
+          email,
+          ageConfirmed,
+          formError: "인증한 지 30분이 지났습니다. 인증번호를 다시 받아 주세요.",
+        };
     }
     const invalid = fieldErrorsOf(error);
+    // 확인 체크박스는 이메일 단계에만 있어 그 단계로 돌아가 다시 받는다. 숨은 입력이 바뀐 경우만 해당한다.
+    if (invalid?.ageConfirmed) {
+      return { step: "email", email, fieldErrors: { ageConfirmed: invalid.ageConfirmed } };
+    }
     return invalid ? { ...state, fieldErrors: invalid } : { ...state, formError: GENERIC_ERROR };
   }
   const returnTo = safeReturnTo(form.get("returnTo"));

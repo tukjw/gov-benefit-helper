@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { Form, Link, useActionData, useNavigation, useSearchParams } from "react-router";
 import { FormError } from "@/components/form/FormError";
 import { TextField } from "@/components/form/TextField";
@@ -17,6 +18,7 @@ const STEPS: { step: SignupStep; label: string }[] = [
 const INITIAL: SignupState = { step: "email", email: "" };
 
 // 이메일 → 인증번호 확인 → 비밀번호(확인 후 가입, 결정 0041). 새로고침하면 처음부터 다시 한다.
+// 만 14세 이상 확인은 이메일 단계에서 받고 다음 단계에는 숨은 입력으로 넘긴다(#111, 결정 0044).
 export function SignupPage() {
   usePageTitle("회원가입");
   const state = (useActionData() as SignupState | undefined) ?? INITIAL;
@@ -42,6 +44,14 @@ export function SignupPage() {
             defaultValue={state.email}
             error={state.fieldErrors?.email}
           />
+          <AgeConfirm defaultChecked={state.ageConfirmed ?? false} error={state.fieldErrors?.ageConfirmed} />
+          <p className={styles.note}>
+            가입하면 이메일과 비밀번호를{" "}
+            <Link to="/privacy" target="_blank" rel="noopener">
+              개인정보 처리방침<span className="visually-hidden">(새 창)</span>
+            </Link>
+            에 따라 처리합니다.
+          </p>
           <button
             type="submit"
             name="intent"
@@ -86,6 +96,7 @@ export function SignupPage() {
           <div className={styles.inline}>
             <Form method="post">
               <input type="hidden" name="email" value={state.email} />
+              <input type="hidden" name="ageConfirmed" value="true" />
               <input type="hidden" name="step" value="code" />
               <button
                 type="submit"
@@ -99,6 +110,7 @@ export function SignupPage() {
             </Form>
             <Form method="post">
               <input type="hidden" name="email" value={state.email} />
+              <input type="hidden" name="ageConfirmed" value="true" />
               <button type="submit" name="intent" value="edit-email" className={styles.textButton}>
                 이메일 바꾸기
               </button>
@@ -124,6 +136,7 @@ export function SignupPage() {
           <Form key="password" method="post" noValidate className={styles.form}>
             <input type="hidden" name="email" value={state.email} />
             <input type="hidden" name="ticket" value={state.ticket ?? ""} />
+            <input type="hidden" name="ageConfirmed" value="true" />
             <input type="hidden" name="returnTo" value={returnTo} />
             {/* 비밀번호 관리자가 이 이메일의 비밀번호로 저장하게 한다. */}
             <input type="email" name="username" value={state.email} autoComplete="username" readOnly hidden />
@@ -161,6 +174,36 @@ export function SignupPage() {
         </span>
       </p>
     </AccountFrame>
+  );
+}
+
+// 만 14세 미만은 법정대리인 동의 대신 가입을 막는다(REQ-ACCOUNT-01, DEC-AUTH).
+function AgeConfirm({ defaultChecked, error }: { defaultChecked: boolean; error?: string }) {
+  const id = useId();
+  const hintId = `${id}-hint`;
+  const errorId = `${id}-error`;
+  return (
+    <div className={styles.check}>
+      <label className={styles.checkLabel}>
+        <input
+          type="checkbox"
+          name="ageConfirmed"
+          value="true"
+          defaultChecked={defaultChecked}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${hintId} ${errorId}` : hintId}
+        />
+        <span>만 14세 이상입니다(필수)</span>
+      </label>
+      <p id={hintId} className={styles.note}>
+        만 14세 미만은 가입할 수 없습니다.
+      </p>
+      {error && (
+        <p id={errorId} role="alert" className={styles.error}>
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

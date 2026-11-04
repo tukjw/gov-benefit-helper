@@ -1,0 +1,136 @@
+/* 개인정보 처리방침(#111). 읽기 좋은 폭의 단일 열 문서다. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  max-width: 48rem;
+  padding-bottom: 4rem;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.title {
+  font-size: var(--text-h1);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.lead {
+  color: var(--color-text-sub);
+  font-size: var(--text-lead);
+}
+
+.meta {
+  color: var(--color-text-sub);
+  font-size: var(--text-sub);
+  font-weight: 700;
+}
+
+.toc {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-gray-bg);
+}
+
+.tocTitle {
+  margin-bottom: 0.75rem;
+  font-size: var(--text-sub);
+  font-weight: 700;
+}
+
+.toc ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.375rem 1.5rem;
+  font-size: var(--text-sub);
+}
+
+.toc a,
+.section a {
+  color: var(--color-primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  scroll-margin-top: 1rem;
+}
+
+.sectionTitle {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-h2);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.section h3 {
+  margin-top: 0.5rem;
+  font-size: var(--text-lead);
+  font-weight: 700;
+}
+
+.section ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+/* 좁은 화면에서는 표만 가로로 스크롤한다. */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  font-size: var(--text-sub);
+}
+
+.table caption {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  background: var(--color-gray-bg);
+  font-weight: 700;
+}
+
+.table tbody th {
+  font-weight: 600;
+}
+
+.contact {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.375rem 1.5rem;
+}
+
+.contact dt {
+  color: var(--color-text-sub);
+}
+
+.contact dd {
+  font-weight: 700;
+}

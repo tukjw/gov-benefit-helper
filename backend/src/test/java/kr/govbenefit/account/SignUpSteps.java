@@ -32,7 +32,7 @@ public class SignUpSteps {
     }
 
     public ResultActions requestCode(String email) throws Exception {
-        return perform("/api/auth/email-verification", body("email", email));
+        return perform("/api/auth/email-verification", body("email", email, "ageConfirmed", true));
     }
 
     public ResultActions confirm(String email, String code) throws Exception {
@@ -41,7 +41,7 @@ public class SignUpSteps {
 
     public ResultActions signUp(String email, String password, String verificationToken) throws Exception {
         return perform("/api/auth/signup", body("email", email, "password", password,
-                "verificationToken", verificationToken));
+                "verificationToken", verificationToken, "ageConfirmed", true));
     }
 
     /**
@@ -75,17 +75,17 @@ public class SignUpSteps {
         return confirmed.verificationToken();
     }
 
-    private ResultActions perform(String path, Map<String, String> body) throws Exception {
+    private ResultActions perform(String path, Map<String, Object> body) throws Exception {
         return mockMvc.perform(MockMvcRequestBuilders.post(path)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonMapper.writeValueAsString(body)));
     }
 
     /** null 값도 넣을 수 있게 {@link Map#of} 대신 쓴다. */
-    private static Map<String, String> body(String... keyValues) {
-        Map<String, String> body = new HashMap<>();
+    private static Map<String, Object> body(Object... keyValues) {
+        Map<String, Object> body = new HashMap<>();
         for (int i = 0; i < keyValues.length; i += 2) {
-            body.put(keyValues[i], keyValues[i + 1]);
+            body.put((String) keyValues[i], keyValues[i + 1]);
         }
         return body;
     }

@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import kr.govbenefit.FixedClockConfiguration;
@@ -25,10 +26,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -200,6 +203,22 @@ class EmailVerificationApiTest {
     }
 
     @Test
+    void 만_14세_이상_확인이_없으면_항목별_오류이고_메일을_보내지_않는다() throws Exception {
+        // 빠짐, false, null(#111, 결정 0044)
+        assertAgeNotConfirmed(requestCode(Map.of("email", EMAIL)), null);
+        assertAgeNotConfirmed(requestCode(Map.of("email", EMAIL, "ageConfirmed", false)), "false");
+        Map<String, Object> nullConfirmed = new HashMap<>();
+        nullConfirmed.put("email", EMAIL);
+        nullConfirmed.put("ageConfirmed", null);
+        assertAgeNotConfirmed(requestCode(nullConfirmed), null);
+
+        assertThat(mailSender.sent()).isEmpty();
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM email_verification", Integer.class)).isZero();
+        // 거절은 발송 간격에 들어가지 않는다.
+        steps.requestCode(EMAIL).andExpect(status().isNoContent());
+    }
+
+    @Test
     void 같은_이메일에는_60초가_지나야_다시_보낸다() throws Exception {
         steps.requestCode(EMAIL).andExpect(status().isNoContent());
 
@@ -241,6 +260,26 @@ class EmailVerificationApiTest {
         assertThat(row.get("code_hash")).isEqualTo(VerificationCodes.hash(code)).isNotEqualTo(code);
         assertThat(row.get("ticket_hash")).isEqualTo(OpaqueTokens.hash(ticket));
         assertThat(row.values().stream().map(String::valueOf)).noneMatch(value -> value.contains(ticket));
+    }
+
+    private ResultActions requestCode(Map<String, Object> body) throws Exception {
+        return mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/email-verification")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsString(body)));
+    }
+
+    private void assertAgeNotConfirmed(ResultActions result, String value) throws Exception {
+        JsonNode body = json(result.andExpect(status().isBadRequest()));
+        assertThat(body.get("code").asString()).isEqualTo("INVALID_INPUT");
+        assertThat(body.get("errors").size()).as("errors: %s", body.get("errors")).isEqualTo(1);
+        JsonNode error = body.get("errors").get(0);
+        assertThat(error.get("field").asString()).isEqualTo("ageConfirmed");
+        if (value == null) {
+            assertThat(error.get("value").isNull()).as("value: %s", error.get("value")).isTrue();
+        } else {
+            assertThat(error.get("value").asString()).isEqualTo(value);
+        }
+        assertThat(error.get("reason").asString()).isEqualTo("만 14세 이상만 가입할 수 있습니다.");
     }
 
     private void assertRejected(ResultActions result, String code) throws Exception {

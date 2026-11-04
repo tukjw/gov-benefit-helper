@@ -86,3 +86,4 @@
 | [0041](0041-email-verification-retention.md) | 가입 전 이메일 인증과 비밀번호 재설정(인증 기록 24시간 보관) | 채택 | #109 |
 | [0042](0042-new-benefit-detection.md) | 새 혜택 감지와 대상 판단 가능 상태 | 채택 | #107 |
 | [0043](0043-test-connection-pool.md) | 테스트 커넥션 풀 크기 | 채택 | #113 |
+| [0044](0044-age-confirmation-and-privacy-policy.md) | 만 14세 이상 확인과 개인정보 처리방침 유지 | 채택 | #111 |
