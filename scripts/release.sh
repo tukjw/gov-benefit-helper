@@ -9,7 +9,13 @@
 # main 머지·태그 push·운영 배포를 하므로 에이전트는 실행하지 않고 명령만 제시한다(AGENTS.md). 절차는 docs/ops/deploy.md.
 set -euo pipefail
 
+# 필수 체크 이름. .github/workflows/ci.yml의 job 이름, .github/rulesets/main.json과 같아야 한다.
+# gh pr checks --required는 frontend를 빠뜨려서 쓰지 않는다.
+required_checks=(test frontend)
 migration_dir=backend/src/main/resources/db/migration
+# 대기 제한(초)과 조회 간격. 근거는 docs/plans/121-release-script.md 설계 6.
+checks_timeout=1800
+poll_interval=15
 
 usage() { echo "사용법: $0 <vX.Y.Z> [설명 파일]" >&2; exit 2; }
 
@@ -127,6 +133,8 @@ confirm() {
     checks) target=$pr_head label="필수 체크 대기" ;;
     pages) target=$pr_merge label="Pages 빌드 확인 (PR 머지됨)" ;;
   esac
+  # 머지는 여기서 보여 준 head로만 한다.
+  confirmed_head=$target
 
   echo "릴리스 $version"
   echo "  직전 릴리스: ${prev:-없음}"
@@ -152,6 +160,85 @@ confirm() {
   fi
 }
 
+# --- 기다리기 ---
+
+# poll <설명> <제한 초> <상태 함수>: 상태 함수는 pass, fail, pending 중 하나를 출력한다.
+# 통과면 0, 실패면 1, 시간 초과면 2를 돌려준다. 조회가 실패하면 pending으로 보고 다시 묻는다.
+poll() {
+  local what=$1 timeout=$2 check=$3 state started=$SECONDS next_note=$((SECONDS + 60))
+  while :; do
+    state=$("$check" 2> /dev/null || true)
+    case $state in
+      pass) return 0 ;;
+      fail) return 1 ;;
+    esac
+    if (( SECONDS - started >= timeout )); then
+      return 2
+    fi
+    if (( SECONDS >= next_note )); then
+      echo "  $what 기다리는 중 ($(( (SECONDS - started) / 60 ))분 지남)"
+      next_note=$((SECONDS + 60))
+    fi
+    sleep "$poll_interval"
+  done
+}
+
+# --- 릴리스 PR 생성, 필수 체크, 머지 ---
+
+create_pr() {
+  step "릴리스 PR 만들기"
+  gh pr create --base main --head develop --title "release: $version" --body-file "$body_file" \
+    || fail "릴리스 PR" "PR을 만들지 못했습니다." "위 gh 출력을 확인한 뒤 같은 명령을 다시 실행합니다."
+  load_pr "$version"
+  [[ $pr_state == OPEN ]] \
+    || fail "릴리스 PR" "만든 PR을 찾지 못했습니다." "GitHub에서 PR을 확인한 뒤 같은 명령을 다시 실행합니다."
+}
+
+# 필수 체크 상태. 같은 이름이 여러 번 돌았으면 가장 늦게 시작한 것을 본다.
+checks_state() {
+  local names rows name status conclusion passed=0
+  names=$(printf '"%s",' "${required_checks[@]}")
+  rows=$(gh pr view "$pr_number" --json statusCheckRollup --jq "
+    [.statusCheckRollup[] | select(.name | IN(${names%,}))]
+    | group_by(.name) | map(max_by(.startedAt)) | .[] | \"\(.name) \(.status) \(.conclusion)\"")
+  while read -r name status conclusion; do
+    [[ -n $name && $status == COMPLETED ]] || continue
+    if [[ $conclusion != SUCCESS ]]; then
+      echo fail
+      return
+    fi
+    passed=$((passed + 1))
+  done <<< "$rows"
+  if (( passed == ${#required_checks[@]} )); then echo pass; else echo pending; fi
+}
+
+wait_checks() {
+  step "필수 체크 기다리기 (#$pr_number: ${required_checks[*]})"
+  local rc=0
+  poll "필수 체크" "$checks_timeout" checks_state || rc=$?
+  case $rc in
+    1) fail "필수 체크" "실패한 체크가 있습니다: $pr_url/checks" \
+         "고칠 것은 develop에 머지하고, 일시적인 실패면 GitHub에서 다시 실행한 뒤 같은 명령을 다시 실행합니다." ;;
+    2) fail "필수 체크" "$((checks_timeout / 60))분 안에 끝나지 않았습니다: $pr_url/checks" \
+         "체크가 끝난 뒤 같은 명령을 다시 실행합니다." ;;
+  esac
+  echo "  통과"
+}
+
+merge_pr() {
+  step "릴리스 PR 머지 (#$pr_number, merge commit)"
+  # develop을 지우지 않도록 --delete-branch를 쓰지 않는다. 머지 커밋 제목·본문은 저장소 설정대로 PR 제목·설명이다.
+  gh pr merge "$pr_number" --merge --match-head-commit "$confirmed_head" \
+    || fail "머지" "PR을 머지하지 못했습니다: #$pr_number" \
+         "확인한 뒤 develop이 바뀌었으면 같은 명령을 다시 실행해 바뀐 커밋을 확인합니다." \
+         "그 밖에는 위 gh 출력을 확인한 뒤 같은 명령을 다시 실행합니다."
+  load_pr "$version"
+  [[ $pr_state == MERGED && -n $pr_merge ]] \
+    || fail "머지" "머지 커밋을 찾지 못했습니다." "GitHub에서 PR을 확인한 뒤 같은 명령을 다시 실행합니다."
+  git fetch --quiet --tags origin
+  echo "  머지 커밋: $pr_merge"
+}
+
 # --- 실행 ---
 
 [[ $# -ge 1 && $# -le 2 ]] || usage
@@ -169,3 +256,10 @@ git fetch --quiet --tags origin
 
 resolve_start
 confirm
+if [[ $start == create ]]; then
+  create_pr
+fi
+if [[ $start != pages ]]; then
+  wait_checks
+  merge_pr
+fi
