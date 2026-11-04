@@ -69,9 +69,10 @@
 ### 릴리스
 
 - 장기 release 브랜치는 두지 않습니다. `develop → main` PR을 머지하고 머지 커밋에 태그를 push하면 릴리스가 끝납니다.
-- 릴리스 PR 제목은 `release: vX.Y.Z`입니다. `release`는 대응하는 이슈 라벨이 없는 유일한 커밋 type이며 이슈 번호를 붙이지 않습니다.
-- 머지 커밋에 `git tag -a vX.Y.Z -m "vX.Y.Z"`를 붙이고 push합니다. 버전의 단일 소스는 git 태그이며, `backend/build.gradle`에는 버전을 두지 않습니다.
-- PR 머지 이후의 태그와 push는 사용자가 직접 합니다. 에이전트는 실행할 명령만 제시합니다.
+- 릴리스는 저장소 루트에서 `scripts/release.sh vX.Y.Z [설명 파일]`로 합니다. 릴리스 PR 머지, 머지 커밋의 Pages 빌드 확인, 태그 push, 이미지 빌드 확인, 운영 배포를 차례로 하고, 중간에 멈추면 같은 명령으로 이어 갑니다. 절차와 멈췄을 때 할 일은 `docs/ops/deploy.md`에 있습니다.
+- 릴리스 PR 제목은 `release: vX.Y.Z`입니다. `release`는 대응하는 이슈 라벨이 없는 유일한 커밋 type이며 이슈 번호를 붙이지 않습니다. 설명 파일을 주면 스크립트가 이 제목으로 PR을 만들고, 열린 릴리스 PR이 있으면 그 PR로 진행합니다.
+- 태그는 머지 커밋에 붙는 주석 태그 `vX.Y.Z`(`git tag -a vX.Y.Z -m "vX.Y.Z"`)이며 스크립트가 붙입니다. 버전의 단일 소스는 git 태그이며, `backend/build.gradle`에는 버전을 두지 않습니다.
+- 에이전트는 릴리스 PR 설명을 쓰고 PR을 만들 수 있지만, `scripts/release.sh`는 실행하지 않고 실행할 명령만 제시합니다. 이 명령이 `main` 머지, 태그 push, 운영 배포를 하기 때문입니다.
 
 ## 하지 말 것
 
