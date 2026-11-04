@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #117 새 혜택에 조건이 해당하는 알림 사용자를 골라 알림 항목으로 저장
 
