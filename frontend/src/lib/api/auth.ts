@@ -3,16 +3,22 @@ import type { AccountResponse, EmailVerificationConfirmResponse, LoginResponse }
 
 // 계정 API(kr.govbenefit.account.controller). 액세스 토큰 없이 부른다.
 
-export function requestSignupCode(email: string): Promise<void> {
-  return apiRequest("POST", "/api/auth/email-verification", { body: { email } });
+// 인증번호 요청과 가입은 만 14세 이상 확인이 있어야 한다(#111, 결정 0044).
+export function requestSignupCode(email: string, ageConfirmed: boolean): Promise<void> {
+  return apiRequest("POST", "/api/auth/email-verification", { body: { email, ageConfirmed } });
 }
 
 export function confirmSignupCode(email: string, code: string): Promise<EmailVerificationConfirmResponse> {
   return apiRequest("POST", "/api/auth/email-verification/confirm", { body: { email, code } });
 }
 
-export function signUp(email: string, password: string, verificationToken: string): Promise<AccountResponse> {
-  return apiRequest("POST", "/api/auth/signup", { body: { email, password, verificationToken } });
+export function signUp(
+  email: string,
+  password: string,
+  verificationToken: string,
+  ageConfirmed: boolean,
+): Promise<AccountResponse> {
+  return apiRequest("POST", "/api/auth/signup", { body: { email, password, verificationToken, ageConfirmed } });
 }
 
 export function login(email: string, password: string): Promise<LoginResponse> {
