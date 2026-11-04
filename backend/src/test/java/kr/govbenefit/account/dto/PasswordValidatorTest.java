@@ -67,7 +67,7 @@ class PasswordValidatorTest {
     }
 
     private static List<String> reasons(String password) {
-        return validator.validateProperty(new SignUpRequest("me@example.com", password, "ticket"), "password").stream()
+        return validator.validateProperty(new SignUpRequest("me@example.com", password, "ticket", true), "password").stream()
                 .map(ConstraintViolation::getMessage)
                 .toList();
     }

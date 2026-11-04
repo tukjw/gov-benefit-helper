@@ -25,6 +25,7 @@ import { BenefitDetailFallback, BenefitDetailPage } from "@/pages/benefits/detai
 import { benefitDetailLoader } from "@/pages/benefits/detail/benefitDetailLoader";
 import { MatchFallback, MatchPage } from "@/pages/match/MatchPage";
 import { matchAction, matchLoader } from "@/pages/match/matchRoute";
+import { PrivacyPolicyPage } from "@/pages/privacy/PrivacyPolicyPage";
 import { ProfileFallback, ProfilePage } from "@/pages/profile/ProfilePage";
 import { profileAction, profileLoader } from "@/pages/profile/profileRoute";
 
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
             hydrateFallbackElement: <AccountFallback title="회원 탈퇴" />,
           },
           { path: "/logout", loader: logoutLoader, action: logoutAction },
+          { path: "/privacy", element: <PrivacyPolicyPage /> },
           { path: "*", element: <NotFoundPage /> },
         ],
       },

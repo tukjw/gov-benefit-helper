@@ -1,6 +1,7 @@
 package kr.govbenefit.account.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.Size;
 
 /**
  * 가입 요청. 이메일은 대소문자를 구분하지 않는다. 먼저 이메일 인증으로 가입 티켓을 받아야 한다(결정 0041).
+ * 만 14세 미만은 가입할 수 없어 만 14세 이상인지 확인받는다(#111, 결정 0044).
  */
 @Schema(description = "가입 요청")
 public record SignUpRequest(
@@ -25,15 +27,26 @@ public record SignUpRequest(
         @Schema(description = "가입 티켓. 이메일 인증 확인 API가 준 `verificationToken`이다. 같은 이메일로만, 한 번만 쓸 수 있다.",
                 example = "Hq3kS0b5rZ1yJ6mVwQ2cXf8nLtA4pE7uGdR9iKoBhYs", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank(message = "이메일 인증을 마쳐야 합니다.")
-        String verificationToken) {
+        String verificationToken,
+        @Schema(description = AGE_CONFIRMED_DESCRIPTION, example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull(message = AGE_CONFIRMATION_MESSAGE)
+        @AssertTrue(message = AGE_CONFIRMATION_MESSAGE)
+        Boolean ageConfirmed) {
 
     public static final int MAX_EMAIL_LENGTH = 254;
+
+    /** 만 14세 이상 확인이 없을 때의 항목 오류 이유. 인증번호 요청과 가입이 같은 문구를 쓴다. */
+    public static final String AGE_CONFIRMATION_MESSAGE = "만 14세 이상만 가입할 수 있습니다.";
+
+    public static final String AGE_CONFIRMED_DESCRIPTION =
+            "만 14세 이상이면 `true`. `true`가 아니면(`false`, `null`, 빠짐) 400이다. 만 14세 미만은 가입할 수 없다.";
 
     /**
      * 로그로 남겨도 비밀번호와 티켓이 드러나지 않게 한다.
      */
     @Override
     public String toString() {
-        return "SignUpRequest[email=" + email + ", password=****, verificationToken=****]";
+        return "SignUpRequest[email=" + email + ", password=****, verificationToken=****, ageConfirmed=" + ageConfirmed
+                + "]";
     }
 }

@@ -79,7 +79,7 @@ class SignUpConcurrencyTest {
                     ready.countDown();
                     start.await();
                     try {
-                        return accountService.signUp(new SignUpRequest(email, "correct-horse", ticket));
+                        return accountService.signUp(new SignUpRequest(email, "correct-horse", ticket, true));
                     } catch (BusinessException ex) {
                         return ex;
                     }
