@@ -13,6 +13,7 @@ set -euo pipefail
 # gh pr checks --required는 frontend를 빠뜨려서 쓰지 않는다.
 required_checks=(test frontend)
 pages_check="Cloudflare Pages"
+public_api=https://api.govbenefit.kr/api/profile/options
 migration_dir=backend/src/main/resources/db/migration
 # 대기 제한(초)과 조회 간격. 근거는 docs/plans/121-release-script.md 설계 6.
 checks_timeout=1800
@@ -326,6 +327,38 @@ wait_image() {
   echo "  통과 (실행 $id)"
 }
 
+# --- 운영 배포 ---
+
+deploy() {
+  step "운영 배포"
+  local prev
+  if ! "$repo_root/scripts/deploy.sh" "$version"; then
+    prev=$(previous_tag "$version")
+    fail "배포" "운영 배포가 끝나지 않았습니다. 자동으로 되돌리지 않습니다(결정 0039)." \
+      "위 앱 로그를 보고 docs/ops/deploy.md의 '되돌리기'에 따라 판단합니다." \
+      "직전 릴리스로 되돌리기: scripts/deploy.sh ${prev:-<직전 태그>}" \
+      "추가된 마이그레이션(${prev:-직전 릴리스}..$version): $(migrations_between "${prev:-$version}" "$version")" \
+      "API를 되돌리면 Pages도 대시보드 → Deployments에서 직전 배포로 되돌립니다." \
+      "원인을 고쳐 같은 버전으로 다시 배포하려면 같은 명령을 다시 실행합니다."
+  fi
+}
+
+# deploy.sh는 VM 안의 관리 포트만 본다. Tunnel을 거친 공개 API도 응답하는지 확인한다.
+check_public_api() {
+  step "공개 API 확인 ($public_api)"
+  local code=''
+  for _ in 1 2 3 4 5; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$public_api" || true)
+    if [[ $code == 200 ]]; then
+      echo "  200"
+      return
+    fi
+    sleep 5
+  done
+  fail "공개 API" "VM 안의 상태 확인은 UP인데 Tunnel을 거친 공개 API가 200이 아닙니다 (마지막 응답: ${code:-없음})." \
+    "app VM에서 cd /opt/gov-benefit/app && docker compose logs --tail 50 cloudflared 로 Tunnel을 확인한 뒤 같은 명령을 다시 실행합니다."
+}
+
 # --- 실행 ---
 
 [[ $# -ge 1 && $# -le 2 ]] || usage
@@ -353,3 +386,9 @@ fi
 wait_pages
 ensure_tag
 wait_image
+deploy
+check_public_api
+
+prev=$(previous_tag "$version")
+printf '\n완료: %s\n' "$version"
+echo "되돌리려면: scripts/deploy.sh ${prev:-<직전 태그>} (docs/ops/deploy.md '되돌리기')"
