@@ -142,7 +142,8 @@ status: in-progress
        - 중단 뒤 이어서: 기준선에서 B와 C를 함께 빼고, 되살린 수집에서 B·C를 선정한다. `JdbcTemplate`으로 C의 `targets_selected_at`을 비우고 C의 대상 행을 지워 "B까지 선정하고 멈춘 상태"를 만든다. `selectAll()`을 부르면 C의 대상은 (U1, C)로 다시 생기고, B의 대상 행과 `targets_selected_at`은 그대로다.
    - `account.controller.WithdrawalApiTest`
      - `USER_TABLES`에 `new_benefit_target`을 더한다.
-     - 준비 단계에서 수집 실행(`CollectionRun.start`), 테스트 혜택의 `NewBenefit.detect`, alice의 대상 행(`NewBenefitTargetRepository.insert`)을 저장한다. 탈퇴 뒤 0건인지는 기존 반복문이 확인한다.
+     - 도우미 `saveNewBenefitTarget(userId)`가 수집 실행(`CollectionRun.start`), 테스트 혜택의 `NewBenefit.detect`, 사용자의 대상 행(`JdbcTemplate`)을 저장한다. 저장소의 `insert`는 트랜잭션 안에서만 돌아 테스트에서 쓰지 않는다.
+     - 탈퇴 테스트에서 alice의 대상 행을, 다른 사용자에게 영향이 없는지 보는 테스트에서 bob의 대상 행을 저장한다. 두 테스트 모두 `USER_TABLES`를 반복해 확인한다.
    - 기존 테스트는 바꾸지 않고 통과한다. `CollectionServiceTest`의 수집에서도 선정이 돌지만, 알림을 켠 사용자가 없어 대상이 생기지 않는다.
 
 ## 완료 조건 매핑
