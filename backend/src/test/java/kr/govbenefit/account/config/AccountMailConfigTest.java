@@ -4,22 +4,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import kr.govbenefit.account.mail.AccountMailSender;
 import kr.govbenefit.account.mail.LoggingAccountMailSender;
-import kr.govbenefit.account.mail.ResendAccountMailSender;
+import kr.govbenefit.account.mail.SesAccountMailSender;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 
 /**
- * 발송 구현은 설정으로만 고른다(결정 0032). 기본 설정에는 구현이 없어 기동에 실패하고, Resend를 고르면 API 키와
- * 발신 주소가 있어야 뜬다.
+ * 발송 구현은 설정으로만 고른다(결정 0045). 기본 설정에는 구현이 없어 기동에 실패하고, SES를 고르면 접근 키,
+ * 리전, 발신 주소가 모두 있어야 뜬다.
  */
 class AccountMailConfigTest {
 
-    private static final String[] RESEND = {"auth.mail.sender=resend",
-            "auth.mail.resend.base-url=https://api.resend.com", "auth.mail.resend.connect-timeout=5s",
-            "auth.mail.resend.read-timeout=10s"};
+    private static final String[] SES = {"auth.mail.sender=ses", "auth.mail.ses.connect-timeout=5s",
+            "auth.mail.ses.read-timeout=10s", "auth.mail.ses.access-key-id=AKIATESTCONFIG0B5C2A",
+            "auth.mail.ses.secret-access-key=test/Config+Secret0b5c2a", "auth.mail.ses.region=ap-northeast-2",
+            "auth.mail.ses.from=no-reply@govbenefit.kr"};
 
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
             .withUserConfiguration(AccountMailConfig.class);
@@ -40,28 +43,20 @@ class AccountMailConfigTest {
     }
 
     @Test
-    void resend면_Resend_구현을_쓴다() {
-        runner.withPropertyValues(RESEND)
-                .withPropertyValues("auth.mail.resend.api-key=re_test_0b5c2a",
-                        "auth.mail.resend.from=no-reply@govbenefit.kr")
-                .run(context -> assertThat(context).getBean(AccountMailSender.class)
-                        .isInstanceOf(ResendAccountMailSender.class));
+    void ses면_SES_구현을_쓰고_컨텍스트와_함께_닫는다() {
+        runner.withPropertyValues(SES)
+                .run(context -> assertThat(context).hasNotFailed().getBean(AccountMailSender.class)
+                        .isInstanceOf(SesAccountMailSender.class));
     }
 
-    @Test
-    void resend인데_API_키가_없으면_기동에_실패한다() {
-        runner.withPropertyValues(RESEND)
-                .withPropertyValues("auth.mail.resend.api-key=", "auth.mail.resend.from=no-reply@govbenefit.kr")
+    @ParameterizedTest
+    @CsvSource({"access-key-id, SES_ACCESS_KEY_ID", "secret-access-key, SES_SECRET_ACCESS_KEY",
+            "region, SES_REGION", "from, SES_FROM"})
+    void ses인데_값이_하나라도_비면_빠진_변수_이름으로_기동에_실패한다(String property, String variable) {
+        runner.withPropertyValues(SES)
+                .withPropertyValues("auth.mail.ses." + property + "=")
                 .run(context -> assertThat(context).hasFailed().getFailure()
-                        .rootCause().hasMessageContaining("RESEND_API_KEY"));
-    }
-
-    @Test
-    void resend인데_발신_주소가_없으면_기동에_실패한다() {
-        runner.withPropertyValues(RESEND)
-                .withPropertyValues("auth.mail.resend.api-key=re_test_0b5c2a")
-                .run(context -> assertThat(context).hasFailed().getFailure()
-                        .rootCause().hasMessageContaining("RESEND_FROM"));
+                        .rootCause().hasMessageContaining(variable));
     }
 
     @Test
