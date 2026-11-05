@@ -1,8 +1,10 @@
 package kr.govbenefit.account.repository;
 
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import kr.govbenefit.account.domain.UserAccount;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -23,4 +25,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from UserAccount a where a.id = :id")
     Optional<UserAccount> findByIdForUpdate(@Param("id") Long id);
+
+    /** 새 혜택 알림을 켠 계정 ID를 {@code afterId} 다음부터 ID 순으로 읽는다. */
+    @Query("select a.id from UserAccount a where a.newBenefitNotify = true and a.id > :afterId order by a.id")
+    List<Long> findNewBenefitNotifyIds(@Param("afterId") Long afterId, Limit limit);
 }

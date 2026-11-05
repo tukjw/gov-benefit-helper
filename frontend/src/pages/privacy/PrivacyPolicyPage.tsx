@@ -8,7 +8,9 @@ import styles from "./PrivacyPolicyPage.module.css";
 // 본문의 기간·항목은 실제 동작·운영 설정과 같아야 한다. 처리 항목·보유 기간·위탁이 바뀌는 변경은 같은 PR에서 이 본문을 고친다.
 // 수치마다 근거 설정을 주석으로 적어, 설정을 바꿀 때 검색으로 찾게 한다.
 
-const EFFECTIVE_DATE = "2026년 11월 4일";
+// 운영 배포일. 바꾸면 '처리방침의 변경'에 이전 시행일과 바뀐 내용을 남긴다(결정 0044).
+const EFFECTIVE_DATE = "2026년 11월 5일";
+const PREVIOUS_EFFECTIVE_DATE = "2026년 11월 4일";
 const CONTACT_EMAIL = "contact@govbenefit.kr";
 
 const SECTIONS = [
@@ -170,10 +172,22 @@ export function PrivacyPolicyPage() {
               <th scope="row">비회원이 입력한 조건</th>
               <td>서버에 저장하지 않습니다.</td>
             </tr>
+            <tr>
+              <th scope="row">메일이 반송되거나 수신 거부를 신고한 이메일 주소</th>
+              {/* SES 계정 수준 억제 목록: 지울 때까지 남는다(SES 개발자 안내서 Using the account-level suppression list,
+                  Deleting personal data). 2026-11-05 확인. 삭제 절차는 docs/ops/mail-domain.md */}
+              <td>
+                같은 주소로 다시 보내지 않도록 메일 발송 업체(Amazon SES)의 수신 거부 목록에 남습니다. 운영자가 지울
+                때까지 보관하며, 삭제를 요구하면 지체 없이 지웁니다.
+              </td>
+            </tr>
           </Table>
           <p>
-            위탁·국외 이전 업체가 보관하는 기간은 <a href="#transfer">국외 이전</a>에 적었습니다. 법령에 따라 따로 보존하는
-            개인정보는 없습니다.
+            {/* SES는 발송 기록의 보관 기간을 공개하지 않는다(SES 개발자 안내서 Data protection, Deleting personal data).
+                2026-11-05 확인 */}
+            메일 발송 업체(Amazon SES)는 그 밖의 발송 기록을 위탁 목적을 이루는 데 필요한 기간 동안 AWS의 보관 기준에
+            따라 보관합니다. Cloudflare가 보관하는 기간은 <a href="#transfer">국외 이전</a>에 적었습니다. 법령에 따라
+            따로 보존하는 개인정보는 없습니다.
           </p>
         </Section>
 
@@ -195,8 +209,10 @@ export function PrivacyPolicyPage() {
         <Section id="entrustment">
           <Table caption="처리 위탁" headers={["수탁자", "위탁 업무"]}>
             <tr>
-              <th scope="row">Plus Five Five, Inc.(Resend)</th>
-              <td>가입 인증번호와 비밀번호 재설정 메일 발송</td>
+              {/* AWS Customer Agreement(2026-10-29 개정): 계정 국가가 대한민국이면 계약 당사자는 Amazon Web Services Korea
+                  LLC. 발송 리전은 서울(ap-northeast-2). 2026-11-05 확인 */}
+              <th scope="row">Amazon Web Services Korea LLC(Amazon SES)</th>
+              <td>가입 인증번호와 비밀번호 재설정 메일 발송, 반송·수신 거부 주소 관리</td>
             </tr>
             <tr>
               <th scope="row">Cloudflare, Inc.</th>
@@ -211,14 +227,9 @@ export function PrivacyPolicyPage() {
             위탁 업무를 위해 개인정보가 국외로 이전됩니다. 이용자와의 계약을 이행하는 데 필요한 위탁으로, 아래 사항을 이
             처리방침에 공개하고 이전합니다(「개인정보 보호법」 제28조의8 제1항 제3호 가목).
           </p>
-          <Table caption="국외 이전" headers={["구분", "Resend", "Cloudflare"]}>
+          <Table caption="국외 이전" headers={["구분", "Cloudflare"]}>
             <tr>
               <th scope="row">이전받는 자와 연락처</th>
-              <td>
-                Plus Five Five, Inc.
-                <br />
-                privacy@resend.com
-              </td>
               <td>
                 Cloudflare, Inc.
                 <br />
@@ -227,30 +238,24 @@ export function PrivacyPolicyPage() {
             </tr>
             <tr>
               <th scope="row">이전되는 국가</th>
-              <td>일본(메일 발송 지역 도쿄), 미국(회사와 하위 처리자 소재지)</td>
               <td>미국 등(주로 미국·유럽경제지역)</td>
             </tr>
             <tr>
               <th scope="row">이전되는 항목</th>
-              <td>받는 이메일 주소, 메일 내용(인증번호 또는 비밀번호 재설정 링크)</td>
               <td>
                 접속 IP 주소, 브라우저 정보, 서비스를 쓰며 주고받는 내용(이메일·비밀번호·프로필 등), 접속 오류 보고
               </td>
             </tr>
             <tr>
               <th scope="row">이전 시기와 방법</th>
-              <td>메일을 보낼 때마다 암호화된 통신(HTTPS)으로 전송</td>
               <td>서비스에 접속할 때마다 암호화된 통신(HTTPS)으로 전송</td>
             </tr>
             <tr>
               <th scope="row">이용 목적</th>
-              <td>메일 발송</td>
               <td>웹 화면 제공, 서비스 서버로의 연결 전달, 과도한 요청 차단</td>
             </tr>
             <tr>
               <th scope="row">보유·이용 기간</th>
-              {/* Resend 요금 페이지의 Data retention(30 days), DPA Exhibit A(계약 종료 후 90일 안에 삭제). 2026-11-03 확인 */}
-              <td>발송 기록 30일. 위탁 계약이 끝나면 90일 안에 삭제</td>
               <td>위탁 목적을 이루는 데 필요한 기간(Cloudflare의 보관 기준)</td>
             </tr>
           </Table>
@@ -356,8 +361,29 @@ export function PrivacyPolicyPage() {
         <Section id="changes">
           <ul>
             <li>이 처리방침은 {EFFECTIVE_DATE}부터 적용합니다.</li>
-            <li>내용이 바뀌면 시행 전에 이 화면에 알리고, 이전 내용과 시행일을 함께 남깁니다.</li>
-            <li>이전 처리방침: 없음(처음 공개)</li>
+            <li>내용이 바뀌면 바뀐 내용과 시행일을 이 화면에 알리고, 이전 내용을 함께 남깁니다.</li>
+            <li>
+              이전 처리방침({PREVIOUS_EFFECTIVE_DATE} 시행)에서 바뀐 내용
+              <ul>
+                <li>
+                  처리 위탁: 메일 발송 수탁자를 Plus Five Five, Inc.(Resend)에서 Amazon Web Services Korea LLC(Amazon
+                  SES)로 바꾸고, 위탁 업무에 반송·수신 거부 주소 관리를 더했습니다.
+                </li>
+                <li>
+                  국외 이전: 메일 발송을 위한 국외 이전(Plus Five Five, Inc., 일본·미국, 받는 이메일 주소와 메일 내용)이
+                  없어졌습니다. 메일은 대한민국(서울) 지역에서 처리합니다.
+                </li>
+                <li>
+                  보유 기간: 메일 발송 업체의 보관 기간이 &lsquo;발송 기록 30일, 위탁 계약이 끝나면 90일 안에
+                  삭제&rsquo;에서 &lsquo;반송·수신 거부 주소는 운영자가 지울 때까지, 그 밖의 발송 기록은 AWS의 보관
+                  기준&rsquo;으로 바뀌었습니다.
+                </li>
+                <li>
+                  처리방침의 변경: &lsquo;시행 전에 이 화면에 알린다&rsquo;를 &lsquo;바뀐 내용과 시행일을 이 화면에
+                  알린다&rsquo;로 바꿨습니다.
+                </li>
+              </ul>
+            </li>
           </ul>
         </Section>
       </article>

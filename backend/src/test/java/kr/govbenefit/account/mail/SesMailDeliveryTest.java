@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Map;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.SignUpSteps;
-import kr.govbenefit.account.mail.ResendStubServer.ReceivedRequest;
+import kr.govbenefit.account.mail.SesStubServer.ReceivedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -29,32 +31,35 @@ import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * {@code auth.mail.sender=resend}로 띄우면 계정 메일이 Resend API로 요청된다(결정 0032). 실제 Resend 대신 로컬 stub
- * 서버가 받는다. 발송 실패는 응답을 바꾸지 않고, 로그에는 행 ID만 남는다. 실행기는 테스트 공통 설정의 동기다.
+ * {@code auth.mail.sender=ses}로 띄우면 계정 메일이 Amazon SES API로 요청된다(결정 0045). 실제 SES 대신 로컬 stub
+ * 서버가 받는다. 발송 실패는 응답을 바꾸지 않고, 다시 보내지 않으며, 로그에는 행 ID만 남는다. 실행기는 테스트 공통 설정의
+ * 동기다.
  *
  * <p>이 클래스만 쓰는 설정이라 컨텍스트를 다른 테스트와 공유하지 않는다. 끝나면 바로 닫아({@link DirtiesContext}) 컨텍스트마다
  * 뜨는 MySQL 컨테이너가 CI 러너의 메모리에 쌓이지 않게 한다.
  */
-@SpringBootTest(properties = {"gov24.schedule.enabled=false", "auth.mail.sender=resend",
-        "auth.mail.resend.api-key=" + ResendMailDeliveryTest.API_KEY,
-        "auth.mail.resend.from=" + ResendMailDeliveryTest.FROM})
+@SpringBootTest(properties = {"gov24.schedule.enabled=false", "auth.mail.sender=ses",
+        "auth.mail.ses.access-key-id=" + SesMailDeliveryTest.ACCESS_KEY_ID,
+        "auth.mail.ses.secret-access-key=" + SesMailDeliveryTest.SECRET_ACCESS_KEY,
+        "auth.mail.ses.region=ap-northeast-2", "auth.mail.ses.from=" + SesMailDeliveryTest.FROM})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 @ExtendWith(OutputCaptureExtension.class)
 @DirtiesContext
-class ResendMailDeliveryTest {
+class SesMailDeliveryTest {
 
-    static final String API_KEY = "re_test_3a9d2f";
+    static final String ACCESS_KEY_ID = "AKIATESTDELIVERY3A9D";
+    static final String SECRET_ACCESS_KEY = "test/Delivery+Secret3a9d2f";
     static final String FROM = "정부 혜택 도우미 <no-reply@govbenefit.kr>";
     private static final String EMAIL = "alice@example.com";
     private static final String PASSWORD = "alice-password";
     private static final String NEW_PASSWORD = "new-alice-password";
 
-    private static final ResendStubServer stub = ResendStubServer.start();
+    private static final SesStubServer stub = SesStubServer.start();
 
     @DynamicPropertySource
-    static void resendProperties(DynamicPropertyRegistry registry) {
-        registry.add("auth.mail.resend.base-url", stub::baseUrl);
+    static void sesProperties(DynamicPropertyRegistry registry) {
+        registry.add("auth.mail.ses.endpoint", stub::endpoint);
     }
 
     @AfterAll
@@ -77,20 +82,20 @@ class ResendMailDeliveryTest {
     }
 
     @Test
-    void 가입_인증번호_메일이_Resend로_요청되고_그_번호로_확인된다() throws Exception {
+    void 가입_인증번호_메일이_SES로_요청되고_그_번호로_확인된다() throws Exception {
         steps.requestCode("ALICE@example.com").andExpect(status().isNoContent());
 
         ReceivedRequest request = stub.last();
         assertThat(stub.received()).hasSize(1);
-        assertThat(request.path()).isEqualTo("/emails");
-        assertThat(request.authorization()).isEqualTo("Bearer " + API_KEY);
-        assertThat(request.body().get("from").asString()).isEqualTo(FROM);
+        assertThat(request.path()).isEqualTo(SesStubServer.SEND_EMAIL_PATH);
+        assertThat(request.authorization()).startsWith("AWS4-HMAC-SHA256 Credential=" + ACCESS_KEY_ID + "/");
+        assertThat(request.from()).isEqualTo(FROM);
         assertThat(request.to()).isEqualTo(EMAIL);
         steps.confirm(EMAIL, request.signupCode()).andExpect(status().isOk());
     }
 
     @Test
-    void 재설정_메일이_Resend로_요청되고_그_링크로_재설정된다() throws Exception {
+    void 재설정_메일이_SES로_요청되고_그_링크로_재설정된다() throws Exception {
         signUp();
 
         requestReset(EMAIL).andExpect(status().isNoContent());
@@ -102,27 +107,39 @@ class ResendMailDeliveryTest {
         login(NEW_PASSWORD).andExpect(status().isOk());
     }
 
-    @Test
-    void Resend가_오류를_응답해도_응답은_같고_로그에_민감한_값이_없다(CapturedOutput output) throws Exception {
+    @ParameterizedTest
+    @CsvSource({
+            // 샌드박스에서 인증하지 않은 수신자로 보내면 설명에 수신 주소가 들어간다.
+            "400, MessageRejected, Email address is not verified. The following identities failed the check: "
+                    + "bob@example.com " + EMAIL,
+            "429, TooManyRequestsException, Maximum sending rate exceeded. " + EMAIL,
+            "500, InternalFailure, Internal failure for " + EMAIL})
+    void SES가_오류를_응답해도_응답은_같고_한_번만_요청되며_로그에_민감한_값이_없다(int status, String errorType,
+                                                                    String message, CapturedOutput output)
+            throws Exception {
         signUp();
-        // 검증 오류 본문에 보낸 주소가 들어 있어도 로그로 옮겨지지 않아야 한다.
-        stub.respondWith(422, "{\"statusCode\":422,\"name\":\"validation_error\",\"message\":\"" + EMAIL + "\"}");
+        int before = stub.received().size();
+        stub.respondWithError(status, errorType, message);
 
         steps.requestCode("bob@example.com").andExpect(status().isNoContent());
-        stub.respondWith(500, "{\"statusCode\":500,\"name\":\"internal_server_error\",\"message\":\"" + EMAIL + "\"}");
         requestReset(EMAIL).andExpect(status().isNoContent());
 
+        assertThat(stub.received()).hasSize(before + 2);
+        assertThat(output).contains("SES 응답 상태 " + status + " " + errorType);
         assertFailureLoggedWithoutSecrets(output);
     }
 
     @Test
-    void Resend와_연결이_끊겨도_응답은_같고_로그에_민감한_값이_없다(CapturedOutput output) throws Exception {
+    void SES와_연결이_끊겨도_응답은_같고_한_번만_요청되며_로그에_민감한_값이_없다(CapturedOutput output) throws Exception {
         signUp();
+        int before = stub.received().size();
         stub.disconnect();
 
         steps.requestCode("bob@example.com").andExpect(status().isNoContent());
         requestReset(EMAIL).andExpect(status().isNoContent());
 
+        assertThat(stub.received()).hasSize(before + 2);
+        assertThat(output).contains("SES 연결 실패: ");
         assertFailureLoggedWithoutSecrets(output);
     }
 
@@ -137,7 +154,7 @@ class ResendMailDeliveryTest {
         ReceivedRequest code = received.get(received.size() - 2);
         ReceivedRequest reset = received.get(received.size() - 1);
         assertThat(output).doesNotContain(EMAIL, "bob@example.com", code.signupCode(), reset.resetUrl(),
-                reset.resetToken(), API_KEY);
+                reset.resetToken(), ACCESS_KEY_ID, SECRET_ACCESS_KEY);
     }
 
     private void signUp() throws Exception {

@@ -25,6 +25,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
 	implementation 'org.flywaydb:flyway-mysql'
+	// 계정 메일 발송(결정 0045). HTTP 클라이언트는 JDK 기반 하나만 둔다.
+	implementation platform('software.amazon.awssdk:bom:2.57.9')
+	implementation('software.amazon.awssdk:sesv2') {
+		exclude group: 'software.amazon.awssdk', module: 'apache5-client'
+		exclude group: 'software.amazon.awssdk', module: 'netty-nio-client'
+	}
+	implementation 'software.amazon.awssdk:url-connection-client'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'

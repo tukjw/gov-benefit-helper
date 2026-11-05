@@ -3,6 +3,7 @@ package kr.govbenefit.account.mail;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -20,25 +21,43 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Resend {@code POST /emails}를 흉내 내는 로컬 HTTP 서버(결정 0032). 받은 요청을 기록하고, 응답을 오류·연결 끊김으로
- * 바꾸거나 테스트가 풀어 줄 때까지 붙잡아 둔다.
+ * Amazon SES API v2 {@code POST /v2/email/outbound-emails}를 흉내 내는 로컬 HTTP 서버(결정 0045). 받은 요청을
+ * 기록하고, 응답을 SES 오류·연결 끊김으로 바꾸거나 테스트가 풀어 줄 때까지 붙잡아 둔다.
  */
-public class ResendStubServer implements Closeable {
+public class SesStubServer implements Closeable {
+
+    public static final String SEND_EMAIL_PATH = "/v2/email/outbound-emails";
 
     private static final Duration HOLD_LIMIT = Duration.ofSeconds(10);
 
     /**
-     * @param body JSON 본문
+     * @param authorization SigV4 서명 헤더
+     * @param body          JSON 본문
      */
-    public record ReceivedRequest(String method, String path, String authorization, String userAgent,
-                                  JsonNode body) {
+    public record ReceivedRequest(String method, String path, String authorization, JsonNode body) {
+
+        public String from() {
+            return body.get("FromEmailAddress").asString();
+        }
+
+        public List<String> toAddresses() {
+            return body.get("Destination").get("ToAddresses").valueStream().map(JsonNode::asString).toList();
+        }
 
         public String to() {
-            return body.get("to").get(0).asString();
+            return toAddresses().getFirst();
+        }
+
+        public JsonNode simple() {
+            return body.get("Content").get("Simple");
+        }
+
+        public String subject() {
+            return simple().get("Subject").get("Data").asString();
         }
 
         public String text() {
-            return body.get("text").asString();
+            return simple().get("Body").get("Text").get("Data").asString();
         }
 
         /** 가입 인증번호 메일 본문의 번호 */
@@ -77,8 +96,8 @@ public class ResendStubServer implements Closeable {
     private volatile CountDownLatch arrival;
     private final AtomicInteger held = new AtomicInteger();
 
-    public static ResendStubServer start() {
-        ResendStubServer stub = new ResendStubServer();
+    public static SesStubServer start() {
+        SesStubServer stub = new SesStubServer();
         stub.server.setDispatcher(new Dispatcher() {
             @Override
             public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
@@ -94,10 +113,10 @@ public class ResendStubServer implements Closeable {
         return stub;
     }
 
-    /** 실제 설정({@code https://api.resend.com})처럼 끝에 {@code /}가 없다. */
-    public String baseUrl() {
+    /** {@code auth.mail.ses.endpoint}에 넣는 주소. 끝에 {@code /}가 없다. */
+    public URI endpoint() {
         String url = server.url("/").toString();
-        return url.substring(0, url.length() - 1);
+        return URI.create(url.substring(0, url.length() - 1));
     }
 
     /**
@@ -106,16 +125,30 @@ public class ResendStubServer implements Closeable {
     public void reset() {
         release();
         received.clear();
-        response = response(200, "{\"id\":\"4ef9a417-02e9-4d39-ad75-9611e0fcc33c\"}");
+        response = new MockResponse.Builder()
+                .code(200)
+                .addHeader("Content-Type", "application/json")
+                .body("{\"MessageId\":\"010c019a5f2e8d6b-5b4c3a2e-7f1d-4c8e-9a6b-3d2e1f0a9b8c-000000\"}")
+                .build();
         hold = null;
         arrival = new CountDownLatch(1);
     }
 
     /**
-     * 다음 요청부터 이 상태 코드와 본문으로 응답한다.
+     * 다음 요청부터 SES 오류로 응답한다. SES API v2는 오류 유형을 {@code x-amzn-ErrorType} 헤더로, 설명을 본문의
+     * {@code message}로 준다.
+     *
+     * @param errorType 예: {@code MessageRejected}, {@code TooManyRequestsException}
+     * @param message   SES가 주는 설명. 수신 주소가 들어 있을 수 있다
      */
-    public void respondWith(int status, String body) {
-        response = response(status, body);
+    public void respondWithError(int status, String errorType, String message) {
+        response = new MockResponse.Builder()
+                .code(status)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("x-amzn-ErrorType", errorType)
+                .addHeader("x-amzn-RequestId", "6f0a1b2c-3d4e-5f60-7182-93a4b5c6d7e8")
+                .body("{\"message\":\"" + message + "\"}")
+                .build();
     }
 
     /**
@@ -161,7 +194,7 @@ public class ResendStubServer implements Closeable {
 
     public ReceivedRequest last() {
         if (received.isEmpty()) {
-            throw new AssertionError("Resend stub이 받은 요청이 없습니다.");
+            throw new AssertionError("SES stub이 받은 요청이 없습니다.");
         }
         return received.getLast();
     }
@@ -175,8 +208,7 @@ public class ResendStubServer implements Closeable {
     private MockResponse respond(RecordedRequest request) throws InterruptedException {
         String body = request.getBody() == null ? "" : request.getBody().utf8();
         received.add(new ReceivedRequest(request.getMethod(), request.getUrl().encodedPath(),
-                request.getHeaders().get("Authorization"), request.getHeaders().get("User-Agent"),
-                body.isEmpty() ? null : jsonMapper.readTree(body)));
+                request.getHeaders().get("Authorization"), body.isEmpty() ? null : jsonMapper.readTree(body)));
         CountDownLatch latch = hold;
         if (latch == null) {
             arrival.countDown();
@@ -191,13 +223,5 @@ public class ResendStubServer implements Closeable {
             held.decrementAndGet();
         }
         return response;
-    }
-
-    private static MockResponse response(int status, String body) {
-        return new MockResponse.Builder()
-                .code(status)
-                .addHeader("Content-Type", "application/json")
-                .body(body)
-                .build();
     }
 }
