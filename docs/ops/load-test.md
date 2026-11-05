@@ -141,7 +141,7 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 6. 메일 발송과 공공 API 호출이 없었는지 확인한다.
    - 결과 디렉터리마다 `app-log-check.txt`에 머리줄 말고 내용이 없다.
    - `prometheus.json`의 `all.collection_runs`와 `all.mail_requests` 값이 구간 처음과 끝에서 같거나, 결과가 비어 있다(앱을 띄운 뒤 한 번도 없었다). `jq -c '.all.collection_runs.data.result, .all.mail_requests.data.result' <결과 디렉터리>/prometheus.json`으로 본다.
-   - Resend 대시보드의 Emails에 측정 시간대의 발송 기록이 없다.
+   - SES 콘솔(서울 리전) **Account dashboard**의 발송 지표나 CloudWatch `AWS/SES` 네임스페이스의 `Send` 지표에 측정 시간대의 발송이 없다.
 7. 결과 디렉터리와 보고서(기준 측정은 [부하 테스트 기준 측정](../research/load-test-baseline.md))를 커밋해 PR로 올린다.
 
 ## 중간에 끊겼을 때
