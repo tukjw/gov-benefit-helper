@@ -73,7 +73,7 @@ vi app.env          # DB 계정은 db VM의 .env와 같게, JWT_SECRET은 openss
 vi cloudflared.env  # 3에서 복사한 토큰
 ```
 
-Resend 키와 발신 주소는 [메일 발신 도메인 인증](mail-domain.md)에서 만든다.
+SES 접근 키와 발신 주소는 [메일 발신 도메인 인증](mail-domain.md)에서 만든다. SES 값이 비어 있으면 앱이 기동에 실패해 배포 스크립트의 상태 확인에서 멈춘다.
 
 ### 5. 확인 배포
 
