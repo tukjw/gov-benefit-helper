@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #127 메일 발송 서비스를 Resend에서 Amazon SES로 전환
 
