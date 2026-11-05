@@ -74,7 +74,7 @@
 | [0029](0029-frontend-static-spa-credentials.md) | 웹 프론트 정적 SPA 구조와 API 호출(쿠키 전송 허용) | 대체됨 → [0040](0040-frontend-static-spa-cors-methods.md) | #76, #73 |
 | [0030](0030-frontend-auth-session.md) | 웹 프론트 로그인 상태와 인증 요청 | 채택 | #73 |
 | [0031](0031-guest-profile-storage.md) | 비회원 프로필 값의 브라우저 보관 | 채택 | #74 |
-| [0032](0032-account-mail-resend.md) | 계정 메일 Resend 비동기 발송 | 채택 | #78 |
+| [0032](0032-account-mail-resend.md) | 계정 메일 Resend 비동기 발송 | 대체됨 → [0045](0045-account-mail-ses.md) | #78 |
 | [0033](0033-test-shared-mysql.md) | 테스트 MySQL 컨테이너 공유와 테이블 정리 | 채택 | #85 |
 | [0034](0034-proxmox-deploy.md) | Proxmox 단일 호스트 배포 구조 | 대체됨 → [0036](0036-proxmox-deploy-and-metrics.md) | #87 |
 | [0035](0035-login-attempt-limit.md) | 로그인·탈퇴의 비밀번호 확인 시도 제한 | 채택 | #52 |
@@ -87,3 +87,4 @@
 | [0042](0042-new-benefit-detection.md) | 새 혜택 감지와 대상 판단 가능 상태 | 채택 | #107 |
 | [0043](0043-test-connection-pool.md) | 테스트 커넥션 풀 크기 | 채택 | #113 |
 | [0044](0044-age-confirmation-and-privacy-policy.md) | 만 14세 이상 확인과 개인정보 처리방침 유지 | 채택 | #111 |
+| [0045](0045-account-mail-ses.md) | 계정 메일 Amazon SES 비동기 발송 | 채택 | #127 |

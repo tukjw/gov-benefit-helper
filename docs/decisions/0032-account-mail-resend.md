@@ -1,6 +1,6 @@
 # 0032. 계정 메일 Resend 비동기 발송
 
-- 상태: 채택
+- 상태: 대체됨 → [0045](0045-account-mail-ses.md)
 - 날짜: 2026-10-27
 - 출처: #78, [플랜](../plans/78-resend-account-mail.md)
 - 대체: [0020](0020-account-mail-sender.md)
