@@ -139,3 +139,8 @@ auth:
       connect-timeout: 5s
       # 요청을 보낸 뒤 응답을 받을 때까지의 시간 제한
       read-timeout: 10s
+
+# 새 혜택 알림 묶기(결정 0046). 매일 08:00(Asia/Seoul)에 알림을 켠 사용자마다 묶지 않은 항목을 묶음 하나로 만든다.
+notification:
+  new-benefit:
+    digest-cron: "0 0 8 * * *"
