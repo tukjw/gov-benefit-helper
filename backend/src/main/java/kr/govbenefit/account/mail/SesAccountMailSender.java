@@ -1,6 +1,7 @@
 package kr.govbenefit.account.mail;
 
 import java.time.Duration;
+import java.util.List;
 import kr.govbenefit.account.config.SesProperties;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -73,6 +74,28 @@ public class SesAccountMailSender implements AccountMailSender, AutoCloseable {
 
                 링크는 %d분 동안 한 번만 쓸 수 있습니다. 재설정을 요청하지 않았다면 이 메일을 무시하세요.
                 """.formatted(resetUrl, validFor.toMinutes()));
+    }
+
+    @Override
+    public void sendNewBenefitDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl) {
+        StringBuilder items = new StringBuilder();
+        for (int i = 0; i < benefits.size(); i++) {
+            NewBenefitMailItem benefit = benefits.get(i);
+            items.append("""
+                    %d. %s
+                       운영 기관: %s
+                       %s
+
+                    """.formatted(i + 1, benefit.name(), benefit.agencyName(), benefit.url()));
+        }
+        send(email, SUBJECT_PREFIX + "조건에 맞는 새 혜택 " + benefits.size() + "건", """
+                회원님의 조건에 해당하는 새 혜택이 등록되었습니다.
+
+                %s'해당'은 회원님이 입력한 프로필을 혜택의 대상 조건과 비교한 결과입니다.
+                실제로 받을 수 있는지는 운영 기관이 정하므로, 신청하기 전에 혜택 상세 화면의 원문을 꼭 확인하세요.
+
+                이 메일은 새 혜택 알림을 켠 회원에게 보냅니다. 알림을 끄려면 %s 에 로그인한 뒤 알림 설정에서 끄세요.
+                """.formatted(items, siteUrl));
     }
 
     @Override

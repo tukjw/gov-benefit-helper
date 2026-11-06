@@ -2,6 +2,8 @@ package kr.govbenefit.account.mail;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import kr.govbenefit.account.domain.Emails;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -26,7 +28,15 @@ public class RecordingAccountMailSender implements AccountMailSender {
     public record SentMail(Kind kind, String email, String content, Duration validFor) {
     }
 
+    /**
+     * @param sentAtNanos 발송을 부른 시각({@link System#nanoTime()}). 발송 간격을 확인할 때 쓴다.
+     */
+    public record SentDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl, long sentAtNanos) {
+    }
+
     private final List<SentMail> sent = new CopyOnWriteArrayList<>();
+    private final List<SentDigest> sentDigests = new CopyOnWriteArrayList<>();
+    private final Queue<RuntimeException> digestFailures = new ConcurrentLinkedQueue<>();
 
     @Override
     public void sendSignupCode(String email, String code, Duration validFor) {
@@ -38,6 +48,26 @@ public class RecordingAccountMailSender implements AccountMailSender {
         sent.add(new SentMail(Kind.PASSWORD_RESET, email, resetUrl, validFor));
     }
 
+    /**
+     * {@link #failNextDigests}로 정한 실패가 남아 있으면 기록하지 않고 그 예외를 던진다.
+     */
+    @Override
+    public void sendNewBenefitDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl) {
+        long now = System.nanoTime();
+        RuntimeException failure = digestFailures.poll();
+        if (failure != null) {
+            throw failure;
+        }
+        sentDigests.add(new SentDigest(email, List.copyOf(benefits), siteUrl, now));
+    }
+
+    /**
+     * 다음 새 혜택 알림 발송부터 한 번에 하나씩 차례로 던진다. 다 던지면 다시 기록한다.
+     */
+    public void failNextDigests(RuntimeException... failures) {
+        digestFailures.addAll(List.of(failures));
+    }
+
     public List<SentMail> sent() {
         return List.copyOf(sent);
     }
@@ -45,6 +75,10 @@ public class RecordingAccountMailSender implements AccountMailSender {
     public List<SentMail> sent(Kind kind, String email) {
         String normalized = Emails.normalize(email);
         return sent.stream().filter(mail -> mail.kind() == kind && mail.email().equals(normalized)).toList();
+    }
+
+    public List<SentDigest> sentDigests() {
+        return List.copyOf(sentDigests);
     }
 
     public String lastSignupCode(String email) {
@@ -63,6 +97,8 @@ public class RecordingAccountMailSender implements AccountMailSender {
 
     public void clear() {
         sent.clear();
+        sentDigests.clear();
+        digestFailures.clear();
     }
 
     private SentMail last(Kind kind, String email) {

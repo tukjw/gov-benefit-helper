@@ -1,6 +1,7 @@
 package kr.govbenefit.account.mail;
 
 import java.time.Duration;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -17,5 +18,10 @@ public class LoggingAccountMailSender implements AccountMailSender {
     @Override
     public void sendPasswordReset(String email, String resetUrl, Duration validFor) {
         log.info("[메일 미발송] 비밀번호 재설정 to={} url={} validFor={}", email, resetUrl, validFor);
+    }
+
+    @Override
+    public void sendNewBenefitDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl) {
+        log.info("[메일 미발송] 새 혜택 알림 to={} benefits={}", email, benefits);
     }
 }
