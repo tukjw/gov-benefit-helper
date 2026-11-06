@@ -27,6 +27,9 @@ public class NewBenefitTarget {
     @Id
     private Long benefitId;
 
+    /** 넣은 묶음({@link NewBenefitDigest}). 비어 있으면 아직 묶지 않았다. */
+    private Long digestId;
+
     public record Key(Long userId, Long benefitId) implements Serializable {
     }
 }

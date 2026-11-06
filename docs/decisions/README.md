@@ -88,3 +88,4 @@
 | [0043](0043-test-connection-pool.md) | 테스트 커넥션 풀 크기 | 채택 | #113 |
 | [0044](0044-age-confirmation-and-privacy-policy.md) | 만 14세 이상 확인과 개인정보 처리방침 유지 | 채택 | #111 |
 | [0045](0045-account-mail-ses.md) | 계정 메일 Amazon SES 비동기 발송 | 채택 | #127 |
+| [0046](0046-new-benefit-digest.md) | 새 혜택 알림 묶음과 알림 항목의 연결 | 채택 | #130 |
