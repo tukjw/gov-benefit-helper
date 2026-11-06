@@ -136,8 +136,9 @@ status: in-progress
 
      '해당'은 회원님이 입력한 프로필을 혜택의 대상 조건과 비교한 결과입니다. 실제로 받을 수 있는지는 운영 기관이 정하므로, 신청하기 전에 혜택 상세 화면의 원문을 꼭 확인하세요.
 
-     이 메일은 새 혜택 알림을 켠 회원에게 보냅니다. 알림을 끄려면 <사이트 주소>에 로그인한 뒤 알림 설정에서 끄세요.
+     이 메일은 새 혜택 알림을 켠 회원에게 보냅니다. 알림을 끄려면 <사이트 주소> 에 로그인한 뒤 알림 설정에서 끄세요.
      ```
+   - 사이트 주소 뒤에 한 칸을 둔다. 메일 앱이 조사까지 링크에 넣지 않게 하기 위해서다.
    - 알림 끄기 안내는 아직 경로가 정해지지 않은 설정 화면을 링크로 걸지 않는다. 알림은 가입할 때 꺼져 있고 켜는 화면이 없으므로, 설정 화면이 나오기 전에는 실제 사용자가 메일을 받지 않는다.
    - 사이트 주소는 설정값 `notification.new-benefit.send.site-url`이다(운영 `https://govbenefit.kr`, local `http://localhost:3000`).
    - 혜택 이름과 운영 기관이 빈 경우는 다루지 않는다. 로컬 DB에 그런 혜택이 없다.
@@ -217,15 +218,15 @@ status: in-progress
    - 테스트 `config/application.yaml`: `notification.new-benefit.send.cron: "-"`. 주석: 정해진 시각에 돌아 테스트가 만든 묶음을 보내지 않게 끈다. 발송 테스트는 `sendDue()`를 직접 부른다.
 6. **준비·기록** `notification.service.NewBenefitDigestSendWriter`
    - 클래스 주석: 묶음 하나의 발송 준비와 결과 기록을 각각 한 트랜잭션으로 한다. SES 호출은 두 트랜잭션 밖에서 한다. `NewBenefitDigestSender`만 부른다.
-   - `record NewBenefitDigestMail(String email, List<NewBenefitMailItem> benefits)`(같은 패키지).
+   - 안쪽 `record NewBenefitDigestMail(String email, List<NewBenefitMailItem> benefits)`.
    - `@Transactional Optional<NewBenefitDigestMail> prepare(Long digestId, LocalDateTime now)`: 설계 3의 준비 단계.
      - 묶음이 없으면 빈 값.
      - `isExpired(now)`면 `expire()` 뒤 빈 값.
      - 계정(`UserAccountRepository.findById(...).orElseThrow()`)의 알림이 꺼져 있으면 `cancel()` 뒤 빈 값.
      - 아니면 `findDigestBenefits`를 `NewBenefitMailItem(name, agencyName, siteUrl + "/benefits/" + serviceId)`로 바꿔 돌려준다.
    - `@Transactional void accept(Long digestId, LocalDateTime now)`.
-   - `@Transactional boolean fail(Long digestId, AccountMailSendException e, LocalDateTime now)`: `digest.fail(e.getMessage(), e.isRetryable(), now, properties.retryDelays())`의 결과(최종 실패 여부)를 돌려준다.
-   - `accept`와 `fail`은 묶음이 없으면(그사이 탈퇴) 아무것도 하지 않는다. `fail`은 이때 `true`를 돌려준다.
+   - `@Transactional Optional<NewBenefitDigest> fail(Long digestId, AccountMailSendException e, LocalDateTime now)`: `digest.fail(e.getMessage(), e.isRetryable(), now, properties.retryDelays())`를 부르고 그 묶음을 돌려준다. 발송 작업이 시도 횟수와 상태를 로그에 남길 때 쓴다.
+   - `accept`와 `fail`은 묶음이 없으면(그사이 탈퇴) 아무것도 하지 않는다. `fail`은 이때 빈 값을 돌려주고, 발송 작업은 최종 실패로 센다.
 7. **발송** `notification.service.NewBenefitDigestSender`(트랜잭션 없음)
    - 클래스 주석: `REQ-NOTIFY-02`, `REQ-NOTIFY-03`, 결정 0048. 단일 인스턴스와 스케줄러 스레드 하나를 전제한다. SES 접수 뒤 기록 전에 끝나면 다시 보낼 수 있다.
    - `@Scheduled(cron = "${notification.new-benefit.send.cron}", zone = "Asia/Seoul") public void sendScheduled()`: `sendDue()`를 부르고, `RuntimeException`을 잡아 `log.error("새 혜택 알림 발송 실패", e)`로 남긴다.
@@ -237,7 +238,7 @@ status: in-progress
        - 성공하면 `writer.accept(id, now)`.
        - `AccountMailSendException`이면 `writer.fail(id, e, now)` 뒤 설계 10의 실패 로그.
      - `now`는 단계마다 `LocalDateTime.now(clock)`으로 다시 읽는다.
-     - 다룬 묶음이 있으면 `log.info("새 혜택 알림 발송 accepted={} retrying={} failed={} skipped={} elapsedMs={}")`. `skipped`는 취소와 기한 지남이다.
+     - 다룬 묶음이 있으면 `log.info("새 혜택 알림 발송 accepted={} retrying={} failed={} skipped={} interrupted={} elapsedMs={}")`. `skipped`는 취소와 기한 지남, `interrupted`는 속도 대기 중 interrupt로 멈췄는지다.
    - `private boolean awaitTurn()`: 설계 4.
      - 필드 `long nextSendNanos`(생성할 때 `System.nanoTime()`)와 `long intervalNanos`(`1초 / ratePerSecond`)를 둔다.
      - `nextSendNanos - System.nanoTime()`이 양수면 그만큼 `Thread.sleep`.
@@ -245,7 +246,7 @@ status: in-progress
      - `InterruptedException`이면 interrupt 표시를 되살리고 `false`.
 8. **테스트용 가짜 발송** `account.mail.RecordingAccountMailSender`
    - `record SentDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl, long sentAtNanos)`를 기록한다. `sentDigests()`로 읽는다.
-   - `failNextDigests(RuntimeException... failures)`: 다음 알림 발송부터 차례로 던진다. 던진 호출은 기록하지 않는다.
+   - `failNextDigests(RuntimeException... failures)`: 다음 알림 발송부터 한 번에 하나씩 차례로 던진다. 던진 호출은 기록하지 않고, 다 던지면 다시 기록한다.
    - `clear()`는 알림 기록과 남은 실패도 비운다.
 9. **테스트**
    - `notification.service.NewBenefitDigestSendTest`(`@SpringBootTest(properties = "gov24.schedule.enabled=false")`, `TestcontainersConfiguration`, `FixedClockConfiguration`. `NewBenefitDigestTest`와 컨텍스트를 함께 쓴다)
@@ -253,7 +254,7 @@ status: in-progress
      - 테스트 항목:
        - U1(X·Y), U2(X)를 묶고 `sendDue()`를 부르면 두 통이 나간다. U1 메일에 X·Y의 이름·운영 기관·`https://govbenefit.kr/benefits/<서비스ID>`가, U2 메일에 X가 든다. 두 묶음은 `ACCEPTED`, 시도 1번, `acceptedAt`은 시계 시각이다. 다시 `sendDue()`를 불러도 더 보내지 않는다.
        - 묶은 뒤 U1이 알림을 끄면 U1에게는 보내지 않고 `CANCELED`다. 알림을 다시 켜고 `sendDue()`를 불러도 보내지 않는다. U2는 `ACCEPTED`다.
-       - 21명의 묶음을 보내면 21통이 나가고, 연속한 11건의 `sentAtNanos` 차이가 모두 1초 이상이다. 기록은 대기 직후에 하므로 GC 정지 같은 지연을 감안해 10ms를 허용한다.
+       - (초당 건수 × 2 + 1)명, 곧 21명의 묶음을 보내면 21통이 나가고, 연속한 11건의 `sentAtNanos` 차이가 모두 1초 이상이다. 기록은 대기 직후에 하므로 GC 정지 같은 지연을 감안해 10ms를 허용한다. 대기를 없애면 11건이 약 40ms 안에 나가 실패하는 것을 확인했다.
        - 일시 실패 둘(`retryable=true`) 뒤 성공:
          - 첫 `sendDue()` 뒤 `PENDING`, 시도 1번, 다음 시도 08:01이다.
          - 30초 뒤 `sendDue()`는 보내지 않는다.
