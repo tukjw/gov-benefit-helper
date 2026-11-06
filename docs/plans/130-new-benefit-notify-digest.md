@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #130 매일 08:00에 사용자별 새 혜택 묶음을 발송 대기로 저장
 
