@@ -15,7 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 /**
- * SES 요청 형식, 실패 예외, 재시도 없음(결정 0045). 실제 SES 대신 로컬 stub 서버로 보낸다.
+ * SES 요청 형식, 실패 예외와 재시도 가능 여부, SDK 재시도 없음(결정 0045). 실제 SES 대신 로컬 stub 서버로 보낸다.
  */
 class SesAccountMailSenderTest {
 
@@ -80,15 +80,18 @@ class SesAccountMailSenderTest {
     @CsvSource({
             // 샌드박스에서 인증하지 않은 수신자로 보내면 설명에 수신 주소가 들어간다.
             "400, MessageRejected, Email address is not verified. The following identities failed the check in region"
-                    + " AP-NORTHEAST-2: " + EMAIL,
-            "429, TooManyRequestsException, Maximum sending rate exceeded. " + EMAIL,
-            "500, InternalFailure, Internal failure for " + EMAIL})
+                    + " AP-NORTHEAST-2: " + EMAIL + ", false",
+            "403, AccessDeniedException, User is not authorized to perform ses:SendEmail, false",
+            "404, NotFoundException, Resource not found, false",
+            "429, TooManyRequestsException, Maximum sending rate exceeded. " + EMAIL + ", true",
+            "500, InternalFailure, Internal failure for " + EMAIL + ", true"})
     void 오류_응답이면_상태와_오류_코드만_담은_예외를_던지고_다시_보내지_않는다(int status, String errorType,
-                                                                  String message) {
+                                                                  String message, boolean retryable) {
         stub.respondWithError(status, errorType, message);
 
         assertThatThrownBy(() -> sender.sendSignupCode(EMAIL, CODE, Duration.ofMinutes(10)))
-                .isInstanceOf(AccountMailSendException.class)
+                .isInstanceOfSatisfying(AccountMailSendException.class,
+                        e -> assertThat(e.isRetryable()).isEqualTo(retryable))
                 .hasMessage("SES 응답 상태 " + status + " " + errorType)
                 .hasNoCause();
         assertThat(stub.received()).hasSize(1);
@@ -99,7 +102,7 @@ class SesAccountMailSenderTest {
         stub.disconnect();
 
         assertThatThrownBy(() -> sender.sendSignupCode(EMAIL, CODE, Duration.ofMinutes(10)))
-                .isInstanceOf(AccountMailSendException.class)
+                .isInstanceOfSatisfying(AccountMailSendException.class, e -> assertThat(e.isRetryable()).isTrue())
                 .hasMessageStartingWith("SES 연결 실패: ")
                 .hasNoCause()
                 .satisfies(e -> assertThat(e.getMessage()).doesNotContain(EMAIL, CODE, ACCESS_KEY_ID,
@@ -115,7 +118,7 @@ class SesAccountMailSenderTest {
 
         try (SesAccountMailSender unreachable = new SesAccountMailSender(properties(endpoint))) {
             assertThatThrownBy(() -> unreachable.sendPasswordReset(EMAIL, RESET_URL, Duration.ofMinutes(30)))
-                    .isInstanceOf(AccountMailSendException.class)
+                    .isInstanceOfSatisfying(AccountMailSendException.class, e -> assertThat(e.isRetryable()).isTrue())
                     .hasMessageStartingWith("SES 연결 실패: ")
                     .hasNoCause()
                     .satisfies(e -> assertThat(e.getMessage()).doesNotContain(EMAIL, RESET_URL, ACCESS_KEY_ID,
