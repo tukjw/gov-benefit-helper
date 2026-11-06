@@ -23,3 +23,6 @@ notification:
   new-benefit:
     # 정해진 시각에 돌아 테스트가 넣은 항목을 묶지 않게 끈다. 묶기 테스트는 bundleAll()을 직접 부른다.
     digest-cron: "-"
+    send:
+      # 정해진 시각에 돌아 테스트가 만든 묶음을 보내지 않게 끈다. 발송 테스트는 sendDue()를 직접 부른다.
+      cron: "-"

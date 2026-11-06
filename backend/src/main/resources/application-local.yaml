@@ -35,3 +35,9 @@ auth:
   # SES로 실제 발송을 확인할 때는 환경 변수 AUTH_MAIL_SENDER=ses로 덮는다(.env의 값은 이 파일을 덮지 못한다).
   mail:
     sender: logging
+
+# 새 혜택 알림 메일의 링크를 로컬 프론트로 보낸다.
+notification:
+  new-benefit:
+    send:
+      site-url: http://localhost:3000

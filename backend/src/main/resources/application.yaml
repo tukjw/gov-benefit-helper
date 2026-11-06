@@ -144,3 +144,12 @@ auth:
 notification:
   new-benefit:
     digest-cron: "0 0 8 * * *"
+    # 새 혜택 알림 발송(결정 0048). 발송 대기 묶음을 30초마다 찾아, 대상이 빌 때까지 보낸다.
+    send:
+      cron: "*/30 * * * * *"
+      # SES 계정 한도(초당 14건)보다 낮게 두어 계정 메일 몫을 남긴다.
+      rate-per-second: 10
+      # 일시 실패 뒤 다시 보내기까지의 간격. 개수가 재시도 횟수다. 묶은 날 24:00(KST)부터는 보내지 않는다.
+      retry-delays: 1m,5m,30m,2h,6h
+      # 메일의 혜택 상세 링크와 알림 끄기 안내에 쓰는 웹 주소(DEC-APP)
+      site-url: https://govbenefit.kr
