@@ -5,7 +5,7 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Amazon SES 메일 발송 설정(결정 0045). 접근 키, 리전, 발신 주소는 실행 환경의 SES_ACCESS_KEY_ID,
+ * Amazon SES 메일 발송 설정(결정 0047). 접근 키, 리전, 발신 주소는 실행 환경의 SES_ACCESS_KEY_ID,
  * SES_SECRET_ACCESS_KEY, SES_REGION, SES_FROM으로만 받는다. {@code auth.mail.sender=ses}일 때만 쓰고, 그때 하나라도
  * 비어 있으면 {@link AccountMailConfig}가 기동을 막는다.
  *

@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 운영과 같은 비동기 실행기({@code auth.mail.async=true})에서는 요청의 응답이 메일 발송을 기다리지 않는다(결정 0045).
+ * 운영과 같은 비동기 실행기({@code auth.mail.async=true})에서는 요청의 응답이 메일 발송을 기다리지 않는다(결정 0047).
  * 재설정 요청의 응답 시간으로 가입 여부가 드러나지 않게 하기 위해서다.
  *
  * <p>이 클래스만 쓰는 설정이라 컨텍스트를 다른 테스트와 공유하지 않는다. 끝나면 바로 닫아({@link DirtiesContext}) 컨텍스트마다

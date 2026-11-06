@@ -20,7 +20,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 커밋된 발급만 메일로 보낸다(결정 0045). 발급한 요청이 롤백되면 인증번호와 재설정 링크가 나가지 않는다.
+ * 커밋된 발급만 메일로 보낸다(결정 0047). 발급한 요청이 롤백되면 인증번호와 재설정 링크가 나가지 않는다.
  * 서비스 호출을 바깥 트랜잭션으로 감싸 롤백시킨다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")

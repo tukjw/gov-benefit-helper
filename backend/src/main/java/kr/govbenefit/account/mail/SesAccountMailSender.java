@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.sesv2.model.Message;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
 
 /**
- * Amazon SES API v2 {@code SendEmail}로 메일을 보낸다(결정 0045). 실패하면 다시 보내지 않고
+ * Amazon SES API v2 {@code SendEmail}로 메일을 보낸다(결정 0047). 실패하면 다시 보내지 않고
  * {@link AccountMailSendException}을 던진다. 나중에 다시 보내도 되는 실패인지는 예외가 알린다.
  *
  * <p>SDK의 재시도는 끈다. 켜 두면 429·5xx·연결 실패에서 같은 메일을 여러 번 보낸다. 자격 증명과 리전은 설정 값으로만

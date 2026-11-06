@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * 회원에게 보내는 메일(계정 메일, 새 혜택 알림) 발송(결정 0045). 실제 발송은 {@link SesAccountMailSender}가 하고, 테스트는 가짜
+ * 회원에게 보내는 메일(계정 메일, 새 혜택 알림) 발송(결정 0047). 실제 발송은 {@link SesAccountMailSender}가 하고, 테스트는 가짜
  * 구현으로 검증한다. 메일 종류마다 메서드를 두어 구현이 제목·본문을 정하고, 가짜 구현은 번호와 링크를 그대로 기록한다.
  */
 public interface AccountMailSender {

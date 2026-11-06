@@ -16,7 +16,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 /**
- * SES 요청 형식, 실패 예외와 재시도 가능 여부, SDK 재시도 없음(결정 0045). 실제 SES 대신 로컬 stub 서버로 보낸다.
+ * SES 요청 형식, 실패 예외와 재시도 가능 여부, SDK 재시도 없음(결정 0047). 실제 SES 대신 로컬 stub 서버로 보낸다.
  */
 class SesAccountMailSenderTest {
 

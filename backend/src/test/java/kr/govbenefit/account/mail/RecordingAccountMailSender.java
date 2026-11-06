@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * 테스트용 가짜 발송(결정 0045). 보내지 않고 기록만 한다. 테스트 클래스패스의 컴포넌트 스캔으로 {@code @SpringBootTest}
+ * 테스트용 가짜 발송(결정 0047). 보내지 않고 기록만 한다. 테스트 클래스패스의 컴포넌트 스캔으로 {@code @SpringBootTest}
  * 컨텍스트에 들어간다. 컨텍스트가 테스트 사이에 재사용되므로 테스트마다 {@link #clear()}한다.
  *
  * <p>테스트 공통 설정의 {@code auth.mail.sender=test}일 때만 등록한다. SES를 검증하는 테스트가 {@code ses}로 덮으면
