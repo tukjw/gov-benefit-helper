@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #134 계정 화면에서 새 혜택 알림을 켜고 끄기
 
