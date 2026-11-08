@@ -2,13 +2,15 @@ package kr.govbenefit.account.mail;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import kr.govbenefit.account.domain.Emails;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * 테스트용 가짜 발송(결정 0045). 보내지 않고 기록만 한다. 테스트 클래스패스의 컴포넌트 스캔으로 {@code @SpringBootTest}
+ * 테스트용 가짜 발송(결정 0047). 보내지 않고 기록만 한다. 테스트 클래스패스의 컴포넌트 스캔으로 {@code @SpringBootTest}
  * 컨텍스트에 들어간다. 컨텍스트가 테스트 사이에 재사용되므로 테스트마다 {@link #clear()}한다.
  *
  * <p>테스트 공통 설정의 {@code auth.mail.sender=test}일 때만 등록한다. SES를 검증하는 테스트가 {@code ses}로 덮으면
@@ -26,7 +28,15 @@ public class RecordingAccountMailSender implements AccountMailSender {
     public record SentMail(Kind kind, String email, String content, Duration validFor) {
     }
 
+    /**
+     * @param sentAtNanos 발송을 부른 시각({@link System#nanoTime()}). 발송 간격을 확인할 때 쓴다.
+     */
+    public record SentDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl, long sentAtNanos) {
+    }
+
     private final List<SentMail> sent = new CopyOnWriteArrayList<>();
+    private final List<SentDigest> sentDigests = new CopyOnWriteArrayList<>();
+    private final Queue<RuntimeException> digestFailures = new ConcurrentLinkedQueue<>();
 
     @Override
     public void sendSignupCode(String email, String code, Duration validFor) {
@@ -38,6 +48,26 @@ public class RecordingAccountMailSender implements AccountMailSender {
         sent.add(new SentMail(Kind.PASSWORD_RESET, email, resetUrl, validFor));
     }
 
+    /**
+     * {@link #failNextDigests}로 정한 실패가 남아 있으면 기록하지 않고 그 예외를 던진다.
+     */
+    @Override
+    public void sendNewBenefitDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl) {
+        long now = System.nanoTime();
+        RuntimeException failure = digestFailures.poll();
+        if (failure != null) {
+            throw failure;
+        }
+        sentDigests.add(new SentDigest(email, List.copyOf(benefits), siteUrl, now));
+    }
+
+    /**
+     * 다음 새 혜택 알림 발송부터 한 번에 하나씩 차례로 던진다. 다 던지면 다시 기록한다.
+     */
+    public void failNextDigests(RuntimeException... failures) {
+        digestFailures.addAll(List.of(failures));
+    }
+
     public List<SentMail> sent() {
         return List.copyOf(sent);
     }
@@ -45,6 +75,10 @@ public class RecordingAccountMailSender implements AccountMailSender {
     public List<SentMail> sent(Kind kind, String email) {
         String normalized = Emails.normalize(email);
         return sent.stream().filter(mail -> mail.kind() == kind && mail.email().equals(normalized)).toList();
+    }
+
+    public List<SentDigest> sentDigests() {
+        return List.copyOf(sentDigests);
     }
 
     public String lastSignupCode(String email) {
@@ -63,6 +97,8 @@ public class RecordingAccountMailSender implements AccountMailSender {
 
     public void clear() {
         sent.clear();
+        sentDigests.clear();
+        digestFailures.clear();
     }
 
     private SentMail last(Kind kind, String email) {

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { usePageTitle } from "@/components/usePageTitle";
+import { NOTIFICATION_SETTINGS_PATH, WITHDRAWAL_PATH } from "@/lib/account/paths";
 import styles from "./PrivacyPolicyPage.module.css";
 
 // 개인정보 처리방침(#111, 개인정보 보호법 제30조, 결정 0044). 로그인 없이 본다.
@@ -9,8 +10,8 @@ import styles from "./PrivacyPolicyPage.module.css";
 // 수치마다 근거 설정을 주석으로 적어, 설정을 바꿀 때 검색으로 찾게 한다.
 
 // 운영 배포일. 바꾸면 '처리방침의 변경'에 이전 시행일과 바뀐 내용을 남긴다(결정 0044).
-const EFFECTIVE_DATE = "2026년 11월 5일";
-const PREVIOUS_EFFECTIVE_DATE = "2026년 11월 4일";
+const EFFECTIVE_DATE = "2026년 11월 8일";
+const PREVIOUS_EFFECTIVE_DATE = "2026년 11월 5일";
 const CONTACT_EMAIL = "contact@govbenefit.kr";
 
 const SECTIONS = [
@@ -69,7 +70,8 @@ export function PrivacyPolicyPage() {
               과도한 요청 방지, 탈퇴 처리
             </li>
             <li>
-              혜택 정보 제공: 입력한 프로필과 혜택의 대상 조건 비교, 프로필·관심 혜택 저장, 새 혜택 알림 설정 보관
+              혜택 정보 제공: 입력한 프로필과 혜택의 대상 조건 비교, 프로필·관심 혜택 저장, 새 혜택 알림 설정 보관과
+              알림 메일 발송
             </li>
             <li>비회원 조건 비교: 로그인하지 않은 이용자가 입력한 조건으로 비교 결과 계산</li>
           </ul>
@@ -97,8 +99,10 @@ export function PrivacyPolicyPage() {
               </td>
             </tr>
             <tr>
-              <th scope="row">관심 혜택·알림 설정</th>
-              <td>저장한 혜택, 새 혜택 알림 켜기·끄기</td>
+              <th scope="row">관심 혜택·알림</th>
+              {/* 알림 기록: new_benefit_digest(발송 상태·시도 횟수·접수 시각)와 new_benefit_target(묶음의 혜택).
+                  보내지 않고 끝난 묶음도 탈퇴할 때까지 남는다(결정 0048) */}
+              <td>저장한 혜택, 새 혜택 알림 켜기·끄기, 알림 기록(알림에 담은 새 혜택 목록과 발송 결과)</td>
             </tr>
             <tr>
               <th scope="row">로그인 실패 기록</th>
@@ -144,7 +148,7 @@ export function PrivacyPolicyPage() {
         <Section id="retention">
           <Table caption="항목별 보유 기간" headers={["항목", "보유 기간"]}>
             <tr>
-              <th scope="row">계정(이메일·비밀번호), 프로필, 관심 혜택, 알림 설정</th>
+              <th scope="row">계정(이메일·비밀번호), 프로필, 관심 혜택, 알림 설정, 알림 기록</th>
               <td>탈퇴할 때까지. 탈퇴하면 즉시 삭제합니다.</td>
             </tr>
             <tr>
@@ -212,7 +216,7 @@ export function PrivacyPolicyPage() {
               {/* AWS Customer Agreement(2026-10-29 개정): 계정 국가가 대한민국이면 계약 당사자는 Amazon Web Services Korea
                   LLC. 발송 리전은 서울(ap-northeast-2). 2026-11-05 확인 */}
               <th scope="row">Amazon Web Services Korea LLC(Amazon SES)</th>
-              <td>가입 인증번호와 비밀번호 재설정 메일 발송, 반송·수신 거부 주소 관리</td>
+              <td>가입 인증번호·비밀번호 재설정·새 혜택 알림 메일 발송, 반송·수신 거부 주소 관리</td>
             </tr>
             <tr>
               <th scope="row">Cloudflare, Inc.</th>
@@ -270,8 +274,9 @@ export function PrivacyPolicyPage() {
             <li>이용자는 언제든지 개인정보의 열람, 정정, 삭제, 처리정지, 동의 철회를 요구할 수 있습니다.</li>
             <li>
               회원은 직접 할 수 있습니다. <Link to="/profile">프로필</Link>에서 값을 확인·수정·삭제하고, 건강 관련
-              정보를 모두 빼고 저장하면 동의가 철회됩니다. 관심 혜택은 해제하고, 새 혜택 알림은 끌 수 있습니다.{" "}
-              <Link to="/account/withdrawal">회원 탈퇴</Link>를 하면 개인정보를 즉시 삭제합니다.
+              정보를 모두 빼고 저장하면 동의가 철회됩니다. 관심 혜택은 해제하고, 새 혜택 알림은{" "}
+              <Link to={NOTIFICATION_SETTINGS_PATH}>알림 설정</Link>에서 끌 수 있습니다.{" "}
+              <Link to={WITHDRAWAL_PATH}>회원 탈퇴</Link>를 하면 개인정보를 즉시 삭제합니다.
             </li>
             <li>
               그 밖의 요구는 <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>로 보내 주세요. 가입한 이메일에서 보낸
@@ -364,6 +369,17 @@ export function PrivacyPolicyPage() {
             <li>내용이 바뀌면 바뀐 내용과 시행일을 이 화면에 알리고, 이전 내용을 함께 남깁니다.</li>
             <li>
               이전 처리방침({PREVIOUS_EFFECTIVE_DATE} 시행)에서 바뀐 내용
+              <ul>
+                <li>처리 목적: 혜택 정보 제공에 새 혜택 알림 메일 발송을 더했습니다.</li>
+                <li>
+                  처리 항목: 관심 혜택·알림에 알림 기록(알림에 담은 새 혜택 목록과 발송 결과)을 더했습니다.
+                </li>
+                <li>보유 기간: 알림 기록을 탈퇴할 때까지 보관합니다.</li>
+                <li>처리 위탁: Amazon SES의 위탁 업무에 새 혜택 알림 메일 발송을 더했습니다.</li>
+              </ul>
+            </li>
+            <li>
+              2026년 11월 5일 시행 처리방침이 그 전 처리방침(2026년 11월 4일 시행)에서 바뀐 내용
               <ul>
                 <li>
                   처리 위탁: 메일 발송 수탁자를 Plus Five Five, Inc.(Resend)에서 Amazon Web Services Korea LLC(Amazon

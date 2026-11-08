@@ -14,7 +14,15 @@ auth:
   jwt:
     generate-secret-if-missing: true
   mail:
-    # 실제 발송 없이 RecordingAccountMailSender에 기록만 한다(결정 0045). SES를 검증하는 테스트만 ses로 덮는다.
+    # 실제 발송 없이 RecordingAccountMailSender에 기록만 한다(결정 0047). SES를 검증하는 테스트만 ses로 덮는다.
     sender: test
     # 메일을 요청 스레드에서 바로 보내 요청이 끝난 직후 가짜 발송의 기록을 읽는다. 비동기는 AccountMailAsyncTest가 확인한다.
     async: false
+
+notification:
+  new-benefit:
+    # 정해진 시각에 돌아 테스트가 넣은 항목을 묶지 않게 끈다. 묶기 테스트는 bundleAll()을 직접 부른다.
+    digest-cron: "-"
+    send:
+      # 정해진 시각에 돌아 테스트가 만든 묶음을 보내지 않게 끈다. 발송 테스트는 sendDue()를 직접 부른다.
+      cron: "-"

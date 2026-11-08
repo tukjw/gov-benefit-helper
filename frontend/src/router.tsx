@@ -1,9 +1,18 @@
 import { createBrowserRouter } from "react-router";
 import { RootLayout } from "@/components/layout/RootLayout";
+import { ACCOUNT_PATH, ACCOUNT_TITLE, NOTIFICATION_SETTINGS_PATH, WITHDRAWAL_PATH } from "@/lib/account/paths";
 import { AccountFallback } from "@/pages/account/AccountFrame";
+import { AccountHomePage } from "@/pages/account/home/AccountHomePage";
+import { accountLoader } from "@/pages/account/home/accountRoute";
 import { LoginPage } from "@/pages/account/login/LoginPage";
 import { loginAction, loginLoader } from "@/pages/account/login/loginRoute";
 import { logoutAction, logoutLoader } from "@/pages/account/logoutRoute";
+import { NotificationSettingsPage } from "@/pages/account/notifications/NotificationSettingsPage";
+import {
+  notificationAction,
+  notificationLoader,
+  notificationShouldRevalidate,
+} from "@/pages/account/notifications/notificationRoute";
 import { ForgotPasswordPage } from "@/pages/account/password/ForgotPasswordPage";
 import { forgotPasswordAction, resetPasswordAction } from "@/pages/account/password/passwordRoutes";
 import { ResetPasswordPage } from "@/pages/account/password/ResetPasswordPage";
@@ -89,11 +98,25 @@ export const router = createBrowserRouter([
           { path: "/forgot-password", action: forgotPasswordAction, element: <ForgotPasswordPage /> },
           { path: "/reset-password", action: resetPasswordAction, element: <ResetPasswordPage /> },
           {
-            path: "/account/withdrawal",
+            path: ACCOUNT_PATH,
+            loader: accountLoader,
+            element: <AccountHomePage />,
+            hydrateFallbackElement: <AccountFallback title={ACCOUNT_TITLE} />,
+          },
+          {
+            path: NOTIFICATION_SETTINGS_PATH,
+            loader: notificationLoader,
+            action: notificationAction,
+            shouldRevalidate: notificationShouldRevalidate,
+            element: <NotificationSettingsPage />,
+            hydrateFallbackElement: <AccountFallback title="알림 설정" underAccount />,
+          },
+          {
+            path: WITHDRAWAL_PATH,
             loader: withdrawalLoader,
             action: withdrawalAction,
             element: <WithdrawalPage />,
-            hydrateFallbackElement: <AccountFallback title="회원 탈퇴" />,
+            hydrateFallbackElement: <AccountFallback title="회원 탈퇴" underAccount />,
           },
           { path: "/logout", loader: logoutLoader, action: logoutAction },
           { path: "/privacy", element: <PrivacyPolicyPage /> },

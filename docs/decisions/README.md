@@ -87,4 +87,7 @@
 | [0042](0042-new-benefit-detection.md) | 새 혜택 감지와 대상 판단 가능 상태 | 채택 | #107 |
 | [0043](0043-test-connection-pool.md) | 테스트 커넥션 풀 크기 | 채택 | #113 |
 | [0044](0044-age-confirmation-and-privacy-policy.md) | 만 14세 이상 확인과 개인정보 처리방침 유지 | 채택 | #111 |
-| [0045](0045-account-mail-ses.md) | 계정 메일 Amazon SES 비동기 발송 | 채택 | #127 |
+| [0045](0045-account-mail-ses.md) | 계정 메일 Amazon SES 비동기 발송 | 대체됨 → [0047](0047-mail-ses-and-new-benefit-mail.md) | #127 |
+| [0046](0046-new-benefit-digest.md) | 새 혜택 알림 묶음과 알림 항목의 연결 | 채택 | #130 |
+| [0047](0047-mail-ses-and-new-benefit-mail.md) | 계정 메일과 새 혜택 알림 메일의 Amazon SES 발송 | 채택 | #132 |
+| [0048](0048-new-benefit-digest-send.md) | 새 혜택 알림 묶음의 발송·재시도·복구 | 채택 | #132 |

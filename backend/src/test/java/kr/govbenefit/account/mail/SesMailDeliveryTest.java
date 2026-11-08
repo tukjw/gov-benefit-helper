@@ -31,7 +31,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * {@code auth.mail.sender=ses}로 띄우면 계정 메일이 Amazon SES API로 요청된다(결정 0045). 실제 SES 대신 로컬 stub
+ * {@code auth.mail.sender=ses}로 띄우면 계정 메일이 Amazon SES API로 요청된다(결정 0047). 실제 SES 대신 로컬 stub
  * 서버가 받는다. 발송 실패는 응답을 바꾸지 않고, 다시 보내지 않으며, 로그에는 행 ID만 남는다. 실행기는 테스트 공통 설정의
  * 동기다.
  *

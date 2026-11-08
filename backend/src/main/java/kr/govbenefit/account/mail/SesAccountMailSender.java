@@ -1,6 +1,7 @@
 package kr.govbenefit.account.mail;
 
 import java.time.Duration;
+import java.util.List;
 import kr.govbenefit.account.config.SesProperties;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -20,8 +21,8 @@ import software.amazon.awssdk.services.sesv2.model.Message;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
 
 /**
- * Amazon SES API v2 {@code SendEmail}로 메일을 보낸다(결정 0045). 실패하면 다시 보내지 않고
- * {@link AccountMailSendException}을 던진다.
+ * Amazon SES API v2 {@code SendEmail}로 메일을 보낸다(결정 0047). 실패하면 다시 보내지 않고
+ * {@link AccountMailSendException}을 던진다. 나중에 다시 보내도 되는 실패인지는 예외가 알린다.
  *
  * <p>SDK의 재시도는 끈다. 켜 두면 429·5xx·연결 실패에서 같은 메일을 여러 번 보낸다. 자격 증명과 리전은 설정 값으로만
  * 정하고 SDK 기본 체인(환경 변수, {@code ~/.aws}, 인스턴스 메타데이터)은 쓰지 않는다.
@@ -76,6 +77,28 @@ public class SesAccountMailSender implements AccountMailSender, AutoCloseable {
     }
 
     @Override
+    public void sendNewBenefitDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl) {
+        StringBuilder items = new StringBuilder();
+        for (int i = 0; i < benefits.size(); i++) {
+            NewBenefitMailItem benefit = benefits.get(i);
+            items.append("""
+                    %d. %s
+                       운영 기관: %s
+                       %s
+
+                    """.formatted(i + 1, benefit.name(), benefit.agencyName(), benefit.url()));
+        }
+        send(email, SUBJECT_PREFIX + "조건에 맞는 새 혜택 " + benefits.size() + "건", """
+                회원님의 조건에 해당하는 새 혜택이 등록되었습니다.
+
+                %s'해당'은 회원님이 입력한 프로필을 혜택의 대상 조건과 비교한 결과입니다.
+                실제로 받을 수 있는지는 운영 기관이 정하므로, 신청하기 전에 혜택 상세 화면의 원문을 꼭 확인하세요.
+
+                이 메일은 새 혜택 알림을 켠 회원에게 보냅니다. 알림을 끄려면 %s 에 로그인한 뒤 알림 설정에서 끄세요.
+                """.formatted(items, siteUrl));
+    }
+
+    @Override
     public void close() {
         client.close();
     }
@@ -94,10 +117,11 @@ public class SesAccountMailSender implements AccountMailSender, AutoCloseable {
         try {
             client.sendEmail(request);
         } catch (SdkServiceException e) {
-            throw new AccountMailSendException("SES 응답 상태 " + e.statusCode() + errorCode(e));
+            boolean retryable = e.statusCode() == 429 || e.statusCode() >= 500;
+            throw new AccountMailSendException("SES 응답 상태 " + e.statusCode() + errorCode(e), retryable);
         } catch (SdkClientException e) {
             // 메시지에 무엇이 담길지 보장할 수 없어 원인은 클래스 이름만 남긴다.
-            throw new AccountMailSendException("SES 연결 실패: " + rootCause(e).getClass().getSimpleName());
+            throw new AccountMailSendException("SES 연결 실패: " + rootCause(e).getClass().getSimpleName(), true);
         }
     }
 
