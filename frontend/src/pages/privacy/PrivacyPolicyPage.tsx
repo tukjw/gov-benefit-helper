@@ -9,7 +9,7 @@ import styles from "./PrivacyPolicyPage.module.css";
 // 수치마다 근거 설정을 주석으로 적어, 설정을 바꿀 때 검색으로 찾게 한다.
 
 // 운영 배포일. 바꾸면 '처리방침의 변경'에 이전 시행일과 바뀐 내용을 남긴다(결정 0044).
-const EFFECTIVE_DATE = "2026년 11월 6일";
+const EFFECTIVE_DATE = "2026년 11월 8일";
 const PREVIOUS_EFFECTIVE_DATE = "2026년 11월 5일";
 const CONTACT_EMAIL = "contact@govbenefit.kr";
 
