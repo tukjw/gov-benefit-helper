@@ -1,6 +1,7 @@
 package kr.govbenefit.notification.repository;
 
 import java.util.List;
+import kr.govbenefit.benefit.domain.Benefit;
 import kr.govbenefit.notification.domain.NewBenefitTarget;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,6 +23,11 @@ public interface NewBenefitTargetRepository extends JpaRepository<NewBenefitTarg
     @Query("select distinct t.userId from NewBenefitTarget t join UserAccount a on a.id = t.userId"
             + " where a.newBenefitNotify = true and t.digestId is null and t.userId > :afterId order by t.userId")
     List<Long> findUnbundledNotifyUserIds(@Param("afterId") Long afterId, Limit limit);
+
+    /** 묶음에 든 혜택을 혜택 ID 순으로 읽는다. */
+    @Query("select b from NewBenefitTarget t join Benefit b on b.id = t.benefitId where t.digestId = :digestId"
+            + " order by b.id")
+    List<Benefit> findDigestBenefits(@Param("digestId") Long digestId);
 
     /** 사용자의 묶지 않은 항목을 모두 묶음에 넣는다. */
     @Modifying

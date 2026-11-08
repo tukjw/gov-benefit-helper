@@ -14,7 +14,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
- * 메일 발송 구현을 {@code auth.mail.sender}로 고르고, 커밋 뒤 발송을 실행할 실행기를 둔다(결정 0045).
+ * 메일 발송 구현을 {@code auth.mail.sender}로 고르고, 커밋 뒤 발송을 실행할 실행기를 둔다(결정 0047).
  * 지정하지 않으면 {@link AccountMailSender} 빈이 없어 기동에 실패한다. 설정 실수 하나로 운영에서 인증번호가 로그로
  * 새거나 메일 없이 뜨지 않게 하기 위해서다.
  */

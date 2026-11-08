@@ -14,7 +14,7 @@ import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 
 /**
- * 발송 구현은 설정으로만 고른다(결정 0045). 기본 설정에는 구현이 없어 기동에 실패하고, SES를 고르면 접근 키,
+ * 발송 구현은 설정으로만 고른다(결정 0047). 기본 설정에는 구현이 없어 기동에 실패하고, SES를 고르면 접근 키,
  * 리전, 발신 주소가 모두 있어야 뜬다.
  */
 class AccountMailConfigTest {

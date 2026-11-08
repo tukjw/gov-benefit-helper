@@ -1,6 +1,6 @@
 # 0045. 계정 메일 Amazon SES 비동기 발송
 
-- 상태: 채택
+- 상태: 대체됨 → [0047](0047-mail-ses-and-new-benefit-mail.md)
 - 날짜: 2026-11-05
 - 출처: #127, [플랜](../plans/127-switch-mail-to-ses.md)
 - 대체: [0032](0032-account-mail-resend.md)

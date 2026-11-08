@@ -21,7 +21,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Amazon SES API v2 {@code POST /v2/email/outbound-emails}를 흉내 내는 로컬 HTTP 서버(결정 0045). 받은 요청을
+ * Amazon SES API v2 {@code POST /v2/email/outbound-emails}를 흉내 내는 로컬 HTTP 서버(결정 0047). 받은 요청을
  * 기록하고, 응답을 SES 오류·연결 끊김으로 바꾸거나 테스트가 풀어 줄 때까지 붙잡아 둔다.
  */
 public class SesStubServer implements Closeable {

@@ -9,7 +9,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * 커밋된 발급만 메일로 보낸다(결정 0045). 롤백된 요청의 번호나 링크가 메일로 나가지 않는다.
+ * 커밋된 발급만 메일로 보낸다(결정 0047). 롤백된 요청의 번호나 링크가 메일로 나가지 않는다.
  *
  * <p>발송은 커밋 뒤 별도 스레드({@link AccountMailConfig#EXECUTOR})에서 하므로 요청의 응답이 발송을 기다리지 않는다.
  * 발송이 느려도 비밀번호 재설정 요청의 응답 시간으로 가입 여부가 드러나지 않는다.

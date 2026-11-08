@@ -1,6 +1,6 @@
 # 메일 발신 도메인 인증과 발송 설정
 
-계정 메일(가입 인증번호·비밀번호 재설정)을 Amazon SES로 보내기 위한 준비 절차다. 발송 구조는 [결정 0045](../decisions/0045-account-mail-ses.md), 서비스 선택은 [`DEC-OPS(메일 발송)`](../product/development.md#결정한-사항)에 있다. AWS 콘솔과 DNS는 운영자가 직접 바꾼다. 접근 키와 DNS 레코드 값은 이 문서와 저장소에 적지 않는다.
+계정 메일(가입 인증번호·비밀번호 재설정)을 Amazon SES로 보내기 위한 준비 절차다. 발송 구조는 [결정 0047](../decisions/0047-mail-ses-and-new-benefit-mail.md), 서비스 선택은 [`DEC-OPS(메일 발송)`](../product/development.md#결정한-사항)에 있다. AWS 콘솔과 DNS는 운영자가 직접 바꾼다. 접근 키와 DNS 레코드 값은 이 문서와 저장소에 적지 않는다.
 
 절차는 2026-11-05에 AWS 문서로 확인했다. 콘솔 화면이 바뀌었으면 AWS 문서를 따른다.
 

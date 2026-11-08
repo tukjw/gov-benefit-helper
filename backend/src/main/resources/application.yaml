@@ -20,7 +20,7 @@ spring:
           time_zone: Asia/Seoul
   task:
     execution:
-      # 계정 메일 실행기(결정 0045)를 빈으로 두어도 기본 applicationTaskExecutor를 그대로 만든다.
+      # 계정 메일 실행기(결정 0047)를 빈으로 두어도 기본 applicationTaskExecutor를 그대로 만든다.
       # 지정하지 않으면 Executor 빈이 하나라도 있을 때 기본 실행기가 빠진다.
       mode: force
   web:
@@ -121,7 +121,7 @@ auth:
     cooldown: 60s
     window: 24h
     max-per-window: 10
-    # 발송 구현(결정 0045). ses: Amazon SES로 보낸다. logging: 보내지 않고 로그로 남긴다(local 전용).
+    # 발송 구현(결정 0047). ses: Amazon SES로 보낸다. logging: 보내지 않고 로그로 남긴다(local 전용).
     # 비워 두면 구현이 없어 기동에 실패한다. 배포 환경은 MAIL_SENDER=ses로 고른다.
     sender: ${MAIL_SENDER:}
     # 커밋 뒤 별도 스레드에서 보내 응답이 발송을 기다리지 않는다. 테스트만 false로 두고 호출한 스레드에서 보낸다.
@@ -144,3 +144,12 @@ auth:
 notification:
   new-benefit:
     digest-cron: "0 0 8 * * *"
+    # 새 혜택 알림 발송(결정 0048). 발송 대기 묶음을 30초마다 찾아, 대상이 빌 때까지 보낸다.
+    send:
+      cron: "*/30 * * * * *"
+      # SES 계정 한도(초당 14건)보다 낮게 두어 계정 메일 몫을 남긴다.
+      rate-per-second: 10
+      # 일시 실패 뒤 다시 보내기까지의 간격. 개수가 재시도 횟수다. 묶은 날 24:00(KST)부터는 보내지 않는다.
+      retry-delays: 1m,5m,30m,2h,6h
+      # 메일의 혜택 상세 링크와 알림 끄기 안내에 쓰는 웹 주소(DEC-APP)
+      site-url: https://govbenefit.kr
