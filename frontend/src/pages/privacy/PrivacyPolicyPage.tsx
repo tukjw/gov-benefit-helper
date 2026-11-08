@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { usePageTitle } from "@/components/usePageTitle";
+import { NOTIFICATION_SETTINGS_PATH, WITHDRAWAL_PATH } from "@/lib/account/paths";
 import styles from "./PrivacyPolicyPage.module.css";
 
 // 개인정보 처리방침(#111, 개인정보 보호법 제30조, 결정 0044). 로그인 없이 본다.
@@ -273,8 +274,9 @@ export function PrivacyPolicyPage() {
             <li>이용자는 언제든지 개인정보의 열람, 정정, 삭제, 처리정지, 동의 철회를 요구할 수 있습니다.</li>
             <li>
               회원은 직접 할 수 있습니다. <Link to="/profile">프로필</Link>에서 값을 확인·수정·삭제하고, 건강 관련
-              정보를 모두 빼고 저장하면 동의가 철회됩니다. 관심 혜택은 해제하고, 새 혜택 알림은 끌 수 있습니다.{" "}
-              <Link to="/account/withdrawal">회원 탈퇴</Link>를 하면 개인정보를 즉시 삭제합니다.
+              정보를 모두 빼고 저장하면 동의가 철회됩니다. 관심 혜택은 해제하고, 새 혜택 알림은{" "}
+              <Link to={NOTIFICATION_SETTINGS_PATH}>알림 설정</Link>에서 끌 수 있습니다.{" "}
+              <Link to={WITHDRAWAL_PATH}>회원 탈퇴</Link>를 하면 개인정보를 즉시 삭제합니다.
             </li>
             <li>
               그 밖의 요구는 <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>로 보내 주세요. 가입한 이메일에서 보낸

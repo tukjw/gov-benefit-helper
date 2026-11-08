@@ -14,7 +14,7 @@ export function WithdrawalPage() {
   const result = useActionData() as WithdrawalResult | undefined;
   const submitting = useNavigation().state === "submitting";
   return (
-    <AccountFrame title="회원 탈퇴">
+    <AccountFrame title="회원 탈퇴" underAccount>
       <InfoBox tone="danger" title="탈퇴하면 되돌릴 수 없습니다">
         <ul className={styles.list}>
           <li>계정과 프로필, 관심 혜택, 로그인 정보가 바로 지워집니다.</li>
