@@ -89,6 +89,15 @@ export type AccountResponse = {
   createdAt: string;
 };
 
+// 알림 설정(#106). 설정한 적이 없으면 newBenefit은 false다.
+export type NotificationSettingResponse = {
+  newBenefit: boolean;
+};
+
+export type NotificationSettingRequest = {
+  newBenefit: boolean;
+};
+
 export type Gender = "MALE" | "FEMALE";
 
 // 속성 값은 null이면 미입력, ["NONE"]이면 해당 없음이다(결정 0022).

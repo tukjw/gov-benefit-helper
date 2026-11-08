@@ -1,4 +1,5 @@
 import { Form, Link, useLocation } from "react-router";
+import { ACCOUNT_PATH, ACCOUNT_TITLE } from "@/lib/account/paths";
 import { loginPath } from "@/lib/auth/guard";
 import { useSession } from "@/lib/auth/session";
 import styles from "./SiteHeader.module.css";
@@ -32,13 +33,13 @@ export function AccountLinks() {
       </ul>
     );
   }
-  // 계정 화면은 아직 탈퇴뿐이라 이메일에서 바로 연결한다. #74의 개인 화면이 생기면 옮길 수 있다.
+  // 이메일은 알림 설정과 회원 탈퇴를 모은 계정 관리 화면으로 연결한다(#134).
   return (
     <ul className={styles.utility}>
       <li className={styles.utilityEmail}>
-        <Link to="/account/withdrawal" className={styles.utilityLink} title="계정 관리">
+        <Link to={ACCOUNT_PATH} className={styles.utilityLink} title={ACCOUNT_TITLE}>
           <strong>{session.email}</strong>
-          <span className="visually-hidden"> 계정 관리(회원 탈퇴)</span>
+          <span className="visually-hidden"> {ACCOUNT_TITLE}</span>
         </Link>
       </li>
       <li>
