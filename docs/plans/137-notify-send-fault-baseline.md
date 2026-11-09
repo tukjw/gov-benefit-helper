@@ -90,6 +90,7 @@ status: in-progress
    - 2026-11-09 결과(지연, 몰아 보내기, 초당 30건 20초)를 `docs/research/notify-send-fault-baseline/results/ses-probe/`에 둔다. 가짜 SES의 지연 표본은 이 파일에서 만든다.
    - 프로그램은 `scripts/loadtest/notify/ses-probe/`(`SesRealProbe.java`와 실행 스크립트)에 둔다. 측정 구간 밖에서만 실행한다.
    - 측정하는 날 시작 전에 app VM에서 같은 프로그램으로 차례로 100건(초당 5건)을 다시 잰다(2026-11-09 사용자 결정). 내 PC와 인터넷 경로가 다를 수 있어서다. 이 실행 시각은 측정 구간과 따로 적는다. p50이 내 PC 값(93.6\~131.5ms)과 20% 넘게 다르면 가짜 SES 지연 표본을 app VM 값으로 바꾼다.
+   - 2026-11-10 app VM 결과(차례로 100건): 첫 요청 582.1ms, p50 92.0ms, p90 245.8ms, p99 284.8ms, 평균 134.8ms. p50이 내 PC보다 30% 낮아 지연 표본을 app VM 값으로 바꿨다. 평균은 내 PC(141.0ms)와 비슷하고, 100ms 이하(62%)와 200ms 초과(23%)로 더 갈린다.
    - app VM에는 JDK가 없으므로 내 PC에서 컴파일한 클래스를 운영 앱 이미지의 일회용 컨테이너(`docker compose run --rm --no-deps app`)에서 실행한다. 라이브러리는 앱 jar에서 꺼내 쓴다(`-Djarmode=tools extract`). `docker run --env-file`은 값의 따옴표를 벗기지 않아 `SES_FROM`이 달라지므로 compose의 `env_file`을 그대로 쓴다. 키는 컨테이너 환경 변수로만 들어가고 화면과 파일에 남지 않는다.
 5. **시나리오와 값.** 2026-11-09 사용자 결정. 모든 시나리오는 1만 통이고, 시각은 발송 시작(가짜 SES의 첫 요청) 기준이다.
 
