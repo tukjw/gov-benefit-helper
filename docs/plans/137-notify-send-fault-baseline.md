@@ -1,4 +1,4 @@
-status: draft
+status: in-progress
 
 # 구현 계획 — #137 새 혜택 알림 발송에 장애를 주입해 유실·중복 기준값 측정
 
@@ -29,9 +29,9 @@ status: draft
   - SES 호출 직전에 "앞 호출을 시작한 뒤 100ms"까지 기다린다(`awaitTurn`). 준비·SES 호출·기록의 합이 100ms를 넘으면 초당 10건이 나오지 않는다.
   - 재시도 간격은 1분·5분·30분·2시간·6시간이고 묶은 날 24:00(KST)까지만 보낸다. 08:00에 시작하면 첫 묶음의 마지막 시도는 16:36이다.
   - SES가 접수한 뒤 기록이 커밋되기 전에 끝나면 그 묶음은 `PENDING`으로 남아 다시 보내진다(설계 3의 한계).
-  - 종료할 때 Spring은 실행 중인 폴링을 30초 기다린 뒤 interrupt한다. 운영 compose의 `stop_grace_period`는 40초다.
+  - 종료할 때 Spring은 실행 중인 폴링을 30초 기다린다. 운영 compose의 `stop_grace_period`는 40초다. 로컬 리허설(2026-11-10)에서는 30초가 지나도 발송 스레드가 interrupt되지 않고, `taskScheduler`가 실행 중인 채로 JPA와 커넥션 풀이 닫힌 뒤 JVM이 끝났다. 발송 요약 로그 없이 끝나고, 배포마다 중복 접수가 1건씩 나왔다. 운영 측정의 `deploy`에서 회차별로 확인한다.
 - SES 클라이언트(`SesAccountMailSender`, 결정 0047): SDK 재시도 없음, 연결 5초·응답 10초 제한. 429와 5xx, 연결 실패(시간 초과 포함)는 일시 실패, 그 밖의 서비스 오류는 재시도 불가다.
-- 엔드포인트는 `SesProperties.endpoint`(`auth.mail.ses.endpoint`)로 바꾼다. `application.yaml`에 키는 없지만 환경 변수 `AUTH_MAIL_SES_ENDPOINT`로 바인딩된다(측정 준비에서 로컬로 확인한다).
+- 엔드포인트는 `SesProperties.endpoint`(`auth.mail.ses.endpoint`)로 바꾼다. `application.yaml`에 키는 없지만 환경 변수 `AUTH_MAIL_SES_ENDPOINT`로 바인딩된다(로컬 리허설에서 확인했다).
 - 실제 SES 사전 측정(2026-11-09, 내 PC, 메일박스 시뮬레이터 `success@simulator.amazonses.com`, 앱과 같은 클라이언트 설정):
   - 차례로 100건(초당 5건): 첫 요청 360.4ms, p50 131.5ms, p90 207.1ms, p99 223.2ms, 최소 86.9ms. 100ms를 넘은 비율은 74%다.
   - 동시 12개로 60건: 0.58초(초당 약 103건)에 모두 성공. p50 95.1ms.
@@ -50,7 +50,8 @@ status: draft
   - `new_benefit_target(user_id, benefit_id, digest_id)`. `benefit_id`는 `new_benefit(benefit_id)`를 참조하므로 알림 항목에는 `new_benefit` 행이 있어야 한다. 이 FK에는 `ON DELETE CASCADE`가 없다.
   - `new_benefit(benefit_id, detected_run_id, status, targets_selected_at, created_at, updated_at)`. 기본 키가 `benefit_id`이고 `benefit(id)`·`collection_run(id)`를 참조한다. 앱은 이 표를 수집(새로 만든 혜택 저장, `WAITING_CONDITIONS` 갱신)과 대상 선정(`READY`이고 `targets_selected_at`이 빈 행)에서만 읽는다.
   - `email_verification`은 FK가 없고 앱이 행을 지우지 않는다(04:30 파기 작업만 지운다).
-- 예약 작업 설정: 수집은 `gov24.schedule.enabled`(`@ConditionalOnBooleanProperty`), 묶기는 `notification.new-benefit.digest-cron`, 인증 기록 파기는 `auth.email-verification.purge-cron`이다. cron 값 `-`는 그 작업을 끈다. `LoginAttemptLimiter.evictExpired`(15분 `fixedDelay`, 로그 없음)는 끌 수 없다.
+- 예약 작업 설정: 수집은 `gov24.schedule.enabled`(`@ConditionalOnBooleanProperty`), 묶기는 `notification.new-benefit.digest-cron`, 인증 기록 파기는 `auth.email-verification.purge-cron`이다. cron 값 `-`는 그 작업을 끈다. 환경 변수 `GOV24_SCHEDULE_ENABLED`, `NOTIFICATION_NEWBENEFIT_DIGESTCRON`, `AUTH_EMAILVERIFICATION_PURGECRON`으로 바뀌는 것을 로컬 리허설에서 확인했다(매분 cron으로 주면 실행되고 `-`면 실행되지 않는다). `LoginAttemptLimiter.evictExpired`(15분 `fixedDelay`, 로그 없음)는 끌 수 없다.
+- 예약 작업 실행은 지표 `tasks_scheduled_execution_seconds`(`code_function`별 횟수·최대)와 `tasks_scheduled_execution_active_seconds`로 나온다(로컬에서 확인).
 - 가입 인증번호 요청(`POST /api/auth/email-verification`, `{"email", "ageConfirmed": true}`)은 같은 이메일에 60초에 한 번, 24시간에 10번까지다. 발송은 커밋 뒤 별도 스레드에서 하고 응답은 실패해도 204다. 실패하면 앱 로그에 `가입 인증번호 메일을 보내지 못했습니다`가 남는다.
 - 운영에는 아직 실제 사용자가 없다(2026-11-09 사용자 확인). 측정 중 API 중단과 실제 사용자 묶음은 고려하지 않는다.
 - 부하 테스트 관례(결정 0039, `docs/ops/load-test.md`): 부하 생성 VM(`govbenefit-loadgen`, `10.10.0.14`)의 `tmux`에서 실행한다. 측정 동안 `cloudflared`를 멈춘다. DB 작업은 `accounts.sh`처럼 db VM의 mysql 컨테이너 안에서 앱 계정으로 한다. 서버 지표는 `export-metrics.sh`가 `steps.tsv` 구간으로 받는다.
@@ -58,12 +59,12 @@ status: draft
 ## 설계 결정
 
 1. **가짜 SES는 Python 표준 라이브러리 서버로 만든다.** 2026-11-09 사용자 결정.
-   - `scripts/loadtest/notify/fake_ses.py`. 부하 생성 VM에서 `python3`로 직접 띄우고 내부 브리지 주소(`10.10.0.14:8025`)에만 연다.
+   - `scripts/loadtest/notify/fake_ses.py`. 부하 생성 VM에서 `python3`로 직접 띄우고 내부 브리지 주소(`10.10.0.14:8025`)에만 연다. 관리 경로는 따로 `127.0.0.1:8026`에 연다.
    - `POST /v2/email/outbound-emails`만 받는다. 성공은 `200 {"MessageId": …}`, 오류는 `x-amzn-ErrorType` 헤더와 `{"message": …}` 본문이다(`SesStubServer`와 같은 형식).
-   - 응답 지연: 실제 SES 사전 측정의 성공 지연(700건)에서 무작위로 골라 그만큼 늦게 응답한다. 시드를 고정한다.
+   - 응답 지연: 실제 SES 사전 측정에서 차례로 보낸 100건의 성공 지연(`latency-ms.txt`)에서 무작위로 골라 그만큼 늦게 응답한다. 시드를 고정한다. 앱도 한 건씩 차례로 보내므로 동시에 보낸 측정(몰아 보내기, 초당 30건)의 지연은 쓰지 않는다. 오류 응답에도 같은 지연을 준다.
    - 속도 제한: 초당 14건이 차는 토큰 버킷, 용량 145건. 넘으면 `429 TooManyRequestsException`, 메시지 `Maximum sending rate exceeded.`로 응답한다(실측).
-   - 장애 주입은 관리 경로(`/_control/*`)로 켜고 끈다. 시나리오 스크립트가 발송 시작을 보고 시각을 맞추기 위해서다.
-   - 요청마다 도착 시각, 수신 주소, 결과, 응답 시각을 JSONL로 남긴다. 유실과 중복은 이 기록으로 센다(이슈).
+   - 장애 주입은 관리 경로(`/outage`, `/late`, `/hold-next`, `/release`, `/stats`)로 켜고 끈다. 시나리오 스크립트가 발송 시작을 보고 시각을 맞추기 위해서다.
+   - 요청마다 도착 시각, 수신 주소, 종류(제목으로 알림과 계정 메일을 나눈다), 결과, 응답 시각을 JSONL로 남긴다. 유실과 중복은 이 기록으로 센다(이슈).
    - 대안: 테스트의 `SesStubServer`를 실행 파일로 만듦. 빌드 구성과 VM의 JDK가 필요하고, 구간 장애·속도 제한·파일 기록은 어차피 새로 짠다.
    - 대안: WireMock. 토큰 버킷 속도 제한이 없어 확장이 필요하다.
 2. **앱의 SES 요청은 측정용 compose 덮어쓰기 파일과 가짜 접근 키로 돌린다.**
@@ -89,75 +90,77 @@ status: draft
    - 2026-11-09 결과(지연, 몰아 보내기, 초당 30건 20초)를 `docs/research/notify-send-fault-baseline/results/ses-probe/`에 둔다. 가짜 SES의 지연 표본은 이 파일에서 만든다.
    - 프로그램은 `scripts/loadtest/notify/ses-probe/`(`SesRealProbe.java`와 실행 스크립트)에 둔다. 측정 구간 밖에서만 실행한다.
    - 측정하는 날 시작 전에 app VM에서 같은 프로그램으로 차례로 100건(초당 5건)을 다시 잰다(2026-11-09 사용자 결정). 내 PC와 인터넷 경로가 다를 수 있어서다. 이 실행 시각은 측정 구간과 따로 적는다. p50이 내 PC 값(93.6\~131.5ms)과 20% 넘게 다르면 가짜 SES 지연 표본을 app VM 값으로 바꾼다.
-   - app VM에는 JDK가 없으므로 앱 이미지와 같은 런타임(`eclipse-temurin:21-jre-noble`) 컨테이너에서 `--env-file app.env`로 실행한다. 키는 컨테이너 환경 변수로만 들어가고 화면과 파일에 남지 않는다.
+   - app VM에는 JDK가 없으므로 내 PC에서 컴파일한 클래스를 운영 앱 이미지의 일회용 컨테이너(`docker compose run --rm --no-deps app`)에서 실행한다. 라이브러리는 앱 jar에서 꺼내 쓴다(`-Djarmode=tools extract`). `docker run --env-file`은 값의 따옴표를 벗기지 않아 `SES_FROM`이 달라지므로 compose의 `env_file`을 그대로 쓴다. 키는 컨테이너 환경 변수로만 들어가고 화면과 파일에 남지 않는다.
 5. **시나리오와 값.** 2026-11-09 사용자 결정. 모든 시나리오는 1만 통이고, 시각은 발송 시작(가짜 SES의 첫 요청) 기준이다.
 
    | 시나리오 | 주입 | 예상 소요 |
    | --- | --- | --- |
    | `outage-1h` | 0\~60분 동안 모든 요청에 `500 InternalFailure` | 약 2시간 |
-   | `normal` | 없음 | 약 25분 |
-   | `kill` | 90\~150초 무작위 간격(시드 고정)으로 10번 SIGKILL. 그중 2번은 가짜 SES가 요청을 붙잡은 채 죽인다 | 약 40분 |
-   | `deploy` | 5분·12분·19분에 같은 이미지로 app만 다시 만든다 | 약 35분 |
-   | `response-loss` | 100번째 요청마다(100건) 기록한 뒤 15초 뒤에 200 | 약 45분 |
-   | `outage-10m` | 0\~10분 동안 `500 InternalFailure` | 약 40분 |
-   | `account-mail` | 처음부터 끝까지 계정 메일 초당 1건, 5\~7분에는 초당 10건 | 약 30분 |
-   | `notify-off` | 1,000명(시드 고정)의 알림을 발송 중 무작위 시각에 DB에서 끈다 | 약 30분 |
+   | `normal` | 없음 | 약 30분 |
+   | `kill` | 90\~150초 무작위 간격(시드 고정)으로 10번 SIGKILL. 간격은 앞 회차에서 발송이 다시 시작된 때부터 잰다. 그중 2번은 가짜 SES가 요청을 붙잡은 채 죽인다 | 약 45분 |
+   | `deploy` | 5분·12분·19분에 같은 이미지로 app만 다시 만든다 | 약 40분 |
+   | `response-loss` | 100번째 요청마다(100건) 기록한 뒤 15초 뒤에 200 | 약 50분 |
+   | `outage-10m` | 0\~10분 동안 `500 InternalFailure` | 약 45분 |
+   | `account-mail` | 30분 동안 계정 메일 초당 1건, 5\~7분에는 초당 10건 | 약 35분 |
+   | `notify-off` | 1,000명(시드 고정)의 알림을 0\~20분 사이 무작위 시각 100번에 나눠 DB에서 끈다 | 약 35분 |
 
    - 몇 시간 장애는 1시간으로 줄인다(2026-11-09 사용자 결정). 하루 안에 끝내기 위해서다. 이슈 본문의 시나리오도 "1시간 동안의 SES 장애"로 고쳤다. 1시간 장애에서는 첫 시도·1분 뒤·5분 뒤 재시도의 일부가 실패하고 5분 뒤·30분 뒤 재시도에서 회복된다. 2시간·6시간 뒤 재시도와 최종 실패는 실측하지 않고, 재시도 간격으로 계산해 보고서에 적는다.
    - 응답 유실의 15초는 앱의 응답 제한(10초)보다 길다. 한 건마다 발송이 10초 멈춘다.
    - 붙잡은 채 죽이기: 가짜 SES가 다음 요청을 기록하고 응답하지 않는 동안 스크립트가 app을 죽이고, 그 뒤 붙잡은 요청을 놓는다. SES 접수 뒤 기록 전 종료를 매번 재현한다.
    - 계정 메일 초당 10건은 알림(초당 7\~9건)과 합쳐 한도를 넘는다. 버킷 용량(145건)을 다 쓰면 알림과 계정 메일이 함께 429를 받는다.
-   - 알림 끄기는 DB를 직접 바꾼다. 발송 직전 확인(준비 단계)은 DB 값만 읽으므로 API를 거친 것과 같다. 끈 시각은 `UPDATE`를 커밋한 시각으로 남긴다.
+   - 예상 소요는 로컬 리허설의 발송 속도(초당 약 6건)로 잡았다. 실측 지연 표본(p50 131.5ms)에 준비·기록 시간이 더해져 사전 측정의 추정(초당 7\~9건)보다 느렸다.
+   - 알림 끄기는 DB를 직접 바꾼다. 발송 직전 확인(준비 단계)은 DB 값만 읽으므로 API를 거친 것과 같다. 끈 시각은 `UPDATE`를 보내기 직전(before)과 끝난 직후(after)의 부하 생성 VM 시각으로 남긴다. 가짜 SES 기록과 같은 시계라 VM 사이 시계 차이가 섞이지 않는다.
    - 대안: 알림 끄기를 API로 함. 합성 계정에 비밀번호와 로그인 준비가 필요하다.
 6. **강제 종료는 호스트 PID로 SIGKILL하고, 배포는 app만 다시 만든다.**
    - 강제 종료: `docker run --rm --pid=host alpine:3.20 kill -KILL "$(docker inspect -f '{{.State.Pid}}' <app 컨테이너>)"`. OOM·크래시처럼 Docker가 다시 띄우므로, 재개 시간에 자동 재시작이 들어간다. 가짜 SES가 최근 2초 안에 요청을 받은 때만 죽인다(발송 중).
-   - 배포: `docker compose -f compose.yaml -f compose.notify-fault.yaml up -d --force-recreate app`. 같은 이미지라 이미지 받기 시간은 없다. 종료 신호 → 30초 대기 → interrupt 흐름을 그대로 재현한다.
+   - 배포: `docker compose -f compose.yaml -f compose.notify-fault.yaml up -d --force-recreate app`. 같은 이미지라 이미지 받기 시간은 없다. 종료 신호 → 30초 대기 → 종료 흐름을 그대로 재현한다. 다시 만들면 이전 컨테이너 로그가 지워지므로 배포 전에 그 컨테이너 로그를 따라가며 남긴다.
    - `scripts/deploy.sh`는 쓰지 않는다. `cloudflared`를 띄우고 덮어쓰기 파일 없이 app을 다시 만들어 실제 SES로 보낸다.
    - 대안: `docker kill`. 자동 재시작이 걸리지 않아 스크립트가 다시 띄워야 한다.
    - 대안: 다른 이미지 태그로 교체. 버전 차이가 결과에 섞인다.
-7. **측정은 하룻밤에 무인으로 한다.** 2026-11-09 사용자 결정.
+7. **측정은 00:00 이후 하루 안에 무인으로 한다.** 2026-11-09 사용자 결정.
    - 00:00 이후에 시작한다. 합성 묶음의 기한이 그날 24:00이므로 자정을 넘기지 않기 위해서다. 예약 작업을 끄므로(설계 2) 04:00·08:00을 피할 필요가 없다.
-   - 순서: `outage-1h` → `normal` → `kill` → `deploy` → `response-loss` → `outage-10m` → `account-mail` → `notify-off`. 합쳐 약 7시간 반이다.
-   - 시나리오는 합성 묶음에 `PENDING`이 없고 가짜 SES가 2분 동안 요청을 받지 않으면 끝난다. 예상 소요의 두 배가 지나도 끝나지 않으면 그 상태로 기록하고 다음으로 넘어간다. 모두 두 배가 걸려도 15시 무렵 끝나므로 따로 멈추는 시각은 두지 않는다.
+   - 순서: `outage-1h` → `normal` → `kill` → `deploy` → `response-loss` → `outage-10m` → `account-mail` → `notify-off`. 합쳐 약 6시간 40분이다.
+   - 시나리오는 합성 묶음에 `PENDING`이 없고 가짜 SES가 2분 동안 요청을 받지 않으면 끝난다. 예상 소요의 두 배가 지나도 끝나지 않으면 그 상태로 기록하고 다음으로 넘어간다. 시나리오마다 시작 전에 두 배가 걸려도 23:50 안에 끝나는지 보고, 아니면 남은 시나리오를 건너뛴다.
    - 사람이 지켜보지 않으므로 `run.sh all`은 끝나거나 중간에 실패하면 스스로 정리한다. 정리 → 합성 데이터 0건 확인 → `switch.sh off` → `cloudflared` 시작 순서다.
    - 합성 데이터가 0건이 아니면 `switch.sh off`를 하지 않고 측정 설정 그대로 멈춘 뒤 이유를 남긴다. 남은 합성 묶음(`.invalid` 주소)이 실제 SES로 나가면 반송이 생겨 SES 계정 평판이 떨어지기 때문이다.
    - 대안: 낮에 사람이 지켜보며 실행. 예약 작업을 켠 채로 04:00·08:00을 피해야 하고, 하루를 비워야 한다.
    - 대안: 이틀(긴 장애 3시간). 6시간 공백까지 실측하지만 측정 준비·정리가 두 번이다.
 8. **센 값의 정의.** `count.py`가 가짜 SES 기록과 측정 끝의 묶음 상태를 수신 주소로 맞춰 센다.
    - 접수: 가짜 SES가 받아 들인 요청. `accepted`(200), `accepted_late`(늦게 200), `accepted_held`(붙잡힌 뒤 앱이 죽음)다.
-   - 유실: 보내야 할 묶음(취소되지 않은 합성 묶음) 중 접수가 0번인 것.
+   - 못 받은 묶음(유실): 보내야 할 묶음(취소되지 않은 합성 묶음) 중 접수가 0번인 것. 끝난 상태별로 나눈다. `FAILED`는 최종 실패, `PENDING`은 끝나지 않은 묶음과 겹치고, `ACCEPTED`인데 접수가 0번이면 조용한 유실이다.
    - 중복 접수: 같은 수신 주소의 두 번째 이후 접수.
    - 끝나지 않은 묶음: 측정 끝에 `PENDING`. 최종 실패: `FAILED`.
-   - 재개 시간: 강제 종료·배포 명령 시각부터 그 뒤 가짜 SES의 첫 요청까지.
+   - 재개 시간: 강제 종료·배포 명령 뒤 알림 요청이 3초 이상 끊긴 구간을 찾아, 명령 → UP, UP → 다시 시작한 첫 요청, 끊긴 시간을 적는다. 배포는 이전 앱이 종료 대기 동안 계속 보내므로 명령 뒤 마지막 요청 시각도 적는다.
    - 총 소요 시간: 첫 요청부터 마지막 접수까지.
-   - 계정 메일 실패: `notify-mail-*` 수신 주소 중 접수가 0번인 요청.
-   - 알림을 끈 뒤 나간 알림: 끈 시각보다 늦게 도착한 그 사용자의 접수.
-9. **다른 예약 작업이 밀린 시간은 지표로 재고, 없으면 발송 로그로 추정한다.**
-   - 준비에서 관리 포트(`/actuator/prometheus`)에 `tasks_scheduled_execution` 지표가 있는지 본다. 있으면 `queries.tsv`에 `evictExpired`의 실행 수를 더해 실행 간격으로 잰다.
-   - 없으면 발송 요약 로그의 `elapsedMs`(한 실행이 스레드를 붙잡은 시간)로 상한을 적는다. 운영 코드에 로그를 더하지 않는다.
+   - 계정 메일 실패: k6가 204를 받은 인증번호 요청 수 − 가짜 SES가 접수한 계정 메일 수. 앱 로그의 실패 줄 수와 맞춰 본다.
+   - 알림을 끈 뒤 나간 알림: `UPDATE`가 끝난 뒤(after) 도착한 그 사용자의 접수. before와 after 사이에 도착한 것은 따로 적는다.
+9. **다른 예약 작업이 밀린 시간은 지표로 잰다.**
+   - `tasks_scheduled_execution` 지표가 있다(로컬에서 확인). `queries.tsv`에 `code_function`별 실행 수(1분 증가량)와 최대 실행 시간을 더해, `evictExpired`의 실행 간격이 15분보다 얼마나 벌어졌는지 잰다.
+   - 발송 요약 로그의 `elapsedMs`(한 실행이 스레드를 붙잡은 시간)도 함께 적는다. 운영 코드에 로그를 더하지 않는다.
    - 수집·묶기·파기는 꺼 두므로(설계 2) 이 작업들과 발송이 스레드를 다투는 경우는 재지 않는다. 보고서의 한계에 적고, 발송 한 실행이 스레드를 붙잡는 시간으로 그 작업들이 밀릴 수 있는 상한을 적는다.
 10. **10만 통은 잰 처리량으로 환산한다.** `normal`의 총 소요 시간 × 10과 그동안 스레드를 붙잡는 시간을 적고, SES 콘솔의 하루 할당량과 비교한다.
 
 ## 단계별 구현 계획
 
 1. **가짜 SES** `scripts/loadtest/notify/fake_ses.py`
-   - 인자: `--host`, `--port`, `--log <JSONL>`, `--latency <표본 파일>`, `--seed`, `--bucket-capacity 145`, `--bucket-rate 14`.
-   - `TokenBucket.take(now) -> bool`, `LatencySampler.sample() -> float`, `Faults`(현재 장애 상태).
+   - 인자: `--host`, `--port`, `--control-host`, `--control-port`, `--log <JSONL>`, `--latency <표본 파일>`, `--seed`, `--bucket-capacity 145`, `--bucket-rate 14`.
+   - `TokenBucket.take() -> bool`, `State`(장애 상태, 통계, 기록).
    - `POST /v2/email/outbound-emails`: 기록 → 토큰 확인(없으면 429) → 장애 상태(500, 붙잡기, 늦은 응답) → 지연 표본만큼 대기 → 응답. 응답을 쓰다 연결이 끊기면 `client_gone`을 남긴다.
-   - 관리 경로: `POST /_control/outage {"status":500,"code":"InternalFailure","on":true|false}`, `POST /_control/late {"every":100,"seconds":15}`, `POST /_control/hold-next`, `POST /_control/release`, `GET /_control/stats`(받은 수, 마지막 요청 시각, 붙잡힌 수). 관리 경로는 `127.0.0.1`에서만 받는다.
-   - 로그 레코드: `arrived`, `to`, `result`(`accepted`·`accepted_late`·`accepted_held`·`rate_limited`·`outage`), `responded`, `client_gone`.
+   - 관리 경로(관리 포트, `127.0.0.1`): `POST /outage {"status":500,"code":"InternalFailure","on":true|false}`, `POST /late {"every":100,"seconds":15}`, `POST /hold-next`, `POST /release`, `GET /stats`(종류별 받은 수·접수 수·첫·마지막 요청 시각, 붙잡힌 수).
+   - 로그 레코드: `id`, `arrived`, `to`, `kind`(`digest`·`signup`·`other`), `status`, `result`(`accepted`·`accepted_late`·`accepted_held`·`rate_limited`·`outage`), `responded`, `client_gone`.
 2. **실제 SES 사전 측정** `scripts/loadtest/notify/ses-probe/`
    - `SesRealProbe.java`: 앱과 같은 클라이언트 설정. 기본 모드(차례로 100건 + 동시 60건)와 `MODE=sustained`(초당 N건 M초). 시뮬레이터 주소로만 보낸다. 속도 초과·연결 오류가 아닌 실패면 멈춘다.
    - `ses-probe.sh local`: `backend/`의 런타임 클래스패스를 init script로 구해 `java`로 실행한다. SES 값은 환경 변수로만 받는다.
-   - `ses-probe.sh app-vm`: 프로그램을 컴파일하고 필요한 jar와 함께 `build/ses-probe/`에 모아 app VM의 `/opt/gov-benefit/loadtest/ses-probe/`에 복사한 뒤, `docker run --rm --env-file /opt/gov-benefit/app/app.env eclipse-temurin:21-jre-noble`로 실행하고 결과를 가져온다(설계 4).
-   - 2026-11-09 결과를 `docs/research/notify-send-fault-baseline/results/ses-probe/`로 옮기고, `latency-ms.txt`(성공 지연 700건)를 만든다.
+   - `ses-probe.sh app-vm`: 내 PC에서 컴파일한 클래스를 app VM의 `/opt/gov-benefit/loadtest/ses-probe/`에 복사한 뒤, 운영 앱 이미지의 일회용 컨테이너에서 차례로 100건만 실행하고 결과를 가져온다(설계 4).
+   - `ses-probe.sh latency <results.jsonl>`: 지연 단계의 성공 지연으로 `latency-ms.txt`를 만든다.
+   - 2026-11-09 결과를 `docs/research/notify-send-fault-baseline/results/ses-probe/2026-11-09-local/`로 옮기고, `latency-ms.txt`(차례로 보낸 100건, p50 131.5ms)를 만든다.
 3. **합성 데이터** `scripts/loadtest/notify/sql/`, `scripts/loadtest/notify/data.sh`
    - `seed.sql`: 설계 3. 가짜 새 혜택 3건을 넣고, 재귀 CTE로 계정 1만 개, 묶음, 알림 항목을 넣는다.
    - `cleanup.sql`: 합성 계정, 가짜 새 혜택, `notify-mail-%@loadtest.invalid`의 `email_verification` 행을 이 순서로 지운다.
    - `count.sql`: 합성 계정·합성 묶음·가짜 새 혜택·계정 메일 인증 기록 수. 정리 뒤 모두 0이어야 한다.
    - `status.sql`: 합성 묶음의 수신 주소·상태·시도 횟수·`last_error`·`accepted_at`을 TSV로 뽑는다.
-   - `notify-off.sql`: 정해진 사용자의 알림을 끄고 커밋 시각을 돌려준다.
-   - `data.sh <seed | cleanup | count | status | notify-off <이메일 목록>>`: `accounts.sh`의 `run_sql`과 같은 방식(`LOADTEST_DB=local` 지원).
+   - `pending.sql`: 발송 대기로 남은 합성 묶음 수(끝 조건).
+   - `data.sh <seed [사용자 수] | cleanup | count | pending | status | notify-off <이메일 파일>>`. `notify-off`는 합성 사용자 주소만 받아 `UPDATE`한다: `accounts.sh`의 `run_sql`과 같은 방식(`LOADTEST_DB=local` 지원).
 4. **측정용 실행 구성** `scripts/loadtest/notify/compose.notify-fault.yaml`, `scripts/loadtest/notify/switch.sh`
    - 덮어쓰기 파일: 설계 2.
    - `switch.sh on`: 해시·`APP_TAG` 기록 → 파일 복사 → 덮어쓰기로 app 재생성 → 상태 `UP` 대기 → 가짜 SES가 요청을 받는지 확인(합성 묶음 1건을 넣어 접수를 보고 지운다).
@@ -166,13 +169,14 @@ status: draft
    - 시작 전 확인: `cloudflared`가 멈춰 있다, 시각이 00:00 이후다, `switch.sh on` 상태다(예약 작업 끔 포함), 합성 데이터가 0건이다.
    - 끝나거나 실패하면(`trap`) 설계 7의 정리 순서를 따른다. 결과 디렉터리에 `finish.txt`(끝난 시각, 끝난 이유, 정리 결과, `switch.sh off`·Tunnel 상태)를 남긴다.
    - 시나리오마다: 가짜 SES 재시작(새 로그) → `data.sh seed` → 첫 요청을 기다림 → 설계 5의 주입 → 끝 조건 대기 → `data.sh status` → 앱 로그(발송 요약·실패·계정 메일 실패) 저장 → `steps.tsv`를 쓰고 `export-metrics.sh` → `count.py` → `data.sh cleanup`.
-   - 주입 함수: `kill_app`(설계 6), `deploy_app`, `outage_window`, `late_every`, `hold_and_kill`, `notify_off`, `account_mail`(k6).
-   - 결과 디렉터리: `<RESULTS_DIR>/<시각>-<시나리오>/`(기본 `docs/research/notify-send-fault-baseline/results`). 파일: `meta.json`(이미지 태그, 실행 구성 해시, 시나리오 값, 주입 시각), `fake-ses.jsonl`, `digests.tsv`, `injections.tsv`, `app-log.txt`, `prometheus.json`, `counts.json`.
+   - 주입 함수: `inject_outage`, `inject_kill`(붙잡은 채 죽이기 포함), `inject_deploy`, `inject_notify_off`, `inject_account_mail`(k6). 응답 유실은 데이터를 넣기 전에 가짜 SES에 켠다.
+   - 결과 디렉터리: `all`은 `<RESULTS_DIR>/<시각>-all/<시나리오>/`와 `finish.txt`·`run.log`, 하나만 재면 `<RESULTS_DIR>/<시각>-<시나리오>/`(기본 `docs/research/notify-send-fault-baseline/results`). 파일: `meta.json`(이미지 태그, 실행 구성 해시, 시나리오 값, 시각), `fake-ses.jsonl.gz`, `digests.tsv`, `injections.tsv`, `notify-off.tsv`, `k6-summary.json`, `app-log.txt.gz`, `prometheus.json`, `counts.json`, `counts.txt`.
+   - 공통 함수는 `lib.sh`(app VM 명령, 가짜 SES 시작·관리, 상태 확인)에 둔다. 본문 전체를 한 묶음으로 읽은 뒤 실행해, 측정 중에 파일이 바뀌어도 깨지지 않게 한다.
 6. **계정 메일 요청** `scripts/loadtest/notify/k6/account-mail.js`: `constant-arrival-rate` 두 구간(설계 5). 이메일은 `notify-mail-<번호>@loadtest.invalid`로 매번 다르게, `CF-Connecting-IP`는 가상 사용자별. 이미지 버전은 `scripts/loadtest/run.sh`와 같다.
 7. **집계** `scripts/loadtest/notify/count.py <결과 디렉터리>`: 설계 8의 값을 `counts.json`과 사람이 읽는 표로 낸다. 강제 종료·배포는 회차별 재개 시간과 그 회차 앞뒤의 중복을 따로 적는다.
-8. **지표** `scripts/loadtest/queries.tsv`: 설계 9에서 지표가 있으면 `scheduled_tasks`(범위 `step`)를 더한다. 앱 재시작 확인용 `app_start_time`(`process_start_time_seconds`)을 더한다.
-9. **로컬 리허설**: 로컬 compose MySQL과 `local` 프로필 앱(`AUTH_MAIL_SENDER=ses`, `AUTH_MAIL_SES_ENDPOINT=http://127.0.0.1:8025`)으로 합성 200명, 시나리오마다 짧은 값으로 `run.sh`를 끝까지 돌린다. 덮어쓰기·강제 종료는 로컬 Docker로 만든 앱 이미지로 확인한다. 엔드포인트 환경 변수 바인딩과 429·500·늦은 응답의 분류를 앱 로그로 본다. 예약 작업 끄기는 묶기·파기 cron을 1분 뒤 시각으로 준 실행과 `-`로 준 실행을 비교해 확인한다. 중간 실패 뒤 자동 정리와 합성 데이터가 남았을 때 멈추는지도 본다.
-10. **운영 측정**: 설계 7의 일정. 00:00 무렵 시작 전에 SES 하루 할당량을 콘솔에서 적고, `switch.sh on` 전에 `ses-probe.sh app-vm`으로 지연을 다시 잰다(설계 4). `cloudflared` 정지 → `switch.sh on` → 합성 100명으로 짧은 확인 → 부하 생성 VM의 `tmux`에서 `run.sh all`. 아침에 `finish.txt`를 보고, SES 콘솔·CloudWatch `Send`에서 측정 시간대 발송이 없는지 확인한다.
+8. **지표** `scripts/loadtest/queries.tsv`: `scheduled_task_runs`·`scheduled_task_max`·`scheduled_task_active_max`(설계 9)와 앱 재시작 확인용 `app_start_time`(`process_start_time_seconds`)을 더한다.
+9. **로컬 리허설** `scripts/loadtest/notify/rehearsal/`: `setup.sh`가 지금 코드로 앱 이미지를 만들고, 운영과 같은 서비스 구성(`compose.yaml`, 로컬 전용 `app.env`)으로 로컬 compose MySQL에 붙인다. `APP_HOST=local`로 `switch.sh`와 `run.sh`를 그대로 쓰고, 시나리오마다 짧은 값으로 끝까지 돌린다. 엔드포인트 환경 변수 바인딩과 429·500·늦은 응답의 분류를 앱 로그로 본다. 예약 작업 끄기는 묶기·파기 cron을 1분 뒤 시각으로 준 실행과 `-`로 준 실행을 비교해 확인한다. 중간 실패 뒤 자동 정리와 합성 데이터가 남았을 때 멈추는지도 본다.
+10. **운영 측정**: 설계 7의 일정. 00:00 무렵 시작 전에 SES 하루 할당량을 콘솔에서 적고, `switch.sh on` 전에 `ses-probe.sh app-vm`으로 지연을 다시 잰다(설계 4). `cloudflared` 정지 → `switch.sh on` → 합성 100명으로 짧은 확인 → 부하 생성 VM의 `tmux`에서 `run.sh all`. 끝나면 `finish.txt`를 보고, SES 콘솔·CloudWatch `Send`에서 측정 시간대 발송이 없는지 확인한다.
 11. **보고서** `docs/research/notify-send-fault-baseline.md`: 측정 기록 형식 1\~6. 규모 가정(사용자 10만 명 중 1만 명, 근거 `docs/research/gov24-api-data.md` §7), 실제 SES 사전 측정(내 PC와 app VM), 시나리오별 표, 회차별 표, 10만 통 환산과 할당량 비교, 1시간 장애에서 실측하지 않은 재시도의 계산, 실제 SES로 나간 요청이 없었다는 근거, 정리 결과, 한계(예약 작업을 꺼 경합을 재지 않음, 가짜 새 혜택 3건 고정), 확인된 문제(후속 이슈 후보).
 12. **절차** `docs/ops/load-test.md`: "알림 발송 장애 측정" 절. 준비(00:00 이후, 할당량 기록, app VM에서 SES 지연 재측정, Tunnel 정지, 가짜 SES 시작, `switch.sh on`, 짧은 확인), 실행(`tmux`에서 `run.sh all`), 끝난 뒤(`finish.txt`, SES 콘솔 확인), 자동 정리가 멈췄을 때(합성 데이터를 지우고 0건을 확인한 뒤 `switch.sh off`와 Tunnel 시작).
 
