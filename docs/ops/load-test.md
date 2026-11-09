@@ -151,3 +151,104 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 ## 다시 잴 때
 
 성능 개선 전후를 비교할 때는 같은 스크립트·단계·판정 기준으로 잰다(결정 0039). 기준 측정과 같은 단계로 재려면 속도를 직접 준다: `scripts/loadtest/run.sh search 5 10 20 40`. 이때는 정한 단계만 재고, 한계 단계가 나오면 멈춘다. 같은 입력으로 재려면 `INPUTS`로 기준 측정의 `inputs.json`을 넘긴다. 데이터 규모(혜택 수)가 달라졌으면 보고서에 함께 적는다. 개선 측정의 결과는 `RESULTS_DIR`로 그 작업의 보고서 옆에 둔다(예: `RESULTS_DIR=docs/research/guest-match-throughput/results`).
+
+## 알림 발송 장애 측정
+
+운영 앱이 합성 사용자에게 새 혜택 알림을 보내는 동안 장애를 주입해 유실·중복·복구 시간을 재는 절차다(#137, 플랜 [`docs/plans/137-notify-send-fault-baseline.md`](../plans/137-notify-send-fault-baseline.md), 보고서는 측정 뒤 `docs/research/notify-send-fault-baseline.md`). 위의 API 부하 테스트와 따로 하며, 부하 생성 VM에서 사람이 지켜보지 않고 돌린다(00:00 이후 시작, 7시간 안팎). 스크립트는 `scripts/loadtest/notify/`에 있다.
+
+| 무엇 | 어디에 |
+| --- | --- |
+| 가짜 SES | `fake_ses.py`. `run.sh`가 시나리오마다 부하 생성 VM에서 새로 띄운다. 앱이 부르는 주소는 `10.10.0.14:8025`, 관리 경로는 `127.0.0.1:8026`. 지연은 실제 SES 사전 측정의 표본(`docs/research/notify-send-fault-baseline/results/ses-probe/latency-ms.txt`), 속도 제한은 초당 14건·용량 145건 |
+| 측정용 실행 구성 | `compose.notify-fault.yaml`. `switch.sh on`이 app VM에 복사하고 app만 다시 만든다. 가짜 SES 주소, 가짜 접근 키, 수집·묶기·인증 기록 파기 끄기. `app.env`는 고치지 않는다 |
+| 합성 데이터 | `data.sh`. 가짜 새 혜택 3건(`new_benefit.created_at = 2000-01-01`), 사용자 1만 명(`notify-00001@loadtest.invalid` \~), 사용자마다 발송 대기 묶음 하나. 시나리오마다 넣고 지운다 |
+| 시나리오 | `run.sh all`이 `outage-1h` → `normal` → `kill` → `deploy` → `response-loss` → `outage-10m` → `account-mail` → `notify-off`를 차례로 잰다. 값은 `run.sh` 머리말 |
+| 결과 | `docs/research/notify-send-fault-baseline/results/<시각>-all/<시나리오>/`, 요약은 `<시각>-all/finish.txt` |
+
+지킬 것:
+
+- 00:00 이후에 시작한다. 합성 묶음은 그날 24:00까지만 보내므로, `run.sh`는 23:50 안에 끝나지 않을 수 있으면 시작하지 않는다. 예약 작업을 끄므로 04:00 수집, 08:00 묶기와는 겹쳐도 된다. 그날 수집은 하루 늦게 반영된다.
+- 측정하는 동안 배포하지 않는다. `scripts/deploy.sh`와 서비스 이름 없는 `docker compose up -d`는 덮어쓰기 파일 없이 app을 다시 만들어 실제 SES로 보낸다.
+- 합성 데이터가 0건이 아니면 실제 SES 설정으로 되돌리지 않는다. 남은 `.invalid` 주소로 실제 SES가 보내면 반송이 생겨 SES 계정 평판이 떨어진다. `switch.sh off`가 이를 확인한다.
+
+### 준비(20분 정도)
+
+1. SES 콘솔(서울 리전) **Account dashboard**에서 하루 할당량과 초당 한도를 적어 둔다.
+2. 내 PC의 저장소 루트에서 app VM의 실제 SES 지연을 잰다. 메일박스 시뮬레이터로만 100통을 보내고, 운영 앱 이미지와 `app.env`를 일회용 컨테이너로 쓰므로 키는 VM 밖으로 나오지 않는다. 실행 중인 앱은 건드리지 않는다.
+
+   ```bash
+   scripts/loadtest/notify/ses-probe/ses-probe.sh app-vm
+   ```
+
+   `[latency]`의 p50이 2026-11-09 내 PC 값(131.5ms)과 20% 넘게 다르면 지연 표본을 바꾸고 커밋·push한다: `scripts/loadtest/notify/ses-probe/ses-probe.sh latency <결과 디렉터리>/results.jsonl`
+3. 부하 생성 VM을 켜고 접속해 `tmux`를 열고 저장소를 맞춘다(1. 준비의 2\~3과 같다). 머지 전이면 브랜치로 바꾼다.
+4. Tunnel을 멈춘다(3. API 막기와 같다): `ssh govbenefit-app 'cd /opt/gov-benefit/app && docker compose stop cloudflared'`
+5. 측정용 실행 구성으로 바꾼다. app이 UP이 되면 합성 사용자 1명의 묶음을 가짜 SES가 접수하는지 보고 지운다.
+
+   ```bash
+   scripts/loadtest/notify/switch.sh on
+   ```
+
+6. 100명으로 짧게 확인한다. `[normal]` 요약에 묶음 100건 `ACCEPTED`, 못 받은 묶음 0, 중복 0이 나오면 된다.
+
+   ```bash
+   USERS=100 IDLE_END_S=30 SKIP_METRICS=1 RESULTS_DIR=/tmp/notify-check scripts/loadtest/notify/run.sh normal
+   ```
+
+7. 측정을 시작하고 `tmux`에서 빠져나온다(`Ctrl+b` 다음 `d`). 7시간 안팎 걸린다.
+
+   ```bash
+   scripts/loadtest/notify/run.sh all
+   ```
+
+`run.sh all`은 끝나거나 중간에 실패하면 스스로 정리한다: 합성 데이터 지우기 → 0건 확인 → `switch.sh off`(기본 실행 구성으로 app 재생성, 실행 구성 파일 해시와 `APP_TAG`를 측정 전과 비교) → Tunnel 켜기. 합성 데이터가 남으면 측정용 실행 구성과 Tunnel 정지를 그대로 두고 멈춘다. 시나리오가 예상 시간의 2배를 넘기면 그 상태로 기록하고 다음 시나리오로 넘어간다.
+
+### 끝난 뒤
+
+1. `finish.txt`를 본다. 남은 합성 데이터가 모두 0이고, `switch.sh off`가 `yes`, Tunnel이 실행 중이어야 한다. 시나리오별 집계도 여기 있다.
+
+   ```bash
+   cat docs/research/notify-send-fault-baseline/results/*-all/finish.txt
+   ```
+
+2. `curl -s -o /dev/null -w '%{http_code}\n' https://api.govbenefit.kr/api/profile/options`가 `200`이다.
+3. SES 콘솔 **Account dashboard**의 발송 지표나 CloudWatch `AWS/SES`의 `Send`에 측정 시간대(사전 측정 100통 제외)의 발송이 없다.
+4. 결과를 내 PC로 가져와 커밋한다(5. 끝난 뒤의 4와 같다. `results=docs/research/notify-send-fault-baseline/results`).
+
+| 결과 파일(시나리오마다) | 내용 |
+| --- | --- |
+| `meta.json` | 이미지 태그, 실행 구성 해시, 시나리오 값, 시각(시작, 데이터 넣음, 첫 요청, 끝), 끝난 이유(`done`·`timeout`) |
+| `fake-ses.jsonl.gz` | 가짜 SES가 받은 요청 전체(도착 시각, 수신 주소, 종류, 결과, 응답 시각) |
+| `digests.tsv` | 끝났을 때 합성 묶음의 상태, 시도 횟수, 마지막 오류, 접수 시각 |
+| `injections.tsv` | 주입 시각. 강제 종료·배포는 회차별 명령·완료·UP 시각 |
+| `notify-off.tsv`, `k6-summary.json` | 알림을 끈 사용자와 UPDATE 전후 시각, 계정 메일 요청 k6 요약 |
+| `app-log.txt.gz` | 측정 구간의 앱 로그(배포로 지워진 이전 컨테이너 로그 포함) |
+| `prometheus.json` | 같은 구간의 서버 지표. `scheduled_task_*`가 예약 작업 실행 기록이다 |
+| `counts.json`, `counts.txt` | `count.py`의 집계. 다시 셀 때: `python3 scripts/loadtest/notify/count.py <결과 디렉터리>` |
+
+### 자동 정리가 멈췄을 때
+
+`finish.txt`에 합성 데이터가 남았다고 나오거나, `run.sh`가 강제로 끝나(부하 생성 VM 재시작 등) `finish.txt`가 없을 때 부하 생성 VM의 저장소에서 차례로 한다.
+
+1. 남은 가짜 SES와 k6를 멈춘다: `pkill -f fake_ses.py; docker stop notify-account-mail`
+2. 합성 데이터를 지우고 모두 0인지 본다: `scripts/loadtest/notify/data.sh cleanup`
+3. 기본 실행 구성으로 되돌린다: `scripts/loadtest/notify/switch.sh off`
+4. Tunnel을 켠다: `ssh govbenefit-app 'cd /opt/gov-benefit/app && docker compose start cloudflared'`
+
+`switch.sh status`로 지금 실행 구성, Tunnel, 덮어쓰기 파일을 볼 수 있다.
+
+### 로컬 리허설
+
+스크립트를 고쳤으면 운영에서 재기 전에 로컬에서 끝까지 돌려 본다. 로컬 compose MySQL이 떠 있어야 한다.
+
+```bash
+scripts/loadtest/notify/rehearsal/setup.sh /tmp/notify-rehearsal   # 지금 코드로 이미지를 만들고 app을 띄운다
+# setup.sh가 출력한 export 줄을 실행한 뒤
+scripts/loadtest/notify/switch.sh on
+(cd /tmp/notify-rehearsal && docker compose stop cloudflared)
+USERS=300 IDLE_END_S=40 EXPECTED_MIN=6 KILLS=2 KILL_MIN_S=10 KILL_MAX_S=15 DEPLOY_AT_MIN=0.3 \
+  OUTAGE_LONG_MIN=1 OUTAGE_SHORT_MIN=0.5 MAIL_MINUTES=1 PEAK_START_MIN=0 PEAK_MIN=1 PEAK_RATE=5 \
+  NOTIFY_OFF_USERS=30 NOTIFY_OFF_BATCHES=5 NOTIFY_OFF_WINDOW_MIN=1 RESULTS_DIR=/tmp/notify-rehearsal/results \
+  scripts/loadtest/notify/run.sh all
+```
+
+끝나면 `cd /tmp/notify-rehearsal && docker compose down`으로 리허설 app을 내린다.
