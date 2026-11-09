@@ -1,0 +1,16 @@
+# 알림 발송 장애 측정(#137)의 측정용 실행 구성. switch.sh on이 app VM의 /opt/gov-benefit/app/에 복사하고
+# `docker compose -f compose.yaml -f compose.notify-fault.yaml up -d app`으로 app만 다시 만든다. switch.sh off가 지운다.
+# environment는 env_file(app.env)보다 우선한다. app.env는 고치지 않는다.
+services:
+  app:
+    environment:
+      # SES 요청을 부하 생성 VM의 가짜 SES로 보낸다(auth.mail.ses.endpoint). 리허설은 NOTIFY_FAKE_SES_URL로 바꾼다.
+      AUTH_MAIL_SES_ENDPOINT: ${NOTIFY_FAKE_SES_URL:-http://10.10.0.14:8025}
+      # 가짜 접근 키. 설정을 잘못해 실제 SES에 닿아도 인증에서 거절돼 메일이 나가지 않는다. 실제 키가 아니다.
+      SES_ACCESS_KEY_ID: AKIANOTIFYFAULTFAKE00
+      SES_SECRET_ACCESS_KEY: notify-fault-fake-secret-not-a-real-key
+      # 측정하는 동안 수집(04:00), 인증 기록 파기(04:30), 묶기(08:00)를 끈다. 발송과 같은 스케줄러 스레드를 붙잡거나
+      # 묶기가 합성 사용자를 건드리지 않게 한다. cron 값 "-"는 그 작업을 등록하지 않는다.
+      GOV24_SCHEDULE_ENABLED: "false"
+      NOTIFICATION_NEWBENEFIT_DIGESTCRON: "-"
+      AUTH_EMAILVERIFICATION_PURGECRON: "-"
