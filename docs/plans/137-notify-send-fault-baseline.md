@@ -151,7 +151,7 @@ status: in-progress
 2. **실제 SES 사전 측정** `scripts/loadtest/notify/ses-probe/`
    - `SesRealProbe.java`: 앱과 같은 클라이언트 설정. 기본 모드(차례로 100건 + 동시 60건)와 `MODE=sustained`(초당 N건 M초). 시뮬레이터 주소로만 보낸다. 속도 초과·연결 오류가 아닌 실패면 멈춘다.
    - `ses-probe.sh local`: `backend/`의 런타임 클래스패스를 init script로 구해 `java`로 실행한다. SES 값은 환경 변수로만 받는다.
-   - `ses-probe.sh app-vm`: 내 PC에서 컴파일한 클래스를 app VM의 `/opt/gov-benefit/loadtest/ses-probe/`에 복사한 뒤, 운영 앱 이미지의 일회용 컨테이너에서 차례로 100건만 실행하고 결과를 가져온다(설계 4).
+   - `ses-probe.sh app-vm`: 내 PC에서 컴파일한 클래스를 app VM의 임시 디렉터리(`/tmp/ses-probe.*`, 끝나면 지운다)에 복사한 뒤, 운영 앱 이미지의 일회용 컨테이너에서 차례로 100건만 실행하고 결과를 가져온다(설계 4).
    - `ses-probe.sh latency <results.jsonl>`: 지연 단계의 성공 지연으로 `latency-ms.txt`를 만든다.
    - 2026-11-09 결과를 `docs/research/notify-send-fault-baseline/results/ses-probe/2026-11-09-local/`로 옮기고, `latency-ms.txt`(차례로 보낸 100건, p50 131.5ms)를 만든다.
 3. **합성 데이터** `scripts/loadtest/notify/sql/`, `scripts/loadtest/notify/data.sh`

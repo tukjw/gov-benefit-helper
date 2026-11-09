@@ -23,7 +23,6 @@ probe_root=$repo_root/docs/research/notify-send-fault-baseline/results/ses-probe
 build=$repo_root/backend/build/ses-probe
 app_host=${APP_HOST:-govbenefit-app}
 app_dir=${APP_DIR:-/opt/gov-benefit/app}
-remote=/opt/gov-benefit/loadtest/ses-probe
 
 # backend의 런타임 클래스패스(AWS SDK 포함). 앱과 같은 SDK 버전으로 잰다.
 runtime_classpath() {
@@ -54,7 +53,10 @@ case $1 in
     cp=$(runtime_classpath)
     rm -rf "$build" && mkdir -p "$build/classes"
     javac --release 21 -cp "$cp" -d "$build/classes" "$script_dir/SesRealProbe.java"
-    ssh "$app_host" "rm -rf $remote && mkdir -p $remote/out"
+    # app VM의 SSH 사용자는 /opt/gov-benefit 아래에 쓸 수 없다. 임시 디렉터리를 쓰고 끝나면 지운다.
+    remote=$(ssh "$app_host" "mktemp -d /tmp/ses-probe.XXXXXX")
+    trap 'ssh "$app_host" "rm -rf $remote"' EXIT
+    ssh "$app_host" "mkdir $remote/out"
     scp -q -r "$build/classes" "$app_host:$remote/"
     # compose run은 app 서비스의 이미지 태그와 env_file(app.env)을 그대로 쓴다. docker run --env-file은 값의 따옴표를
     # 벗기지 않아 SES_FROM이 달라진다. 포트를 열지 않는 일회용 컨테이너라 실행 중인 앱과 겹치지 않는다.
@@ -65,7 +67,6 @@ case $1 in
       'java -Djarmode=tools -jar /app/app.jar extract --destination /tmp/app > /dev/null && exec java -cp \"/tmp/app/lib/*:/probe\" SesRealProbe'"
     mkdir -p "$out"
     scp -q "$app_host:$remote/out/*" "$out/"
-    ssh "$app_host" "rm -rf $remote"
     echo "결과: $out"
     ;;
   latency)
