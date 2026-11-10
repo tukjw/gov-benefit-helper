@@ -154,7 +154,7 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 
 ## 알림 발송 장애 측정
 
-운영 앱이 합성 사용자에게 새 혜택 알림을 보내는 동안 장애를 주입해 유실·중복·복구 시간을 재는 절차다(#137, 플랜 [`docs/plans/137-notify-send-fault-baseline.md`](../plans/137-notify-send-fault-baseline.md), 보고서는 측정 뒤 `docs/research/notify-send-fault-baseline.md`). 위의 API 부하 테스트와 따로 하며, 부하 생성 VM에서 사람이 지켜보지 않고 돌린다(00:00 이후 시작, 7시간 안팎). 스크립트는 `scripts/loadtest/notify/`에 있다.
+운영 앱이 합성 사용자에게 새 혜택 알림을 보내는 동안 장애를 주입해 유실·중복·복구 시간을 재는 절차다(#137, 플랜 [`docs/plans/137-notify-send-fault-baseline.md`](../plans/137-notify-send-fault-baseline.md), 보고서 [`docs/research/notify-send-fault-baseline.md`](../research/notify-send-fault-baseline.md)). 위의 API 부하 테스트와 따로 하며, 부하 생성 VM에서 사람이 지켜보지 않고 돌린다(00:00 이후 시작, 7시간 안팎). 스크립트는 `scripts/loadtest/notify/`에 있다.
 
 | 무엇 | 어디에 |
 | --- | --- |
@@ -212,7 +212,14 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 
 2. `curl -s -o /dev/null -w '%{http_code}\n' https://api.govbenefit.kr/api/profile/options`가 `200`이다.
 3. SES 콘솔 **Account dashboard**의 발송 지표나 CloudWatch `AWS/SES`의 `Send`에 측정 시간대(사전 측정 100통 제외)의 발송이 없다.
-4. 결과를 내 PC로 가져와 커밋한다(5. 끝난 뒤의 4와 같다. `results=docs/research/notify-send-fault-baseline/results`).
+4. 결과를 내 PC로 가져와 커밋하고, 부하 생성 VM의 결과는 지운다. 내 PC의 저장소 루트에서 실행한다. `results/` 아래에는 저장소가 관리하는 `ses-probe/`도 있으므로 `results/` 전체가 아니라 측정한 디렉터리만 지정한다.
+
+   ```bash
+   results=docs/research/notify-send-fault-baseline/results
+   run=<시각>-all   # finish.txt가 있는 디렉터리 이름
+   scp -r "govbenefit-loadgen:gov-benefit-helper/$results/$run" "$results/"
+   ssh govbenefit-loadgen "rm -rf gov-benefit-helper/$results/$run"
+   ```
 
 | 결과 파일(시나리오마다) | 내용 |
 | --- | --- |
@@ -224,6 +231,18 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
 | `app-log.txt.gz` | 측정 구간의 앱 로그(배포로 지워진 이전 컨테이너 로그 포함) |
 | `prometheus.json` | 같은 구간의 서버 지표. `scheduled_task_*`가 예약 작업 실행 기록이다 |
 | `counts.json`, `counts.txt` | `count.py`의 집계. 다시 셀 때: `python3 scripts/loadtest/notify/count.py <결과 디렉터리>` |
+
+### 시나리오 하나만 다시 잴 때
+
+`run.sh <시나리오>`는 그 시나리오의 합성 데이터만 정리하고, 실행 구성과 Tunnel은 되돌리지 않는다. 부하 생성 VM의 `tmux`에서 차례로 한다(준비의 3\~5를 먼저 한다).
+
+```bash
+scripts/loadtest/notify/run.sh kill
+scripts/loadtest/notify/switch.sh off
+ssh govbenefit-app 'cd /opt/gov-benefit/app && docker compose start cloudflared'
+```
+
+결과는 `results/<시각>-<시나리오>/`에 생긴다. 가져오기와 지우기는 끝난 뒤의 4와 같다.
 
 ### 자동 정리가 멈췄을 때
 
