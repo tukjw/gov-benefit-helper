@@ -131,6 +131,15 @@ def kind_of(subject):
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "fake-ses"
+    # 응답의 헤더와 본문을 한 번에, 곧바로 보낸다. 따로 쓰고 Nagle을 켜 두면 본문이 클라이언트의 지연 ACK(리눅스 약 40ms)를
+    # 기다렸다 나가, 요청마다 그만큼 늦어진다(2026-11-10 첫 측정의 도구 오차).
+    disable_nagle_algorithm = True
+    wbufsize = 64 * 1024
+
+    def handle_expect_100(self):
+        ok = super().handle_expect_100()
+        self.wfile.flush()
+        return ok
 
     def log_message(self, fmt, *args):
         pass
