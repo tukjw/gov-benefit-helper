@@ -121,6 +121,11 @@ def main():
     total_s = (last_accept - first) if first and last_accept else None
     accepted_first = len(accepted_by_to)
 
+    # 응답을 보낸 뒤 다음 요청이 올 때까지(앱이 기록하고 다음 묶음을 준비하는 시간)와 요청 간격
+    after_response = [(b["arrived"] - a["responded"]) * 1000
+                      for a, b in zip(digest_records, digest_records[1:]) if a.get("responded")]
+    intervals = [(b - a) * 1000 for a, b in zip(arrivals, arrivals[1:])]
+
     counts = {
         "scenario": scenario,
         "users": meta["users"],
@@ -142,6 +147,8 @@ def main():
             "lastAcceptance": last_accept,
             "totalSeconds": rnd(total_s),
             "acceptedPerSecond": rnd(accepted_first / total_s, 2) if total_s else None,
+            "responseToNextRequestMs": {"p50": rnd(pct(after_response, 50)), "p90": rnd(pct(after_response, 90))},
+            "requestIntervalMs": {"p50": rnd(pct(intervals, 50)), "p90": rnd(pct(intervals, 90))},
             "firstAcceptanceDelaySeconds": {"p50": rnd(pct(first_accept_delay, 50)),
                                             "p90": rnd(pct(first_accept_delay, 90)),
                                             "max": rnd(max(first_accept_delay) if first_accept_delay else None)},
@@ -236,6 +243,8 @@ def print_summary(c):
     print(f"  중복 접수 {c['duplicates']['extraAcceptances']}건(주소 {c['duplicates']['addresses']}개)")
     print(f"  총 소요 {t['totalSeconds']}초(첫 요청 → 마지막 접수), 초당 접수 {t['acceptedPerSecond']}, "
           f"첫 접수까지 p50 {t['firstAcceptanceDelaySeconds']['p50']}초, 최대 {t['firstAcceptanceDelaySeconds']['max']}초")
+    print(f"  요청 간격 p50 {t['requestIntervalMs']['p50']}ms(p90 {t['requestIntervalMs']['p90']}ms), "
+          f"응답 → 다음 요청 p50 {t['responseToNextRequestMs']['p50']}ms(p90 {t['responseToNextRequestMs']['p90']}ms)")
     for r in c.get("rounds", []):
         print(f"  {r['round']}회차 {r['kind']}: UP까지 {r['cmdToUpSeconds']}초, 재개까지 {r['cmdToResumeSeconds']}초"
               f"(UP 뒤 {r['upToResumeSeconds']}초), 끊긴 시간 {r['gapSeconds']}초, 명령 뒤 마지막 요청 "

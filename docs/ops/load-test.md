@@ -188,7 +188,7 @@ rate-40: 목표 40/s, 응답 7202건(39.9/s), p50 21.3ms, p95 48.0ms, p99 75.2ms
    scripts/loadtest/notify/switch.sh on
    ```
 
-6. 100명으로 짧게 확인한다. `[normal]` 요약에 묶음 100건 `ACCEPTED`, 못 받은 묶음 0, 중복 0이 나오면 된다.
+6. 100명으로 짧게 확인한다. `[normal]` 요약에 묶음 100건 `ACCEPTED`, 못 받은 묶음 0, 중복 0이 나오면 된다. `응답 → 다음 요청` p50이 30ms를 넘으면 가짜 SES의 응답이 늦게 나가고 있는 것이니 시작하지 않는다(2026-11-10 첫 측정은 Nagle과 지연 ACK 때문에 59ms였다).
 
    ```bash
    USERS=100 IDLE_END_S=30 SKIP_METRICS=1 RESULTS_DIR=/tmp/notify-check scripts/loadtest/notify/run.sh normal
