@@ -1,0 +1,175 @@
+{
+  "scenario": "kill",
+  "users": 10000,
+  "endReason": "done",
+  "digests": {
+    "total": 10000,
+    "byStatus": {
+      "ACCEPTED": 10000
+    },
+    "toSend": 10000
+  },
+  "requests": {
+    "digest": 10010,
+    "byResult": {
+      "accepted": 10008,
+      "accepted_held": 2
+    },
+    "clientGone": 0
+  },
+  "lost": {
+    "total": 0,
+    "byStatus": {},
+    "silent": 0
+  },
+  "duplicates": {
+    "extraAcceptances": 10,
+    "addresses": 10
+  },
+  "unfinished": 0,
+  "finalFailed": 0,
+  "acceptedUnknownAddresses": 0,
+  "timing": {
+    "firstRequest": 1794271920.0327828,
+    "lastAcceptance": 1794274151.1469648,
+    "totalSeconds": 2231.1,
+    "acceptedPerSecond": 4.48,
+    "firstAcceptanceDelaySeconds": {
+      "p50": 1193.0,
+      "p90": 2036.8,
+      "max": 2231.1
+    }
+  },
+  "rounds": [
+    {
+      "round": "1",
+      "kind": "kill",
+      "detail": "interval=94.3",
+      "lastBeforeStopAfterCmdSeconds": 0.88,
+      "cmdToUpSeconds": 9.19,
+      "upToResumeSeconds": 16.83,
+      "cmdToResumeSeconds": 26.02,
+      "gapSeconds": 25.14,
+      "duplicates": 1
+    },
+    {
+      "round": "2",
+      "kind": "kill",
+      "detail": "interval=114.6",
+      "lastBeforeStopAfterCmdSeconds": 1.08,
+      "cmdToUpSeconds": 9.26,
+      "upToResumeSeconds": 26.07,
+      "cmdToResumeSeconds": 35.34,
+      "gapSeconds": 34.25,
+      "duplicates": 1
+    },
+    {
+      "round": "3",
+      "kind": "kill",
+      "detail": "interval=149.4",
+      "lastBeforeStopAfterCmdSeconds": 1.27,
+      "cmdToUpSeconds": 9.45,
+      "upToResumeSeconds": 20.83,
+      "cmdToResumeSeconds": 30.28,
+      "gapSeconds": 29.01,
+      "duplicates": 1
+    },
+    {
+      "round": "4",
+      "kind": "kill",
+      "detail": "interval=103.9",
+      "lastBeforeStopAfterCmdSeconds": 1.05,
+      "cmdToUpSeconds": 9.26,
+      "upToResumeSeconds": 6.78,
+      "cmdToResumeSeconds": 16.04,
+      "gapSeconds": 14.99,
+      "duplicates": 1
+    },
+    {
+      "round": "5",
+      "kind": "kill",
+      "detail": "interval=110.9",
+      "lastBeforeStopAfterCmdSeconds": 0.98,
+      "cmdToUpSeconds": 8.93,
+      "upToResumeSeconds": -0.0,
+      "cmdToResumeSeconds": 8.93,
+      "gapSeconds": 7.95,
+      "duplicates": 1
+    },
+    {
+      "round": "6",
+      "kind": "kill",
+      "detail": "interval=139.2",
+      "lastBeforeStopAfterCmdSeconds": 1.13,
+      "cmdToUpSeconds": 9.21,
+      "upToResumeSeconds": 0.97,
+      "cmdToResumeSeconds": 10.19,
+      "gapSeconds": 9.06,
+      "duplicates": 1
+    },
+    {
+      "round": "7",
+      "kind": "kill",
+      "detail": "interval=144.0",
+      "lastBeforeStopAfterCmdSeconds": 1.02,
+      "cmdToUpSeconds": 9.24,
+      "upToResumeSeconds": 26.74,
+      "cmdToResumeSeconds": 35.97,
+      "gapSeconds": 34.96,
+      "duplicates": 1
+    },
+    {
+      "round": "8",
+      "kind": "hold",
+      "detail": "interval=120.9",
+      "lastBeforeStopAfterCmdSeconds": -0.05,
+      "cmdToUpSeconds": 9.28,
+      "upToResumeSeconds": 19.63,
+      "cmdToResumeSeconds": 28.91,
+      "gapSeconds": 28.96,
+      "duplicates": 1
+    },
+    {
+      "round": "9",
+      "kind": "hold",
+      "detail": "interval=147.7",
+      "lastBeforeStopAfterCmdSeconds": -0.08,
+      "cmdToUpSeconds": 9.5,
+      "upToResumeSeconds": 22.55,
+      "cmdToResumeSeconds": 32.05,
+      "gapSeconds": 32.13,
+      "duplicates": 1
+    },
+    {
+      "round": "10",
+      "kind": "kill",
+      "detail": "interval=140.4",
+      "lastBeforeStopAfterCmdSeconds": 1.18,
+      "cmdToUpSeconds": 9.52,
+      "upToResumeSeconds": -0.02,
+      "cmdToResumeSeconds": 9.49,
+      "gapSeconds": 8.32,
+      "duplicates": 1
+    }
+  ],
+  "duplicatesBeforeFirstRound": 0,
+  "appLog": {
+    "sendRuns": 1,
+    "sendRunMaxMs": 731317,
+    "sendRunInterrupted": 0,
+    "signupMailFailures": 0,
+    "appStarts": 10,
+    "appStartSeconds": [
+      6.608,
+      6.414,
+      6.155,
+      6.424,
+      6.132,
+      6.233,
+      6.374,
+      6.126,
+      6.353,
+      6.404
+    ]
+  }
+}

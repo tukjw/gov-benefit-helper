@@ -1,0 +1,51 @@
+{
+  "scenario": "outage-1h",
+  "users": 10000,
+  "endReason": "done",
+  "digests": {
+    "total": 10000,
+    "byStatus": {
+      "ACCEPTED": 10000
+    },
+    "toSend": 10000
+  },
+  "requests": {
+    "digest": 28335,
+    "byResult": {
+      "outage": 18335,
+      "accepted": 10000
+    },
+    "clientGone": 0
+  },
+  "lost": {
+    "total": 0,
+    "byStatus": {},
+    "silent": 0
+  },
+  "duplicates": {
+    "extraAcceptances": 0,
+    "addresses": 0
+  },
+  "unfinished": 0,
+  "finalFailed": 0,
+  "acceptedUnknownAddresses": 0,
+  "timing": {
+    "firstRequest": 1794242790.0259292,
+    "lastAcceptance": 1794248370.0121763,
+    "totalSeconds": 5580.0,
+    "acceptedPerSecond": 1.79,
+    "firstAcceptanceDelaySeconds": {
+      "p50": 4603.6,
+      "p90": 5376.6,
+      "max": 5580.0
+    }
+  },
+  "appLog": {
+    "sendRuns": 4,
+    "sendRunMaxMs": 1966348,
+    "sendRunInterrupted": 0,
+    "signupMailFailures": 0,
+    "appStarts": 0,
+    "appStartSeconds": []
+  }
+}
