@@ -418,7 +418,7 @@ jq -n \
   --argjson tStart "$t_start" --argjson tSeeded "$t_seeded" --argjson t0 "$t0" --argjson tEnd "$t_end" \
   --arg endReason "$end_reason" --argjson idleEndS "$idle_end_s" --argjson timeoutMin "$(timeout_min "$scenario")" \
   --arg params "OUTAGE_LONG_MIN=${OUTAGE_LONG_MIN:-60} OUTAGE_SHORT_MIN=${OUTAGE_SHORT_MIN:-10} KILLS=${KILLS:-10} \
-HOLD_KILLS=${HOLD_KILLS:-2} KILL_MIN_S=${KILL_MIN_S:-90} KILL_MAX_S=${KILL_MAX_S:-150} DEPLOY_AT_MIN=${DEPLOY_AT_MIN:-5 12 19} \
+HOLD_KILLS=${HOLD_KILLS:-2} KILL_MIN_S=${KILL_MIN_S:-90} KILL_MAX_S=${KILL_MAX_S:-150} DEPLOY_AT_MIN=$(tr ' ' , <<< "${DEPLOY_AT_MIN:-5 12 19}") \
 LATE_EVERY=${LATE_EVERY:-100} LATE_S=${LATE_S:-15} MAIL_MINUTES=${MAIL_MINUTES:-30} BASE_RATE=${BASE_RATE:-1} \
 PEAK_RATE=${PEAK_RATE:-10} PEAK_START_MIN=${PEAK_START_MIN:-5} PEAK_MIN=${PEAK_MIN:-2} \
 NOTIFY_OFF_USERS=${NOTIFY_OFF_USERS:-1000} NOTIFY_OFF_BATCHES=${NOTIFY_OFF_BATCHES:-100} \
