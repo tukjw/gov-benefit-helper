@@ -69,10 +69,11 @@ def as_float(text):
     return float(text) if text not in (None, "") else None
 
 
-def resume_after(arrivals, t_cmd, t_up):
-    """명령 뒤 처음으로 RESUME_GAP_S초 이상 끊긴 구간. 다시 시작한 요청은 UP(없으면 명령) 뒤여야 한다."""
+def resume_after(arrivals, t_cmd, t_done):
+    """명령 뒤 처음으로 RESUME_GAP_S초 이상 끊긴 구간. 다시 시작한 요청은 명령이 끝난 뒤(이전 프로세스가 끝난 뒤)여야 한다.
+    UP 뒤로 두지 않는다. 헬스 체크는 1초마다라서 발송이 UP을 보기 직전에 다시 시작하기도 한다."""
     start = t_cmd - 2
-    after = t_up if t_up is not None else t_cmd
+    after = t_done if t_done is not None else t_cmd
     previous = None
     for arrived in arrivals:
         if arrived < start:
@@ -157,7 +158,7 @@ def main():
         t_cmd = float(row["t_cmd"])
         t_up = as_float(row.get("t_up"))
         next_cmd = float(restarts[i + 1]["t_cmd"]) if i + 1 < len(restarts) else math.inf
-        last_before, resumed = resume_after(arrivals, t_cmd, t_up)
+        last_before, resumed = resume_after(arrivals, t_cmd, as_float(row.get("t_done")))
         rounds.append({
             "round": row["round"], "kind": row["kind"], "detail": row.get("detail", ""),
             "lastBeforeStopAfterCmdSeconds": rnd(last_before - t_cmd, 2) if last_before else None,
