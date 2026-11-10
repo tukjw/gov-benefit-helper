@@ -229,7 +229,8 @@ for i in range(n):
     print(i + 1, f'{intervals[i]:.1f}', 'hold' if i in hold else 'kill')
 ")
   ref=$t0
-  while read -r round interval type; do
+  # 계획은 3번 파일 설명자로 읽는다. 루프 안의 명령이 표준 입력을 읽어도 남은 회차가 사라지지 않는다.
+  while read -r round interval type <&3; do
     sleep_until "$(calc "$ref + $interval")"
     if ! wait_sending 180; then
       log "발송이 끝나 ${round}회차부터 강제 종료하지 않는다."
@@ -255,7 +256,7 @@ for i in range(n):
     log "${round}회차 강제 종료($type), 다시 UP까지 $(calc "${t_up:-$t_done} - $t_cmd")초"
     t_resume=$(wait_arrival_after "${t_up:-$t_done}" 180) || t_resume=$(now)
     ref=$t_resume
-  done <<< "$plan"
+  done 3<<< "$plan"
 }
 
 inject_deploy() {

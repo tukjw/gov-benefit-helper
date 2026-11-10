@@ -43,10 +43,11 @@ log() {
   echo "[$(TZ=Asia/Seoul date '+%H:%M:%S')] $*"
 }
 
-# app VM의 실행 구성 디렉터리에서 명령을 실행한다.
+# app VM의 실행 구성 디렉터리에서 명령을 실행한다. 표준 입력은 읽지 않는다(ssh -n). 읽으면 `while read` 루프 안에서
+# 부를 때 루프의 남은 입력을 삼킨다(2026-11-10 운영 측정의 kill이 1회차에서 멈춘 원인).
 on_app() {
   local command="cd $app_dir && $1"
-  if [[ $app_host == local ]]; then bash -c "$command"; else ssh "$app_host" "$command"; fi
+  if [[ $app_host == local ]]; then bash -c "$command" < /dev/null; else ssh -n "$app_host" "$command"; fi
 }
 
 copy_to_app() {
