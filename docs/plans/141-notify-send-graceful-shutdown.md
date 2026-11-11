@@ -1,4 +1,4 @@
-status: in-progress
+status: done
 
 # 구현 계획 — #141 배포할 때 새 혜택 알림이 두 번 나가지 않게 발송 종료 처리 개선
 
@@ -112,7 +112,7 @@ scripts/loadtest/notify/rehearsal/setup.sh /tmp/notify-rehearsal
 # setup.sh가 출력한 export 줄을 실행한 뒤
 scripts/loadtest/notify/switch.sh on
 (cd /tmp/notify-rehearsal && docker compose stop cloudflared)
-USERS=300 IDLE_END_S=40 EXPECTED_MIN=6 DEPLOY_AT_MIN=0.3 RESULTS_DIR=/tmp/notify-rehearsal/results \
+USERS=1000 IDLE_END_S=40 EXPECTED_MIN=10 DEPLOY_AT_MIN="0.5 1.5 2.5" RESULTS_DIR=/tmp/notify-rehearsal/results \
   scripts/loadtest/notify/run.sh deploy
 ```
 
@@ -152,12 +152,12 @@ USERS=300 IDLE_END_S=40 EXPECTED_MIN=6 DEPLOY_AT_MIN=0.3 RESULTS_DIR=/tmp/notify
 
 ## 완료 조건 매핑
 
-- [ ] 발송 중 배포 3번(#137 `deploy`와 같은 조건)에서 중복 접수가 0건이다. 가짜 SES 기록과 묶음 상태를 대조해 센 값이다. → 설계 1·2·7. 단계 1·7·8.
-- [ ] 같은 측정에서 못 받은 묶음, 끝나지 않은 묶음, 최종 실패가 모두 0건이다. → 설계 2. 단계 7·8.
-- [ ] 회차마다 이전 앱이 종료 대기 안에 발송을 멈췄다는 근거가 있다. 멈추기 전에 남긴 발송 요약 로그와, 종료 신호 뒤 이전 앱의 마지막 요청 시각이다. → 설계 4. 단계 4·7·8.
-- [ ] 회차별로 다시 UP까지 걸린 시간과 발송이 재개될 때까지 걸린 시간이 #137 값과 함께 있다. → 단계 8.
-- [ ] 발송 중에 앱이 종료되면 보내던 묶음은 결과가 기록되고 다음 묶음은 보내지 않는다는 것을 테스트로 확인한다. → 설계 5. 단계 2.
-- [ ] 측정하는 동안 실제 SES로 나간 요청이 없었다는 확인 결과가 있다. 측정이 끝난 뒤 합성 데이터는 0건이고, 앱 설정과 Tunnel은 측정 전과 같다. → 설계 7. 단계 7(4·5)·8.
+- [x] 발송 중 배포 3번(#137 `deploy`와 같은 조건)에서 중복 접수가 0건이다. 가짜 SES 기록과 묶음 상태를 대조해 센 값이다. → 설계 1·2·7. 단계 1·7·8.
+- [x] 같은 측정에서 못 받은 묶음, 끝나지 않은 묶음, 최종 실패가 모두 0건이다. → 설계 2. 단계 7·8.
+- [x] 회차마다 이전 앱이 종료 대기 안에 발송을 멈췄다는 근거가 있다. 멈추기 전에 남긴 발송 요약 로그와, 종료 신호 뒤 이전 앱의 마지막 요청 시각이다. → 설계 4. 단계 4·7·8.
+- [x] 회차별로 다시 UP까지 걸린 시간과 발송이 재개될 때까지 걸린 시간이 #137 값과 함께 있다. → 단계 8.
+- [x] 발송 중에 앱이 종료되면 보내던 묶음은 결과가 기록되고 다음 묶음은 보내지 않는다는 것을 테스트로 확인한다. → 설계 5. 단계 2.
+- [x] 측정하는 동안 실제 SES로 나간 요청이 없었다는 확인 결과가 있다. 측정이 끝난 뒤 합성 데이터는 0건이고, 앱 설정과 Tunnel은 측정 전과 같다. → 설계 7. 단계 7(4·5)·8.
 
 ## 검증 명령
 
