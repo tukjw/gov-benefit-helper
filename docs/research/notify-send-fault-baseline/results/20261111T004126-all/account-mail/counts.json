@@ -1,0 +1,70 @@
+{
+  "scenario": "account-mail",
+  "users": 10000,
+  "endReason": "done",
+  "digests": {
+    "total": 10000,
+    "byStatus": {
+      "ACCEPTED": 10000
+    },
+    "toSend": 10000
+  },
+  "requests": {
+    "digest": 10050,
+    "byResult": {
+      "accepted": 10000,
+      "rate_limited": 50
+    },
+    "clientGone": 0
+  },
+  "lost": {
+    "total": 0,
+    "byStatus": {},
+    "silent": 0
+  },
+  "duplicates": {
+    "extraAcceptances": 0,
+    "addresses": 0
+  },
+  "unfinished": 0,
+  "finalFailed": 0,
+  "acceptedUnknownAddresses": 0,
+  "timing": {
+    "firstRequest": 1794341850.0128074,
+    "lastAcceptance": 1794343417.1897247,
+    "totalSeconds": 1567.2,
+    "acceptedPerSecond": 6.38,
+    "responseToNextRequestMs": {
+      "p50": 18.7,
+      "p90": 21.1
+    },
+    "requestIntervalMs": {
+      "p50": 112.0,
+      "p90": 266.9
+    },
+    "firstAcceptanceDelaySeconds": {
+      "p50": 777.3,
+      "p90": 1398.7,
+      "max": 1567.2
+    }
+  },
+  "accountMail": {
+    "k6Requests": 2881,
+    "k6Non2xx": 0,
+    "sesRequests": 2881,
+    "sesByResult": {
+      "accepted": 2802,
+      "rate_limited": 79
+    },
+    "accepted": 2802,
+    "failed": 79
+  },
+  "appLog": {
+    "sendRuns": 2,
+    "sendRunMaxMs": 1538824,
+    "sendRunInterrupted": 0,
+    "signupMailFailures": 79,
+    "appStarts": 0,
+    "appStartSeconds": []
+  }
+}

@@ -28,3 +28,7 @@ mysql_buffer_pool_disk_reads	step	rate(mysql_global_status_innodb_buffer_pool_re
 collection_runs	all	sum by (status) (collection_runs_total{job="app"})
 mail_requests	all	sum by (uri) (http_server_requests_seconds_count{job="app", uri=~"/api/auth/email-verification|/api/auth/password-reset"})
 app_requests_total	all	sum by (uri) (http_server_requests_seconds_count{job="app", uri!~"/actuator.*"})
+app_start_time	step	process_start_time_seconds{job="app"}
+scheduled_task_runs	step	sum by (code_function) (increase(tasks_scheduled_execution_seconds_count{job="app"}[1m]))
+scheduled_task_max	step	max by (code_function) (tasks_scheduled_execution_seconds_max{job="app"})
+scheduled_task_active_max	step	max by (code_function) (tasks_scheduled_execution_active_seconds_max{job="app"})
