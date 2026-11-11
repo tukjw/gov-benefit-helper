@@ -1,0 +1,3 @@
+round	kind	t_cmd	t_done	t_up	detail
+-	outage_on	1794325286.665858			status=500 code=InternalFailure
+-	outage_off	1794328890.058256			

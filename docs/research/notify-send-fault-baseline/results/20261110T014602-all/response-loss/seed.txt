@@ -1,4 +1,0 @@
-accounts	10000
-digests	10000
-fake_benefits	3
-signup_verifications	0
