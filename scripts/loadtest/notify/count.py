@@ -14,6 +14,8 @@ app-log.txt(.gz)
   ACCEPTED는 앱은 접수로 기록했는데 가짜 SES는 받은 적이 없는 묶음(조용한 유실)
 - 중복 접수: 같은 수신 주소의 두 번째 이후 접수
 - 재개: 강제 종료·배포 명령 뒤 알림 요청이 3초 이상 끊긴 구간. 끊기기 직전 요청과 다시 시작한 첫 요청의 시각
+- 멈춤 요약 로그: 명령부터 명령이 끝날 때까지 앱 로그에 남은 interrupted=true 발송 요약. 이전 앱이 종료 신호를 받고
+  발송을 멈췄다는 근거다(#141). 없으면 null
 - 알림을 끈 뒤 나간 알림: 끈 사용자의 접수 중 UPDATE를 마친 시각(after)보다 늦게 도착한 것(확실),
   UPDATE를 보내기 전(before)과 마친 시각 사이에 도착한 것(커밋 시각에 따라 다름)
 - 계정 메일 실패: k6가 204를 받은 인증번호 요청 수 - 가짜 SES가 접수한 계정 메일 수
@@ -24,6 +26,7 @@ import math
 import re
 import sys
 from collections import Counter, defaultdict
+from datetime import datetime
 from pathlib import Path
 
 ACCEPTED = {"accepted", "accepted_late", "accepted_held"}
@@ -32,6 +35,7 @@ SUMMARY = re.compile(r"새 혜택 알림 발송 accepted=(\d+) retrying=(\d+) fa
 SIGNUP_FAILURE = "가입 인증번호 메일을 보내지 못했습니다"
 STARTED = re.compile(r"Started \S+ in ([\d.]+) seconds")
 RESUME_GAP_S = 3.0
+LOG_TIME = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2})\s")
 
 
 def open_text(path):
@@ -161,10 +165,12 @@ def main():
     restarts = sorted((row for row in injections if row["kind"] in ("kill", "hold", "deploy")),
                       key=lambda row: float(row["t_cmd"]))
     duplicate_times = sorted(t for times in accepted_by_to.values() for t in sorted(times)[1:])
+    round_windows = []
     for i, row in enumerate(restarts):
         t_cmd = float(row["t_cmd"])
         t_up = as_float(row.get("t_up"))
         next_cmd = float(restarts[i + 1]["t_cmd"]) if i + 1 < len(restarts) else math.inf
+        round_windows.append((t_cmd, as_float(row.get("t_done")) or next_cmd))
         last_before, resumed = resume_after(arrivals, t_cmd, as_float(row.get("t_done")))
         rounds.append({
             "round": row["round"], "kind": row["kind"], "detail": row.get("detail", ""),
@@ -174,6 +180,7 @@ def main():
             "cmdToResumeSeconds": rnd(resumed - t_cmd, 2) if resumed else None,
             "gapSeconds": rnd(resumed - last_before, 2) if resumed and last_before else None,
             "duplicates": sum(1 for t in duplicate_times if t_cmd <= t < next_cmd),
+            "stopSummaryAfterCmdSeconds": None,
         })
     if rounds:
         counts["rounds"] = rounds
@@ -212,13 +219,17 @@ def main():
     # 앱 로그: 발송 요약(한 실행이 스케줄러 스레드를 붙잡은 시간), 계정 메일 실패, 앱 시작
     log = open_text(out / "app-log.txt")
     if log:
-        elapsed, interrupted, signup_failures, started = [], 0, 0, []
+        elapsed, interrupted, signup_failures, started, stop_summaries = [], 0, 0, [], []
         with log:
             for line in log:
                 m = SUMMARY.search(line)
                 if m:
                     elapsed.append(int(m.group(6)))
-                    interrupted += m.group(5) == "true"
+                    if m.group(5) == "true":
+                        interrupted += 1
+                        t = LOG_TIME.match(line)
+                        if t:
+                            stop_summaries.append(datetime.fromisoformat(t.group(1)).timestamp())
                 elif SIGNUP_FAILURE in line:
                     signup_failures += 1
                 else:
@@ -228,6 +239,9 @@ def main():
         counts["appLog"] = {"sendRuns": len(elapsed), "sendRunMaxMs": max(elapsed) if elapsed else None,
                             "sendRunInterrupted": interrupted, "signupMailFailures": signup_failures,
                             "appStarts": len(started), "appStartSeconds": started}
+        for r, (t_cmd, t_end) in zip(rounds, round_windows):
+            stops = [t for t in stop_summaries if t_cmd <= t <= t_end]
+            r["stopSummaryAfterCmdSeconds"] = rnd(stops[0] - t_cmd, 2) if stops else None
 
     (out / "counts.json").write_text(json.dumps(counts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print_summary(counts)
@@ -246,9 +260,11 @@ def print_summary(c):
     print(f"  요청 간격 p50 {t['requestIntervalMs']['p50']}ms(p90 {t['requestIntervalMs']['p90']}ms), "
           f"응답 → 다음 요청 p50 {t['responseToNextRequestMs']['p50']}ms(p90 {t['responseToNextRequestMs']['p90']}ms)")
     for r in c.get("rounds", []):
+        stop = r.get("stopSummaryAfterCmdSeconds")
         print(f"  {r['round']}회차 {r['kind']}: UP까지 {r['cmdToUpSeconds']}초, 재개까지 {r['cmdToResumeSeconds']}초"
               f"(UP 뒤 {r['upToResumeSeconds']}초), 끊긴 시간 {r['gapSeconds']}초, 명령 뒤 마지막 요청 "
-              f"{r['lastBeforeStopAfterCmdSeconds']}초, 중복 {r['duplicates']}")
+              f"{r['lastBeforeStopAfterCmdSeconds']}초, 멈춤 요약 로그 {'없음' if stop is None else f'{stop}초'}, "
+              f"중복 {r['duplicates']}")
     if "notifyOff" in c:
         n = c["notifyOff"]
         print(f"  알림 끄기 {n['users']}명: 끈 뒤 나간 알림 {n['sentAfterOff']}(UPDATE 중 {n['sentDuringOffUpdate']}), "

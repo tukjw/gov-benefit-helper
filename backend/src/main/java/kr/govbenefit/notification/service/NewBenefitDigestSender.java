@@ -13,6 +13,9 @@ import kr.govbenefit.notification.domain.NewBenefitDigestStatus;
 import kr.govbenefit.notification.repository.NewBenefitDigestRepository;
 import kr.govbenefit.notification.service.NewBenefitDigestSendWriter.NewBenefitDigestMail;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Limit;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -24,6 +27,9 @@ import org.springframework.stereotype.Component;
  *
  * <p>단일 인스턴스와 스케줄러 스레드 하나를 전제한다. 묶기({@link NewBenefitDigestBundler})와 같은 스레드라 둘이 함께 돌지 않는다.
  * SES가 접수한 뒤 결과를 기록하기 전에 끝나면 그 묶음은 다시 보낸다.
+ *
+ * <p>앱이 종료를 시작하면(컨텍스트 종료 이벤트) 다음 묶음을 다루지 않고 실행을 끝낸다(결정 0049). 보내던 메일은 끊지 않고
+ * 결과까지 기록하므로, 실행은 Spring의 종료 대기(30초) 안에 끝난다. 남은 묶음은 다음에 뜬 앱이 보낸다.
  */
 @Slf4j
 @Component
@@ -36,18 +42,23 @@ public class NewBenefitDigestSender {
     private final NewBenefitDigestSendWriter writer;
     private final AccountMailSender mailSender;
     private final Clock clock;
+    private final ApplicationContext applicationContext;
     private final String siteUrl;
     /** SES 호출 시작 사이의 최소 간격 */
     private final long intervalNanos;
     /** 다음 SES 호출을 시작해도 되는 시각({@link System#nanoTime()}) */
     private long nextSendNanos = System.nanoTime();
+    /** 앱이 종료를 시작했다. 한번 켜지면 끄지 않는다. */
+    private volatile boolean stopping;
 
     public NewBenefitDigestSender(NewBenefitDigestRepository digestRepository, NewBenefitDigestSendWriter writer,
-                                  AccountMailSender mailSender, Clock clock, NewBenefitSendProperties properties) {
+                                  AccountMailSender mailSender, Clock clock, NewBenefitSendProperties properties,
+                                  ApplicationContext applicationContext) {
         this.digestRepository = digestRepository;
         this.writer = writer;
         this.mailSender = mailSender;
         this.clock = clock;
+        this.applicationContext = applicationContext;
         this.siteUrl = properties.siteUrl();
         this.intervalNanos = NANOS_PER_SECOND / properties.ratePerSecond();
     }
@@ -65,8 +76,19 @@ public class NewBenefitDigestSender {
     }
 
     /**
+     * 종료의 가장 앞 단계라, 스케줄러가 실행 중인 발송을 기다리기 전에 받는다. 관리 포트의 자식 컨텍스트가 닫힐 때도 이 이벤트가
+     * 전달되므로 이 앱의 컨텍스트인지 확인한다.
+     */
+    @EventListener
+    public void onContextClosed(ContextClosedEvent event) {
+        if (event.getApplicationContext() == applicationContext) {
+            stopping = true;
+        }
+    }
+
+    /**
      * 실행을 시작한 시각까지 보낼 차례가 된 묶음을 모두 보낸다. 한 실행에서 같은 묶음은 한 번만 다룬다. 실패해 다음 시도 시각이
-     * 뒤로 간 묶음은 다음 실행이 다시 읽는다.
+     * 뒤로 간 묶음은 다음 실행이 다시 읽는다. 앱이 종료를 시작했으면 다음 묶음을 다루지 않고 끝낸다.
      */
     public void sendDue() {
         long start = System.nanoTime();
@@ -84,6 +106,10 @@ public class NewBenefitDigestSender {
                 break;
             }
             for (Long id : ids) {
+                if (stopping) {
+                    interrupted = true;
+                    break;
+                }
                 Optional<NewBenefitDigestMail> mail = writer.prepare(id, LocalDateTime.now(clock));
                 if (mail.isEmpty()) {
                     skipped++;

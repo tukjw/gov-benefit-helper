@@ -242,7 +242,7 @@ scripts/loadtest/notify/switch.sh off
 ssh govbenefit-app 'cd /opt/gov-benefit/app && docker compose start cloudflared'
 ```
 
-결과는 `results/<시각>-<시나리오>/`에 생긴다. 가져오기와 지우기는 끝난 뒤의 4와 같다.
+결과는 `results/<시각>-<시나리오>/`에 생긴다. 가져오기와 지우기는 끝난 뒤의 4와 같다. 개선 전후를 비교하는 측정은 `RESULTS_DIR`로 그 작업의 보고서 옆에 둔다(예: `RESULTS_DIR=docs/research/notify-send-graceful-shutdown/results scripts/loadtest/notify/run.sh deploy`). 회차별 집계의 "멈춤 요약 로그"는 명령 뒤 이전 앱이 `interrupted=true` 발송 요약을 남기기까지 걸린 시간이다(결정 0049).
 
 ### 자동 정리가 멈췄을 때
 

@@ -9,11 +9,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import kr.govbenefit.FixedClockConfiguration;
 import kr.govbenefit.MutableClock;
 import kr.govbenefit.TestcontainersConfiguration;
 import kr.govbenefit.account.domain.UserAccount;
 import kr.govbenefit.account.mail.AccountMailSendException;
+import kr.govbenefit.account.mail.AccountMailSender;
 import kr.govbenefit.account.mail.NewBenefitMailItem;
 import kr.govbenefit.account.mail.RecordingAccountMailSender;
 import kr.govbenefit.account.mail.RecordingAccountMailSender.SentDigest;
@@ -33,18 +35,28 @@ import kr.govbenefit.notification.domain.NewBenefitDigestStatus;
 import kr.govbenefit.notification.repository.NewBenefitDigestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * 새 혜택 알림 발송(REQ-NOTIFY-02, 결정 0048). 메일은 가짜 발송({@link RecordingAccountMailSender})에 기록하고, 실패는 가짜
  * 발송이 던지는 예외로 만든다. 묶음은 시계를 그날 08:00으로 옮겨 {@link NewBenefitDigestBundler#bundleAll()}로 만들고, 발송은
  * {@link NewBenefitDigestSender#sendDue()}를 직접 부른다.
+ *
+ * <p>앱 종료(결정 0049)는 공유 컨텍스트를 닫지 않고, 테스트에서 따로 만든 발송기에 종료 이벤트를 넘겨 재현한다. 공유 컨텍스트에
+ * 종료 이벤트를 발행하면 스케줄러가 실제로 종료돼 다른 테스트가 깨진다.
  */
 @SpringBootTest(properties = "gov24.schedule.enabled=false")
 @Import({TestcontainersConfiguration.class, FixedClockConfiguration.class})
+@ExtendWith(OutputCaptureExtension.class)
 class NewBenefitDigestSendTest {
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
@@ -54,6 +66,8 @@ class NewBenefitDigestSendTest {
 
     @Autowired
     private NewBenefitDigestSender sender;
+    @Autowired
+    private NewBenefitDigestSendWriter writer;
     @Autowired
     private NewBenefitDigestBundler bundler;
     @Autowired
@@ -74,6 +88,8 @@ class NewBenefitDigestSendTest {
     private JdbcTemplate jdbcTemplate;
     @Autowired
     private MutableClock clock;
+    @Autowired
+    private ApplicationContext applicationContext;
 
     private Long x;
     private Long y;
@@ -305,6 +321,54 @@ class NewBenefitDigestSendTest {
     }
 
     @Test
+    void 발송_중에_앱이_종료되면_보내던_묶음은_결과를_기록하고_다음_묶음은_보내지_않는다(CapturedOutput output) {
+        Long u1 = createUser("u1@example.com", true);
+        Long u2 = createUser("u2@example.com", true);
+        addTarget(u1, x);
+        addTarget(u2, x);
+        bundleOn(NOV_5);
+
+        senderClosedOnFirstSend(applicationContext).sendDue();
+
+        assertThat(mail.sentDigests()).extracting(SentDigest::email).containsExactly("u1@example.com");
+        NewBenefitDigest sent = digest(u1, NOV_5);
+        assertThat(sent.getStatus()).isEqualTo(NewBenefitDigestStatus.ACCEPTED);
+        assertThat(sent.getAttemptCount()).isEqualTo(1);
+        assertThat(sent.getAcceptedAt()).isEqualTo(NOV_5.atTime(8, 0));
+        NewBenefitDigest left = digest(u2, NOV_5);
+        assertThat(left.getStatus()).isEqualTo(NewBenefitDigestStatus.PENDING);
+        assertThat(left.getAttemptCount()).isZero();
+        assertThat(output).contains("새 혜택 알림 발송 accepted=1 retrying=0 failed=0 skipped=0 interrupted=true");
+
+        // 다시 뜬 앱의 첫 실행은 남은 묶음만 보낸다.
+        clock.advance(Duration.ofSeconds(30));
+        sender.sendDue();
+
+        assertThat(mail.sentDigests()).extracting(SentDigest::email)
+                .containsExactly("u1@example.com", "u2@example.com");
+        assertThat(digest(u2, NOV_5).getStatus()).isEqualTo(NewBenefitDigestStatus.ACCEPTED);
+        assertThat(digest(u1, NOV_5).getAttemptCount()).isEqualTo(1);
+    }
+
+    @Test
+    void 다른_컨텍스트가_닫혀도_발송을_멈추지_않는다() {
+        Long u1 = createUser("u1@example.com", true);
+        Long u2 = createUser("u2@example.com", true);
+        addTarget(u1, x);
+        addTarget(u2, x);
+        bundleOn(NOV_5);
+
+        // 운영의 관리 포트처럼 자식 컨텍스트가 닫히는 경우
+        senderClosedOnFirstSend(new GenericApplicationContext()).sendDue();
+
+        assertThat(mail.sentDigests()).extracting(SentDigest::email)
+                .containsExactly("u1@example.com", "u2@example.com");
+        for (Long user : List.of(u1, u2)) {
+            assertThat(digest(user, NOV_5).getStatus()).isEqualTo(NewBenefitDigestStatus.ACCEPTED);
+        }
+    }
+
+    @Test
     void 묶은_날이_지난_발송_대기_묶음은_보내지_않고_최종_실패로_끝난다() {
         Long u1 = createUser("u1@example.com", true);
         addTarget(u1, x);
@@ -317,6 +381,37 @@ class NewBenefitDigestSendTest {
         assertThat(digest.getStatus()).isEqualTo(NewBenefitDigestStatus.FAILED);
         assertThat(digest.getAttemptCount()).isZero();
         assertThat(mail.sentDigests()).isEmpty();
+    }
+
+    /**
+     * 이 앱의 컨텍스트를 쓰는 발송기를 따로 만든다. 첫 새 혜택 알림을 SES가 받은 직후, 결과를 기록하기 전에 {@code closed}의
+     * 종료 이벤트를 받는다. 메일은 공유 가짜 발송({@link #mail})에 기록한다.
+     */
+    private NewBenefitDigestSender senderClosedOnFirstSend(ApplicationContext closed) {
+        AtomicReference<NewBenefitDigestSender> closing = new AtomicReference<>();
+        AccountMailSender closingMail = new AccountMailSender() {
+            @Override
+            public void sendSignupCode(String email, String code, Duration validFor) {
+                mail.sendSignupCode(email, code, validFor);
+            }
+
+            @Override
+            public void sendPasswordReset(String email, String resetUrl, Duration validFor) {
+                mail.sendPasswordReset(email, resetUrl, validFor);
+            }
+
+            @Override
+            public void sendNewBenefitDigest(String email, List<NewBenefitMailItem> benefits, String siteUrl) {
+                mail.sendNewBenefitDigest(email, benefits, siteUrl);
+                if (mail.sentDigests().size() == 1) {
+                    closing.get().onContextClosed(new ContextClosedEvent(closed));
+                }
+            }
+        };
+        NewBenefitDigestSender closingSender = new NewBenefitDigestSender(digestRepository, writer, closingMail, clock,
+                properties, applicationContext);
+        closing.set(closingSender);
+        return closingSender;
     }
 
     private static AccountMailSendException retryable() {
