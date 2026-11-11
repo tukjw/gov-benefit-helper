@@ -91,3 +91,4 @@
 | [0046](0046-new-benefit-digest.md) | 새 혜택 알림 묶음과 알림 항목의 연결 | 채택 | #130 |
 | [0047](0047-mail-ses-and-new-benefit-mail.md) | 계정 메일과 새 혜택 알림 메일의 Amazon SES 발송 | 채택 | #132 |
 | [0048](0048-new-benefit-digest-send.md) | 새 혜택 알림 묶음의 발송·재시도·복구 | 채택 | #132 |
+| [0049](0049-new-benefit-digest-send-shutdown.md) | 새 혜택 알림 발송의 종료 처리 | 채택 | #141 |
