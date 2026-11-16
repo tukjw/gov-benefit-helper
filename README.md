@@ -23,40 +23,7 @@
 
 ## 시스템 아키텍처
 
-```mermaid
-flowchart LR
-    user([브라우저])
-
-    subgraph cf[Cloudflare]
-        pages["Pages<br/>govbenefit.kr<br/>React 정적 파일"]
-        tunnel["Tunnel<br/>api.govbenefit.kr"]
-    end
-
-    subgraph host[Proxmox 호스트]
-        subgraph appvm[app VM]
-            app[Spring Boot API]
-        end
-        subgraph dbvm[db VM]
-            mysql[(MySQL)]
-        end
-        subgraph metricsvm[지표 VM]
-            metrics["Prometheus<br/>Grafana"]
-        end
-    end
-
-    gov24["공공데이터포털<br/>공공서비스(혜택) API"]
-    ses[Amazon SES]
-
-    user --> pages
-    user --> tunnel --> app
-    app --> mysql
-    app -- "매일 04:00 수집" --> gov24
-    app -- "인증·알림 메일" --> ses
-    metrics -. 지표 수집 .-> app
-    metrics -. 지표 수집 .-> mysql
-```
-
-프론트는 Cloudflare Pages가 정적 파일로 내보내고, API는 집에 둔 Proxmox 호스트의 VM에서 컨테이너로 실행합니다. 외부 요청은 Cloudflare Tunnel로만 들어옵니다.
+![시스템 아키텍처](docs/images/readme/system-architecture.png)
 
 ## 기술 스택
 
