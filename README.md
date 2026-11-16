@@ -4,12 +4,13 @@
 
 서비스 주소: **<https://govbenefit.kr>**
 
-<p>
-  <img src="docs/images/readme/search.png" width="49%" alt="혜택 검색 화면">
-  <img src="docs/images/readme/match.png" width="49%" alt="조건 비교 결과 화면">
-</p>
+**혜택 검색**
 
-왼쪽은 혜택 검색, 오른쪽은 조건 비교 결과입니다.
+![혜택 검색 화면](docs/images/readme/search.png)
+
+**조건 비교 결과**
+
+![조건 비교 결과 화면](docs/images/readme/match.png)
 
 ## 주요 기능
 
