@@ -6,11 +6,11 @@
 
 **혜택 검색**
 
-![혜택 검색 화면](docs/images/readme/search.png)
+<img src="docs/images/readme/search.png" width="640" alt="혜택 검색 화면">
 
 **조건 비교 결과**
 
-![조건 비교 결과 화면](docs/images/readme/match.png)
+<img src="docs/images/readme/match.png" width="640" alt="조건 비교 결과 화면">
 
 ## 주요 기능
 
