@@ -34,17 +34,6 @@ const DATE_TIME = new Intl.DateTimeFormat("ko-KR", {
   hourCycle: "h23",
 });
 
-const DATE = new Intl.DateTimeFormat("ko-KR", {
-  timeZone: "Asia/Seoul",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
 export function formatDateTime(iso: string | null): string | null {
   return iso ? DATE_TIME.format(new Date(iso)) : null;
-}
-
-export function formatDate(iso: string | null): string | null {
-  return iso ? DATE.format(new Date(iso)) : null;
 }

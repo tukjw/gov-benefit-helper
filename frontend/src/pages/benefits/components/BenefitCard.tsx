@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { Badge } from "@/components/ui/Badge";
 import type { BenefitSummary } from "@/lib/api/types";
-import { applyPeriodLabel, formatDate, hasText } from "@/lib/benefits/display";
+import { applyPeriodLabel, hasText } from "@/lib/benefits/display";
 import { agencyTypeLabel } from "@/lib/benefits/options";
 import styles from "./BenefitCard.module.css";
 
@@ -12,7 +12,7 @@ import styles from "./BenefitCard.module.css";
 export function BenefitCard({ benefit, children }: { benefit: BenefitSummary; children?: ReactNode }) {
   const periodLabel = applyPeriodLabel(benefit.applyPeriodType);
   const agency = [benefit.agencyName, agencyTypeLabel(benefit.agencyType)].filter(Boolean).join(" · ");
-  const lastSeen = formatDate(benefit.lastSeenAt);
+  const applyPeriodText = hasText(benefit.applyPeriodText) ? benefit.applyPeriodText : null;
 
   return (
     <article className={styles.card}>
@@ -24,26 +24,22 @@ export function BenefitCard({ benefit, children }: { benefit: BenefitSummary; ch
         <h3 className={styles.title}>{benefit.name}</h3>
         {hasText(benefit.summary) && <p className={styles.summary}>{benefit.summary}</p>}
         {children}
-        <dl className={styles.meta}>
-          {agency && (
-            <div>
-              <dt>운영 기관</dt>
-              <dd>{agency}</dd>
-            </div>
-          )}
-          {hasText(benefit.applyPeriodText) && (
-            <div>
-              <dt>신청기한</dt>
-              <dd>{benefit.applyPeriodText}</dd>
-            </div>
-          )}
-          {lastSeen && (
-            <div>
-              <dt>마지막 확인</dt>
-              <dd>{lastSeen}</dd>
-            </div>
-          )}
-        </dl>
+        {(agency || applyPeriodText) && (
+          <dl className={styles.meta}>
+            {agency && (
+              <div>
+                <dt>운영 기관</dt>
+                <dd>{agency}</dd>
+              </div>
+            )}
+            {applyPeriodText && (
+              <div>
+                <dt>신청기한</dt>
+                <dd>{applyPeriodText}</dd>
+              </div>
+            )}
+          </dl>
+        )}
       </Link>
       <div className={styles.bookmark}>
         <BookmarkButton serviceId={benefit.serviceId} name={benefit.name} />
