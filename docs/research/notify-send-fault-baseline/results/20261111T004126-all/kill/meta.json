@@ -1,0 +1,47 @@
+{
+  "scenario": "kill",
+  "out": "docs/research/notify-send-fault-baseline/results/20261111T004126-all/kill",
+  "users": 10000,
+  "seed": 137,
+  "params": {
+    "OUTAGE_LONG_MIN": "60",
+    "OUTAGE_SHORT_MIN": "10",
+    "KILLS": "10",
+    "HOLD_KILLS": "2",
+    "KILL_MIN_S": "90",
+    "KILL_MAX_S": "150",
+    "DEPLOY_AT_MIN": "5,12,19",
+    "LATE_EVERY": "100",
+    "LATE_S": "15",
+    "MAIL_MINUTES": "30",
+    "BASE_RATE": "1",
+    "PEAK_RATE": "10",
+    "PEAK_START_MIN": "5",
+    "PEAK_MIN": "2",
+    "NOTIFY_OFF_USERS": "1000",
+    "NOTIFY_OFF_BATCHES": "100",
+    "NOTIFY_OFF_WINDOW_MIN": "20"
+  },
+  "app": {
+    "imageTag": "v0.1.5",
+    "configSha256": "compose.yaml=534ca8a77c8b4242de1480f8237e9c4eacdd9a14b685945801ee07011120384d compose.notify-fault.yaml=e05b8aeea7f15f89eb6e5fe026e9c726106a6acbbc1973533cc567a366179098",
+    "fakeSesUrl": "http://10.10.0.14:8025"
+  },
+  "fakeSes": {
+    "latencyFile": "docs/research/notify-send-fault-baseline/results/ses-probe/latency-ms.txt",
+    "latencySha256": "52a50be4cba2480df1f2500e6fde136ddc159dd306999b86ecb243fd2e1e7dad"
+  },
+  "repo": {
+    "commit": "31da703ade984daee6dc7c0f4bd18f32dc18bee6",
+    "dirty": false
+  },
+  "times": {
+    "start": 1794332627.875272,
+    "seeded": 1794332630.243597,
+    "firstRequest": 1794332640.0151823,
+    "end": 1794334596.845717
+  },
+  "endReason": "done",
+  "idleEndS": 120,
+  "timeoutMin": 90
+}

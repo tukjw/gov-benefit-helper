@@ -1,0 +1,66 @@
+{
+  "scenario": "notify-off",
+  "users": 10000,
+  "endReason": "done",
+  "digests": {
+    "total": 10000,
+    "byStatus": {
+      "ACCEPTED": 9403,
+      "CANCELED": 597
+    },
+    "toSend": 9403
+  },
+  "requests": {
+    "digest": 9403,
+    "byResult": {
+      "accepted": 9403
+    },
+    "clientGone": 0
+  },
+  "lost": {
+    "total": 0,
+    "byStatus": {},
+    "silent": 0
+  },
+  "duplicates": {
+    "extraAcceptances": 0,
+    "addresses": 0
+  },
+  "unfinished": 0,
+  "finalFailed": 0,
+  "acceptedUnknownAddresses": 0,
+  "timing": {
+    "firstRequest": 1794343680.013451,
+    "lastAcceptance": 1794345135.138374,
+    "totalSeconds": 1455.1,
+    "acceptedPerSecond": 6.46,
+    "responseToNextRequestMs": {
+      "p50": 19.0,
+      "p90": 22.5
+    },
+    "requestIntervalMs": {
+      "p50": 112.8,
+      "p90": 268.1
+    },
+    "firstAcceptanceDelaySeconds": {
+      "p50": 724.5,
+      "p90": 1308.3,
+      "max": 1455.1
+    }
+  },
+  "notifyOff": {
+    "users": 1000,
+    "sentAfterOff": 0,
+    "sentDuringOffUpdate": 0,
+    "alreadySentBeforeOff": 403,
+    "canceled": 597
+  },
+  "appLog": {
+    "sendRuns": 1,
+    "sendRunMaxMs": 1455232,
+    "sendRunInterrupted": 0,
+    "signupMailFailures": 0,
+    "appStarts": 0,
+    "appStartSeconds": []
+  }
+}

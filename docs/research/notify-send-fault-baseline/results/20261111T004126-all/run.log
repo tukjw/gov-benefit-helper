@@ -1,0 +1,140 @@
+[00:41:26] 측정 시작: outage-1h normal kill deploy response-loss outage-10m account-mail notify-off, 사용자 10000명 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all
+[00:41:26] outage-1h: 합성 사용자 10000명을 넣는다 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/outage-1h
+[00:41:30] 발송 시작(1.285724초 뒤)
+[01:41:30] SES 장애를 끝냈다(60분).
+서버 지표: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/outage-1h/prometheus.json
+[outage-1h] 사용자 10000명, 끝: done
+  묶음 상태: {'ACCEPTED': 10000} (보내야 할 묶음 10000)
+  알림 요청 33074건: {'outage': 23074, 'accepted': 10000}
+  못 받은 묶음 0 (상태별 {}, 조용한 유실 0), 끝나지 않은 묶음 0, 최종 실패 0
+  중복 접수 0건(주소 0개)
+  총 소요 5520.0초(첫 요청 → 마지막 접수), 초당 접수 1.81, 첫 접수까지 p50 4389.1초, 최대 5520.0초
+  요청 간격 p50 113.0ms(p90 268.3ms), 응답 → 다음 요청 p50 19.2ms(p90 22.1ms)
+  앱 로그: 발송 실행 13번, 한 실행 최대 1558420ms, 중단 0, 계정 메일 실패 로그 0, 앱 시작 0번
+[02:15:37] outage-1h 끝(done): /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/outage-1h
+[02:15:38] normal: 합성 사용자 10000명을 넣는다 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/normal
+[02:16:00] 발송 시작(19.462850초 뒤)
+서버 지표: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/normal/prometheus.json
+[normal] 사용자 10000명, 끝: done
+  묶음 상태: {'ACCEPTED': 10000} (보내야 할 묶음 10000)
+  알림 요청 10000건: {'accepted': 10000}
+  못 받은 묶음 0 (상태별 {}, 조용한 유실 0), 끝나지 않은 묶음 0, 최종 실패 0
+  중복 접수 0건(주소 0개)
+  총 소요 1541.1초(첫 요청 → 마지막 접수), 초당 접수 6.49, 첫 접수까지 p50 766.9초, 최대 1541.1초
+  요청 간격 p50 112.0ms(p90 268.5ms), 응답 → 다음 요청 p50 18.6ms(p90 21.1ms)
+  앱 로그: 발송 실행 1번, 한 실행 최대 1541211ms, 중단 0, 계정 메일 실패 로그 0, 앱 시작 0번
+[02:43:47] normal 끝(done): /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/normal
+[02:43:48] kill: 합성 사용자 10000명을 넣는다 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/kill
+[02:44:00] 발송 시작(9.771585초 뒤)
+[02:45:43] 1회차 강제 종료(kill), 다시 UP까지 9.157728초
+[02:48:04] 2회차 강제 종료(kill), 다시 UP까지 9.052477초
+[02:51:08] 3회차 강제 종료(kill), 다시 UP까지 9.137495초
+[02:53:23] 4회차 강제 종료(kill), 다시 UP까지 9.180880초
+[02:55:30] 5회차 강제 종료(kill), 다시 UP까지 9.038234초
+[02:57:59] 6회차 강제 종료(kill), 다시 UP까지 9.364929초
+[03:00:33] 7회차 강제 종료(kill), 다시 UP까지 9.281341초
+[03:03:10] 8회차 강제 종료(hold), 다시 UP까지 9.319204초
+[03:06:07] 9회차 강제 종료(hold), 다시 UP까지 9.370854초
+[03:09:00] 10회차 강제 종료(kill), 다시 UP까지 9.276750초
+서버 지표: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/kill/prometheus.json
+[kill] 사용자 10000명, 끝: done
+  묶음 상태: {'ACCEPTED': 10000} (보내야 할 묶음 10000)
+  알림 요청 10010건: {'accepted': 10008, 'accepted_held': 2}
+  못 받은 묶음 0 (상태별 {}, 조용한 유실 0), 끝나지 않은 묶음 0, 최종 실패 0
+  중복 접수 10건(주소 10개)
+  총 소요 1833.1초(첫 요청 → 마지막 접수), 초당 접수 5.46, 첫 접수까지 p50 923.9초, 최대 1833.1초
+  요청 간격 p50 120.0ms(p90 275.0ms), 응답 → 다음 요청 p50 24.5ms(p90 32.2ms)
+  1회차 kill: UP까지 9.16초, 재개까지 26.01초(UP 뒤 16.85초), 끊긴 시간 25.03초, 명령 뒤 마지막 요청 0.98초, 중복 1
+  2회차 kill: UP까지 9.05초, 재개까지 35.32초(UP 뒤 26.27초), 끊긴 시간 34.43초, 명령 뒤 마지막 요청 0.89초, 중복 1
+  3회차 kill: UP까지 9.14초, 재개까지 30.58초(UP 뒤 21.45초), 끊긴 시간 29.5초, 명령 뒤 마지막 요청 1.08초, 중복 1
+  4회차 kill: UP까지 9.18초, 재개까지 16.0초(UP 뒤 6.82초), 끊긴 시간 14.86초, 명령 뒤 마지막 요청 1.14초, 중복 1
+  5회차 kill: UP까지 9.04초, 재개까지 9.11초(UP 뒤 0.07초), 끊긴 시간 8.11초, 명령 뒤 마지막 요청 0.99초, 중복 1
+  6회차 kill: UP까지 9.36초, 재개까지 10.49초(UP 뒤 1.13초), 끊긴 시간 9.31초, 명령 뒤 마지막 요청 1.19초, 중복 1
+  7회차 kill: UP까지 9.28초, 재개까지 35.97초(UP 뒤 26.68초), 끊긴 시간 35.02초, 명령 뒤 마지막 요청 0.95초, 중복 1
+  8회차 hold: UP까지 9.32초, 재개까지 28.94초(UP 뒤 19.62초), 끊긴 시간 28.99초, 명령 뒤 마지막 요청 -0.05초, 중복 1
+  9회차 hold: UP까지 9.37초, 재개까지 31.98초(UP 뒤 22.61초), 끊긴 시간 32.01초, 명령 뒤 마지막 요청 -0.03초, 중복 1
+  10회차 kill: UP까지 9.28초, 재개까지 9.5초(UP 뒤 0.23초), 끊긴 시간 8.82초, 명령 뒤 마지막 요청 0.69초, 중복 1
+  앱 로그: 발송 실행 1번, 한 실행 최대 333262ms, 중단 0, 계정 메일 실패 로그 0, 앱 시작 10번
+[03:16:42] kill 끝(done): /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/kill
+[03:16:42] deploy: 합성 사용자 10000명을 넣는다 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/deploy
+[03:17:00] 발송 시작(15.104997초 뒤)
+[03:22:40] 1회차 배포(5분), 다시 UP까지 39.834652초
+[03:29:40] 2회차 배포(12분), 다시 UP까지 39.845856초
+[03:36:40] 3회차 배포(19분), 다시 UP까지 39.587892초
+서버 지표: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/deploy/prometheus.json
+[deploy] 사용자 10000명, 끝: done
+  묶음 상태: {'ACCEPTED': 10000} (보내야 할 묶음 10000)
+  알림 요청 10003건: {'accepted': 10003}
+  못 받은 묶음 0 (상태별 {}, 조용한 유실 0), 끝나지 않은 묶음 0, 최종 실패 0
+  중복 접수 3건(주소 3개)
+  총 소요 1664.8초(첫 요청 → 마지막 접수), 초당 접수 6.01, 첫 접수까지 p50 843.4초, 최대 1664.8초
+  요청 간격 p50 116.6ms(p90 272.7ms), 응답 → 다음 요청 p50 21.6ms(p90 27.4ms)
+  1회차 deploy: UP까지 39.83초, 재개까지 59.49초(UP 뒤 19.66초), 끊긴 시간 28.84초, 명령 뒤 마지막 요청 30.65초, 중복 1
+  2회차 deploy: UP까지 39.85초, 재개까지 59.41초(UP 뒤 19.57초), 끊긴 시간 28.79초, 명령 뒤 마지막 요청 30.62초, 중복 1
+  3회차 deploy: UP까지 39.59초, 재개까지 59.57초(UP 뒤 19.99초), 끊긴 시간 29.0초, 명령 뒤 마지막 요청 30.57초, 중복 1
+  앱 로그: 발송 실행 1번, 한 실행 최대 464880ms, 중단 0, 계정 메일 실패 로그 0, 앱 시작 3번
+[03:47:04] deploy 끝(done): /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/deploy
+[03:47:04] response-loss: 합성 사용자 10000명을 넣는다 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/response-loss
+[03:47:30] 발송 시작(23.371480초 뒤)
+서버 지표: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/response-loss/prometheus.json
+[response-loss] 사용자 10000명, 끝: done
+  묶음 상태: {'ACCEPTED': 10000} (보내야 할 묶음 10000)
+  알림 요청 10101건: {'accepted': 10000, 'accepted_late': 101}
+  못 받은 묶음 0 (상태별 {}, 조용한 유실 0), 끝나지 않은 묶음 0, 최종 실패 0
+  중복 접수 101건(주소 100개)
+  총 소요 2940.0초(첫 요청 → 마지막 접수), 초당 접수 3.4, 첫 접수까지 p50 1255.9초, 최대 2523.6초
+  요청 간격 p50 112.8ms(p90 273.1ms), 응답 → 다음 요청 p50 19.2ms(p90 21.7ms)
+  앱 로그: 발송 실행 5번, 한 실행 최대 2533652ms, 중단 0, 계정 메일 실패 로그 0, 앱 시작 0번
+[04:38:35] response-loss 끝(done): /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/response-loss
+[04:38:36] outage-10m: 합성 사용자 10000명을 넣는다 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/outage-10m
+[04:39:00] 발송 시작(21.757286초 뒤)
+[04:49:00] SES 장애를 끝냈다(10분).
+서버 지표: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/outage-10m/prometheus.json
+[outage-10m] 사용자 10000명, 끝: done
+  묶음 상태: {'ACCEPTED': 10000} (보내야 할 묶음 10000)
+  알림 요청 13883건: {'outage': 3883, 'accepted': 10000}
+  못 받은 묶음 0 (상태별 {}, 조용한 유실 0), 끝나지 않은 묶음 0, 최종 실패 0
+  중복 접수 0건(주소 0개)
+  총 소요 2152.9초(첫 요청 → 마지막 접수), 초당 접수 4.64, 첫 접수까지 p50 1374.2초, 최대 2152.9초
+  요청 간격 p50 112.3ms(p90 267.6ms), 응답 → 다음 요청 p50 18.9ms(p90 21.4ms)
+  앱 로그: 발송 실행 2번, 한 실행 최대 1544432ms, 중단 0, 계정 메일 실패 로그 0, 앱 시작 0번
+[05:17:05] outage-10m 끝(done): /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/outage-10m
+[05:17:05] account-mail: 합성 사용자 10000명을 넣는다 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/account-mail
+[05:17:30] 발송 시작(22.508051초 뒤)
+[05:47:31] 계정 메일 요청을 마쳤다.
+서버 지표: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/account-mail/prometheus.json
+[account-mail] 사용자 10000명, 끝: done
+  묶음 상태: {'ACCEPTED': 10000} (보내야 할 묶음 10000)
+  알림 요청 10050건: {'accepted': 10000, 'rate_limited': 50}
+  못 받은 묶음 0 (상태별 {}, 조용한 유실 0), 끝나지 않은 묶음 0, 최종 실패 0
+  중복 접수 0건(주소 0개)
+  총 소요 1567.2초(첫 요청 → 마지막 접수), 초당 접수 6.38, 첫 접수까지 p50 777.3초, 최대 1567.2초
+  요청 간격 p50 112.0ms(p90 266.9ms), 응답 → 다음 요청 p50 18.7ms(p90 21.1ms)
+  계정 메일: k6 요청 2881(2xx 아님 0), 가짜 SES {'accepted': 2802, 'rate_limited': 79}, 접수 2802, 실패 79
+  앱 로그: 발송 실행 2번, 한 실행 최대 1538824ms, 중단 0, 계정 메일 실패 로그 79, 앱 시작 0번
+[05:47:38] account-mail 끝(done): /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/account-mail
+[05:47:39] notify-off: 합성 사용자 10000명을 넣는다 → /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/notify-off
+[05:48:00] 발송 시작(18.873844초 뒤)
+[06:07:59] 알림 끄기를 마쳤다.
+서버 지표: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/notify-off/prometheus.json
+[notify-off] 사용자 10000명, 끝: done
+  묶음 상태: {'ACCEPTED': 9403, 'CANCELED': 597} (보내야 할 묶음 9403)
+  알림 요청 9403건: {'accepted': 9403}
+  못 받은 묶음 0 (상태별 {}, 조용한 유실 0), 끝나지 않은 묶음 0, 최종 실패 0
+  중복 접수 0건(주소 0개)
+  총 소요 1455.1초(첫 요청 → 마지막 접수), 초당 접수 6.46, 첫 접수까지 p50 724.5초, 최대 1455.1초
+  요청 간격 p50 112.8ms(p90 268.1ms), 응답 → 다음 요청 p50 19.0ms(p90 22.5ms)
+  알림 끄기 1000명: 끈 뒤 나간 알림 0(UPDATE 중 0), 끄기 전에 이미 나감 403, 취소 597
+  앱 로그: 발송 실행 1번, 한 실행 최대 1455232ms, 중단 0, 계정 메일 실패 로그 0, 앱 시작 0번
+[06:14:23] notify-off 끝(done): /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/notify-off
+[06:14:23] 정리: 모두 마쳤다
+[06:14:25] 기본 실행 구성으로 app을 다시 만든다.
+ Container gov-benefit-app-app-1 Recreate 
+ Container gov-benefit-app-app-1 Recreated 
+ Container gov-benefit-app-app-1 Starting 
+ Container gov-benefit-app-app-1 Started 
+[06:14:36] 실행 구성 파일 해시와 APP_TAG가 측정 전과 같다.
+[06:14:36] 기본 실행 구성이다. Tunnel은 따로 켠다.
+ Container gov-benefit-app-cloudflared-1 Starting 
+ Container gov-benefit-app-cloudflared-1 Started 
+[06:14:38] 요약: /home/pi/gov-benefit-helper/docs/research/notify-send-fault-baseline/results/20261111T004126-all/finish.txt
