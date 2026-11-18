@@ -1,6 +1,6 @@
 # 정부 혜택 도우미
 
-중앙부처·지자체·공공기관의 혜택을 한곳에서 검색하고, 내 조건과 비교해 볼 수 있는 웹 서비스입니다. 공공데이터포털의 [공공서비스(혜택) 정보](https://www.data.go.kr/data/15113968/openapi.do)를 매일 수집해 보여 줍니다.
+중앙부처·지자체·공공기관의 혜택을 한곳에서 검색하고, 내 조건과 비교해 볼 수 있는 웹 서비스입니다.
 
 서비스 주소: **<https://govbenefit.kr>**
 
@@ -55,7 +55,7 @@ npm ci
 npm run dev
 ```
 
-- 처음에는 DB가 비어 있어 혜택이 0건입니다. 공공데이터포털에서 받은 인증키(Decoding)를 `backend/.env`의 `GOV24_SERVICE_KEY`에 넣고 `SPRING_PROFILES_ACTIVE=local,collect ./gradlew bootRun`으로 띄우면 기동할 때 한 번 수집합니다.
+- 처음에는 DB가 비어 있어 혜택이 0건입니다. 공공데이터포털의 [공공서비스(혜택) 정보](https://www.data.go.kr/data/15113968/openapi.do)에서 받은 인증키(Decoding)를 `backend/.env`의 `GOV24_SERVICE_KEY`에 넣고 `SPRING_PROFILES_ACTIVE=local,collect ./gradlew bootRun`으로 띄우면 기동할 때 한 번 수집합니다.
 - `local` 프로필은 메일을 보내지 않습니다. 가입 인증번호와 비밀번호 재설정 링크는 API 로그에 남습니다.
 - 테스트는 `backend/`에서 `./gradlew test`로 실행합니다. Testcontainers가 MySQL을 띄우므로 Docker가 필요합니다.
 
